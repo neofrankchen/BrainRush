@@ -1,0 +1,30 @@
+---
+description: 记录脑乱挑战项目的用户提示词并单独编号
+alwaysApply: true
+---
+
+# 提示词记录
+
+每次收到用户消息后、开始动手前，把该提示词追加到 `/Users/cmstudent/jec_game/BrainRush/.cursor/prompt-log.md`。
+
+仅当当前工作区根目录是 `/Users/cmstudent/jec_game/BrainRush` 时记录。这是脑乱挑战项目自己的记录。不要写入 `/Users/cmstudent/jec_game/.cursor/prompt-log.md`，也不要沿用那边的编号。
+
+## 编号
+
+- 从 `001` 起，三位数字，只增不改已有条目。
+- 新编号 = 本文件里已有的最大编号 + 1。日志不存在或为空时用 `001`。
+- 一条用户消息对应一个编号，不拆分、不合并。
+
+## 格式
+
+追加一块，保留原文，不改写、不摘要：
+
+```markdown
+## 001
+
+用户提示词原文
+```
+
+## 回复
+
+回复第一行标出本次编号，例如：`提示词 001`。
