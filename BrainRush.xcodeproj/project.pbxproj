@@ -243,7 +243,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphonesimulator*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6247D877D9;
+				DEVELOPMENT_TEAM = F5VUJ2MYTF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Brain Rush";
@@ -257,7 +257,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jec.brainrush;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jec.brainrush2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -275,7 +275,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphonesimulator*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6247D877D9;
+				DEVELOPMENT_TEAM = F5VUJ2MYTF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Brain Rush";
@@ -289,7 +289,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jec.brainrush;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jec.brainrush2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
