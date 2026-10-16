@@ -736,8 +736,7 @@ struct StroopGameView: View {
                 Color(red: 0.07, green: 0.10, blue: 0.30).ignoresSafeArea()
                 Image("StartScreenArt")
                     .resizable()
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    .clipped()
+                    .ignoresSafeArea(.container, edges: .all)
                     .accessibilityLabel("Brain Rush — ブレインラッシュ")
                 ScrollView {
                     VStack(spacing: 18) {
