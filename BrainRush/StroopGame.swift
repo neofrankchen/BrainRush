@@ -810,6 +810,8 @@ final class StroopSession {
 
 struct StroopGameView: View {
     @State private var session = StroopSession()
+    @State private var showsGuide = false
+    @State private var showsPractice = false
 
     var body: some View {
         Group {
@@ -845,11 +847,75 @@ struct StroopGameView: View {
         }
     }
 
+    private let mint = Color(red: 0.55, green: 0.96, blue: 0.78)
+
     private var menu: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            LanguagePicker()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 28) {
+                HStack {
+                    Label("BRAIN RUSH", systemImage: "brain.head.profile")
+                        .font(.system(.caption, design: .rounded, weight: .heavy))
+                        .tracking(2)
+                        .foregroundStyle(mint)
+                    Spacer()
+                    Menu {
+                        ForEach(AppLanguage.allCases) { language in
+                            Button(language.label) { LanguageStore.shared.language = language }
+                        }
+                    } label: {
+                        Label(LanguageStore.shared.language.label, systemImage: "globe")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.8))
+                            .padding(12)
+                            .background(.white.opacity(0.06), in: Capsule())
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("FOCUS. THINK. RUSH.")
+                        .font(.system(.caption2, design: .monospaced, weight: .bold))
+                        .tracking(3)
+                        .foregroundStyle(mint)
+                    Text(tr(ja: "直感を超えろ。\n脳を、加速させよう。", zh: "超越直觉。\n让大脑加速。", en: "Outsmart your instinct.\nFind your focus.", my: "အာရုံစိုက်ပါ။\nဦးနှောက်ကို စိန်ခေါ်ပါ။"))
+                        .font(.system(size: 36, weight: .heavy, design: .rounded))
+                        .tracking(-1.5)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(tr(ja: "見えるものに惑わされず、問いに答えよう。", zh: "别被眼前的线索迷惑，按题目作答。", en: "Ignore the distraction. Follow the question.", my: "အနှောင့်အယှက်ကို ကျော်ပြီး မေးခွန်းကို ဖြေပါ။"))
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.6))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                previewCard
+
+                HStack(spacing: 12) {
+                    menuStat("heart.fill", "3", tr(ja: "ハート", zh: "爱心", en: "Hearts", my: "နှလုံး"), .pink)
+                    menuStat("timer", "10s", tr(ja: "最初の制限時間", zh: "起始时限", en: "Starting timer", my: "စတင်ချိန်"), mint)
+                    menuStat("square.grid.2x2.fill", "7", tr(ja: "問題の種類", zh: "题目类型", en: "Question types", my: "အမျိုးအစား"), .orange)
+                }
+
+                VStack(spacing: 12) {
+                    Button { session.start() } label: {
+                        HStack {
+                            Spacer()
+                            Text(tr(ja: "開始", zh: "开始", en: "Start", my: "စတင်မည်"))
+                            Spacer()
+                            Image(systemName: "arrow.right")
+                        }
+                        .font(.headline)
+                        .foregroundStyle(Color(red: 0.04, green: 0.12, blue: 0.13))
+                        .padding(20)
+                        .background(mint, in: RoundedRectangle(cornerRadius: 20))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("stroop-start")
+                    Text(tr(ja: "3問連続正解でハート +1", zh: "连续答对3题，爱心 +1", en: "Three correct in a row earns a heart", my: "ဆက်တိုက် ၃ ခုမှန်လျှင် နှလုံး +1"))
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+
+                DisclosureGroup(isExpanded: $showsGuide) {
+                    VStack(alignment: .leading, spacing: 20) {
                     guide(
                         tr(ja: "遊び方", zh: "怎么玩", en: "How to play", my: "ကစားနည်း"),
                         tr(
@@ -895,16 +961,92 @@ struct StroopGameView: View {
                             my: "မှန်လျှင် ၁၀ မှတ်။ ဆက်တိုက်မှန်လျှင် တစ်ခါလျှင် ၂ မှတ် ထပ်ပေါင်းပြီး အများဆုံး ၁၀ မှတ် ထပ်ရသည်။"
                         )
                     )
+                    }
+                    .padding(.top, 18)
+                } label: {
+                    Label(tr(ja: "遊び方", zh: "怎么玩", en: "How to play", my: "ကစားနည်း"), systemImage: "questionmark.circle")
+                        .font(.subheadline.weight(.semibold))
                 }
+                .tint(mint)
+
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        Image(systemName: "trophy.fill").foregroundStyle(.orange)
+                        Text(tr(ja: "自己ベスト", zh: "个人最佳", en: "Personal best", my: "အကောင်းဆုံး"))
+                            .font(.subheadline.weight(.semibold))
+                        Spacer()
+                        Text(ScoreBoard.records(for: "stroop").first.map { "\($0.score)" } ?? "—")
+                            .font(.system(.title2, design: .rounded, weight: .bold))
+                            .monospacedDigit()
+                    }
+                    if !ScoreBoard.records(for: "stroop").isEmpty {
+                        ScoreBoardList(game: "stroop")
+                    }
+                }
+                .padding(20)
+                .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 20))
+
+                DisclosureGroup(isExpanded: $showsPractice) {
+                    testControls(showNote: true).padding(.top, 12)
+                } label: {
+                    Label(tr(ja: "練習・テスト設定", zh: "练习与测试设置", en: "Practice & test settings", my: "လေ့ကျင့်ရန်"), systemImage: "slider.horizontal.3")
+                        .font(.caption)
+                }
+                .tint(.white.opacity(0.6))
             }
-            testControls(showNote: true)
-            Button(tr(ja: "開始", zh: "开始", en: "Start", my: "စတင်မည်")) { session.start() }
-                .buttonStyle(.borderedProminent)
-                .tint(Color(red: 0.98, green: 0.74, blue: 0.32))
-            ScoreBoardList(game: "stroop")
+            .padding(24)
+            .frame(maxWidth: 560)
+            .frame(maxWidth: .infinity)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .foregroundStyle(.white)
+        .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private var previewCard: some View {
+        VStack(spacing: 18) {
+            HStack {
+                Circle().fill(mint).frame(width: 6, height: 6)
+                Text(tr(ja: "こんな問題が出ます", zh: "题目预览", en: "A TASTE OF THE CHALLENGE", my: "မေးခွန်း နမူနာ"))
+                    .font(.system(.caption2, design: .monospaced, weight: .semibold))
+                    .tracking(1)
+                Spacer()
+                Image(systemName: "sparkles").foregroundStyle(mint)
+            }
+            .foregroundStyle(.white.opacity(0.6))
+            Text(tr(ja: "見えている「色」は？", zh: "你看到的颜色是？", en: "What color do you see?", my: "မြင်ရသော အရောင်က ဘာလဲ။"))
+                .font(.subheadline.weight(.semibold))
+            Text(StroopColor.red.name)
+                .font(.system(size: 66, weight: .black, design: .rounded))
+                .foregroundStyle(mint)
+                .minimumScaleFactor(0.5)
+                .lineLimit(1)
+            HStack(spacing: 6) {
+                Image(systemName: "lightbulb.fill").foregroundStyle(mint)
+                Text(tr(ja: "文字ではなく、インクの色に注目。", zh: "注意墨水的颜色，而不是文字。", en: "Focus on the ink color, not the word.", my: "မင်အရောင်ကို အာရုံစိုက်ပါ။"))
+                    .foregroundStyle(.white.opacity(0.6))
+            }
+            .font(.caption)
+        }
+        .padding(22)
+        .frame(maxWidth: .infinity)
+        .background {
+            RoundedRectangle(cornerRadius: 28)
+                .fill(LinearGradient(colors: [mint.opacity(0.12), .white.opacity(0.025)], startPoint: .topLeading, endPoint: .bottomTrailing))
+        }
+        .overlay { RoundedRectangle(cornerRadius: 28).strokeBorder(mint.opacity(0.18)) }
+    }
+
+    private func menuStat(_ symbol: String, _ value: String, _ title: String, _ color: Color) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: symbol).font(.subheadline).foregroundStyle(color)
+            Text(value).font(.system(.title3, design: .rounded, weight: .bold))
+            Text(title).font(.caption2).foregroundStyle(.white.opacity(0.55))
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .combine)
     }
 
     private func testControls(showNote: Bool) -> some View {
