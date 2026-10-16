@@ -773,7 +773,7 @@ struct StroopGameView: View {
                 HStack(spacing: 12) {
                     menuStat("heart.fill", "3", tr(ja: "ハート", zh: "爱心", en: "Hearts", my: "နှလုံး"), .pink)
                     menuStat("timer", "10s", tr(ja: "最初の制限時間", zh: "起始时限", en: "Starting timer", my: "စတင်ချိန်"), mint)
-                    menuStat("square.grid.2x2.fill", "7", tr(ja: "問題の種類", zh: "题目类型", en: "Question types", my: "အမျိုးအစား"), .orange)
+                    menuStat("square.grid.2x2.fill", "\(InterferenceTask.allCases.count)", tr(ja: "問題の種類", zh: "题目类型", en: "Question types", my: "အမျိုးအစား"), .orange)
                 }
 
                 VStack(spacing: 12) {
