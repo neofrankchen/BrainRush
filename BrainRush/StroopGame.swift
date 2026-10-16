@@ -311,14 +311,15 @@ struct StroopRound: Equatable {
     }
 
     private static func numberCount(trap: Bool) -> StroopRound {
+        // Interference: the written number as shown (数字, e.g. 111) vs the count (数量, e.g. 3).
         let count = Int.random(in: 2...4)
         let value = other(count, in: Array(1...9))
         let shown = String(repeating: "\(value)", count: count)
         return StroopRound(
             task: .numberCount,
             rule: trap
-                ? tr(ja: "数字は何個ある？", zh: "数字一共有几个？", en: "How many digits are there?", my: "ဂဏန်း ဘယ်နှစ်လုံး ရှိသလဲ။")
-                : tr(ja: "書いてある数字を選べ", zh: "选出画面上写着的数", en: "Pick the number written on screen", my: "မျက်နှာပြင်ပေါ် ရေးထားသော ကိန်းကို ရွေးပါ"),
+                ? tr(ja: "数字は何個ある？", zh: "有几个数字？", en: "How many digits are there?", my: "ဂဏန်း ဘယ်နှစ်လုံး ရှိသလဲ။")
+                : tr(ja: "数字は？", zh: "数字是几？", en: "What is the number?", my: "ဂဏန်းက ဘယ်လဲ။"),
             answerID: trap ? "\(count)" : shown,
             choices: numberChoices(shown: shown, count: count),
             stimulus: .digits(value: value, count: count)
@@ -808,10 +809,10 @@ struct StroopGameView: View {
                     guide(
                         tr(ja: "5種類の問題", zh: "五种题目", en: "Five kinds of questions", my: "မေးခွန်း ၅ မျိုး"),
                         tr(
-                            ja: "どの問題も二択です。\n色：見えている色か、見えている文字か。文字の意味とインクの色は違います。\n矢印：指している方か、矢印がある場所か。向きと場所は違います。\n文字の位置：書いてある字か、字がある場所か。意味と場所は違います。\n数字：画面に書いてある数（88など）か、何個あるか（2など）。2〜4個で、並びと個数は違います。\n大きさ：数の大きい方か、字の大きい方か。差は1か2で、字が大きいのは数の小さい方です。",
-                            zh: "每道题都是二选一。\n颜色：看到的颜色，还是看到的文字。字义和墨水颜色不会相同。\n箭头：箭头指向哪一边，还是箭头在哪一边。指向和位置不会相同。\n方位字：字写的是什么，还是字在哪一边。字义和位置不会相同。\n数字：画面上写着的数（例如 88），还是一共有几个（例如 2）。每次 2 到 4 个，数字串和个数不会相同。\n大小：数值更大的一边，还是字体更大的一边。两数只差 1 或 2，字更大的是数值更小的那个。",
-                            en: "Every question is a two-choice pick.\nColor: the color you see, or the text you see. The word and the ink never match.\nArrow: the side it points to, or the side where it sits. Direction and place never match.\nPlace word: what the word says, or the side where it sits. Meaning and place never match.\nDigits: the number written on screen (like 88), or how many digits there are (like 2). There are 2 to 4 digits, and the written number never matches the count.\nSize: the larger number, or the bigger text. The numbers differ by 1 or 2, and the bigger text is the smaller number.",
-                            my: "မေးခွန်းတိုင်းကို ရွေးစရာ ၂ ခုသာ ပေးသည်။\nအရောင်။ မြင်ရသော အရောင်၊ သို့မဟုတ် မြင်ရသော စာသား။ စာသားအဓိပ္ပာယ်နှင့် မင်အရောင် မတူပါ။\nမြား။ ညွှန်သောဘက်၊ သို့မဟုတ် မြားရှိသောဘက်။ ဦးတည်ချက်နှင့် နေရာ မတူပါ။\nနေရာစာလုံး။ ရေးထားသောစာလုံး၊ သို့မဟုတ် စာလုံးရှိသောဘက်။ အဓိပ္ပာယ်နှင့် နေရာ မတူပါ။\nဂဏန်း။ မျက်နှာပြင်ပေါ် ရေးထားသော ကိန်း (ဥပမာ ၈၈)၊ သို့မဟုတ် ဘယ်နှစ်လုံးရှိသလဲ (ဥပမာ ၂)။ တစ်ကြိမ် ၂ လုံးမှ ၄ လုံးဖြစ်ပြီး ရေးထားသောကိန်းနှင့် အရေအတွက် မတူပါ။\nအရွယ်။ ကိန်းပိုကြီးသောဘက်၊ သို့မဟုတ် စာလုံးပိုကြီးသောဘက်။ ကိန်းနှစ်ခုက ၁ သို့မဟုတ် ၂ ပဲ ကွာပြီး စာလုံးပိုကြီးတာက ကိန်းပိုငယ်သောဘက် ဖြစ်သည်။"
+                            ja: "どの問題も二択です。\n色：見えている色か、見えている文字か。文字の意味とインクの色は違います。\n矢印：指している方か、矢印がある場所か。向きと場所は違います。\n文字の位置：書いてある字か、字がある場所か。意味と場所は違います。\n数字と個数：例えば画面が111なら、選択肢は111と3。「数字は？」なら111、「数字は何個ある？」なら3。並びと個数は違います。\n大きさ：数の大きい方か、字の大きい方か。差は1か2で、字が大きいのは数の小さい方です。",
+                            zh: "每道题都是二选一。\n颜色：看到的颜色，还是看到的文字。字义和墨水颜色不会相同。\n箭头：箭头指向哪一边，还是箭头在哪一边。指向和位置不会相同。\n方位字：字写的是什么，还是字在哪一边。字义和位置不会相同。\n数字和数量：例如画面是 111，选项是 111 和 3。问「数字是几？」选 111，问「有几个数字？」选 3。数字串和数量不会相同。\n大小：数值更大的一边，还是字体更大的一边。两数只差 1 或 2，字更大的是数值更小的那个。",
+                            en: "Every question is a two-choice pick.\nColor: the color you see, or the text you see. The word and the ink never match.\nArrow: the side it points to, or the side where it sits. Direction and place never match.\nPlace word: what the word says, or the side where it sits. Meaning and place never match.\nNumber and count: if the screen shows 111, the choices are 111 and 3. \"What is the number?\" means 111. \"How many digits are there?\" means 3. The written number and the count never match.\nSize: the larger number, or the bigger text. The numbers differ by 1 or 2, and the bigger text is the smaller number.",
+                            my: "မေးခွန်းတိုင်းကို ရွေးစရာ ၂ ခုသာ ပေးသည်။\nအရောင်။ မြင်ရသော အရောင်၊ သို့မဟုတ် မြင်ရသော စာသား။ စာသားအဓိပ္ပာယ်နှင့် မင်အရောင် မတူပါ။\nမြား။ ညွှန်သောဘက်၊ သို့မဟုတ် မြားရှိသောဘက်။ ဦးတည်ချက်နှင့် နေရာ မတူပါ။\nနေရာစာလုံး။ ရေးထားသောစာလုံး၊ သို့မဟုတ် စာလုံးရှိသောဘက်။ အဓိပ္ပာယ်နှင့် နေရာ မတူပါ။\nဂဏန်းနှင့် အရေအတွက်။ ဥပမာ မျက်နှာပြင်မှာ ၁၁၁ ဖြစ်လျှင် ရွေးစရာက ၁၁၁ နှင့် ၃။ \"ဂဏန်းက ဘယ်လဲ\" ဆိုရင် ၁၁၁၊ \"ဂဏန်း ဘယ်နှစ်လုံး ရှိသလဲ\" ဆိုရင် ၃။ ရေးထားသောကိန်းနှင့် အရေအတွက် မတူပါ။\nအရွယ်။ ကိန်းပိုကြီးသောဘက်၊ သို့မဟုတ် စာလုံးပိုကြီးသောဘက်။ ကိန်းနှစ်ခုက ၁ သို့မဟုတ် ၂ ပဲ ကွာပြီး စာလုံးပိုကြီးတာက ကိန်းပိုငယ်သောဘက် ဖြစ်သည်။"
                         )
                     )
                     guide(
