@@ -140,8 +140,6 @@ enum InterferenceTask: String, CaseIterable {
     case wordPlace
     case numberCount
     case valueSize
-    case math
-    case animal
 
     var title: String {
         switch self {
@@ -150,8 +148,6 @@ enum InterferenceTask: String, CaseIterable {
         case .wordPlace: tr(ja: "文字と位置", zh: "字和位置", en: "Word and place", my: "စာလုံးနှင့် နေရာ")
         case .numberCount: tr(ja: "数字と個数", zh: "数字和数量", en: "Number and count", my: "ဂဏန်းနှင့် အရေအတွက်")
         case .valueSize: tr(ja: "数値と大きさ", zh: "数值和字号", en: "Value and size", my: "တန်ဖိုးနှင့် အရွယ်")
-        case .math: tr(ja: "計算", zh: "计算", en: "Calculation", my: "တွက်ချက်")
-        case .animal: tr(ja: "動物", zh: "动物", en: "Animal", my: "တိရစ္ဆာန်")
         }
     }
 
@@ -162,34 +158,6 @@ enum InterferenceTask: String, CaseIterable {
         case .wordPlace: tr(ja: "位置", zh: "方位", en: "Place", my: "နေရာ")
         case .numberCount: tr(ja: "個数", zh: "数量", en: "Count", my: "အရေအတွက်")
         case .valueSize: tr(ja: "大きさ", zh: "大小", en: "Size", my: "အရွယ်")
-        case .math: tr(ja: "計算", zh: "计算", en: "Math", my: "တွက်")
-        case .animal: tr(ja: "動物", zh: "动物", en: "Animal", my: "တိရစ္ဆာန်")
-        }
-    }
-}
-
-enum Animal: String, CaseIterable {
-    case cat, dog, rabbit, bird, fish, frog
-
-    var name: String {
-        switch self {
-        case .cat: tr(ja: "猫", zh: "猫", en: "Cat", my: "ကြောင်")
-        case .dog: tr(ja: "犬", zh: "狗", en: "Dog", my: "ခွေး")
-        case .rabbit: tr(ja: "兎", zh: "兔", en: "Rabbit", my: "ယုန်")
-        case .bird: tr(ja: "鳥", zh: "鸟", en: "Bird", my: "ငှက်")
-        case .fish: tr(ja: "魚", zh: "鱼", en: "Fish", my: "ငါး")
-        case .frog: tr(ja: "蛙", zh: "蛙", en: "Frog", my: "ဖား")
-        }
-    }
-
-    var emoji: String {
-        switch self {
-        case .cat: "🐱"
-        case .dog: "🐶"
-        case .rabbit: "🐰"
-        case .bird: "🐦"
-        case .fish: "🐟"
-        case .frog: "🐸"
         }
     }
 }
@@ -271,8 +239,6 @@ enum Stimulus: Equatable {
     case placedWord(word: Compass, place: Compass)
     case digits(value: Int, count: Int)
     case pair(left: Int, right: Int, leftUsesLargerFont: Bool)
-    case math(left: Int, right: Int, add: Bool, written: Int)
-    case animal(picture: Animal, word: Animal)
 }
 
 struct StroopRound: Equatable {
@@ -289,8 +255,6 @@ struct StroopRound: Equatable {
         case .wordPlace: wordPlace(trap: trap)
         case .numberCount: numberCount(trap: trap)
         case .valueSize: valueSize(trap: trap)
-        case .math: math(trap: trap)
-        case .animal: animal(trap: trap)
         }
     }
 
@@ -381,66 +345,6 @@ struct StroopRound: Equatable {
             ],
             stimulus: .pair(left: left, right: right, leftUsesLargerFont: leftUsesLargerFont)
         )
-    }
-
-    private static func math(trap: Bool) -> StroopRound {
-        let add = Bool.random()
-        let left: Int
-        let right: Int
-        if add {
-            left = Int.random(in: 2...8)
-            let other = Int.random(in: 2...8)
-            right = other == left ? (left == 8 ? 3 : left + 1) : other
-        } else {
-            left = Int.random(in: 5...9)
-            var smaller = Int.random(in: 1..<left)
-            if left - smaller == smaller {
-                smaller = smaller == 1 ? 2 : 1
-            }
-            right = smaller
-        }
-        let correct = add ? left + right : left - right
-        let blocked = Set([correct, left, right])
-        let written = [1, -1, 2, -2, 3, -3, 4, -4]
-            .map { correct + $0 }
-            .first { $0 > 0 && !blocked.contains($0) } ?? correct + 5
-        let operand = Bool.random() ? left : right
-        var filler = 1
-        let used = Set([correct, written, operand])
-        while used.contains(filler) {
-            filler += 1
-        }
-        let labels = ["\(correct)", "\(written)", "\(operand)", "\(filler)"].shuffled()
-        return StroopRound(
-            task: .math,
-            rule: trap
-                ? tr(ja: "イコールの右に書いてある数を選べ", zh: "选出等号右边写着的数", en: "Pick the number written after the equals sign", my: "ညီမျှခြင်းညာဘက်တွင် ရေးထားသော ကိန်းကို ရွေးပါ")
-                : tr(ja: "正しく計算した答えを選べ", zh: "选出正确的计算结果", en: "Pick the correct result", my: "မှန်ကန်စွာ တွက်ထားသော အဖြေကို ရွေးပါ"),
-            answerID: "\(trap ? written : correct)",
-            choices: labels.map { AnswerChoice(id: $0, title: $0, symbol: nil, style: .neutral) },
-            stimulus: .math(left: left, right: right, add: add, written: written)
-        )
-    }
-
-    private static func animal(trap: Bool) -> StroopRound {
-        let picture = Animal.allCases.randomElement() ?? .cat
-        let word = other(picture, in: Animal.allCases)
-        let answer = trap ? word : picture
-        return StroopRound(
-            task: .animal,
-            rule: trap
-                ? tr(ja: "見えている文字を選べ", zh: "选择你看到的文字", en: "Choose the text you see", my: "မြင်ရသော စာသားကို ရွေးပါ")
-                : tr(ja: "見えている動物を選べ", zh: "选择你看到的动物", en: "Choose the animal you see", my: "မြင်ရသော တိရစ္ဆာန်ကို ရွေးပါ"),
-            answerID: answer.rawValue,
-            choices: animalChoices(),
-            stimulus: .animal(picture: picture, word: word)
-        )
-    }
-
-    private static func animalChoices() -> [AnswerChoice] {
-        Animal.allCases.shuffled().map { animal in
-            AnswerChoice(id: animal.rawValue, title: animal.name, symbol: nil, style: .neutral, badge: animal.emoji)
-        }
     }
 
     private static func colorChoices() -> [AnswerChoice] {
@@ -773,12 +677,9 @@ final class StroopSession {
             previousTrial = trial
             return trial
         }
-        let pool = Self.tasks(for: streak)
-        let task = pool.randomElement() ?? .colorWord
+        let task = InterferenceTask.allCases.randomElement() ?? .colorWord
         let trap: Bool
-        if streak == 0 {
-            trap = false
-        } else if previousTrial?.task == task {
+        if previousTrial?.task == task {
             trap = !(previousTrial?.trap ?? false)
         } else {
             trap = Bool.random()
@@ -786,25 +687,6 @@ final class StroopSession {
         let trial = ScriptedTrial(task: task, trap: trap)
         previousTrial = trial
         return trial
-    }
-
-    private static func tasks(for streak: Int) -> [InterferenceTask] {
-        switch streak {
-        case 0, 1:
-            [.colorWord]
-        case 2, 3:
-            [.colorWord, .wordPlace]
-        case 4, 5:
-            [.colorWord, .wordPlace, .animal]
-        case 6, 7:
-            [.colorWord, .wordPlace, .animal, .arrowPlace]
-        case 8, 9:
-            [.colorWord, .wordPlace, .animal, .arrowPlace, .numberCount]
-        case 10, 11:
-            [.colorWord, .wordPlace, .animal, .arrowPlace, .numberCount, .valueSize]
-        default:
-            Array(InterferenceTask.allCases)
-        }
     }
 }
 
@@ -860,21 +742,21 @@ struct StroopGameView: View {
                         )
                     )
                     guide(
-                        tr(ja: "7種類の問題", zh: "七种题目", en: "Seven kinds of questions", my: "မေးခွန်း ၇ မျိုး"),
+                        tr(ja: "5種類の問題", zh: "五种题目", en: "Five kinds of questions", my: "မေးခွန်း ၅ မျိုး"),
                         tr(
-                            ja: "色：見えている色を選ぶか、見えている文字を選ぶか。文字の意味とインクの色は違います。選択肢は、文字とその色が同じです。\n矢印：指している方を選ぶか、矢印がある場所を選ぶか。向きと場所は違います。選択肢は、文字と位置と矢印が同じです。\n文字の位置：書いてある字を選ぶか、字がある場所を選ぶか。意味と場所は違います。選択肢は、文字と位置が同じです。\n数字：書いてある数字か、何個あるか。2〜4個で、数字と個数は違います。画面の数字の並びも選択肢に出ますが、それは邪魔なので押してはいけません。\n大きさ：数の大きい方か、字の大きい方か。差は1か2で、字が大きいのは数の小さい方です。\n計算：正しく計算した答えか、イコールの右に大きく書いてある数か。右の数は計算結果と違います。\n動物：見えている動物か、見えている文字か。絵と文字は違います。選択肢は、絵と文字が同じです。",
-                            zh: "颜色：选择你看到的颜色，或选择你看到的文字。字义和墨水颜色不会相同。选项上的字和颜色是一致的。\n箭头：选出箭头指向哪一边，或选出箭头在哪一边。指向和位置不会相同。选项上的字、位置和箭头是一致的。\n方位字：选出字写的是什么，或选出字在哪一边。字义和位置不会相同。选项上的字和位置是一致的。\n数字：写的是数字几，或一共有几个。每次 2 到 4 个，数字和个数不会相同。画面上的数字串也会出现在选项里，那是干扰，不要按。\n大小：选出数值更大的一边，或选出字体更大的一边。两数只差 1 或 2，字更大的是数值更小的那个。\n计算：选出正确的计算结果，或选出等号右边写着的数。右边的数写得很大，但和正确结果不一样。\n动物：选择你看到的动物，或选择你看到的文字。图画和文字不会相同。选项上的图画和文字是一致的。",
-                            en: "Color: choose the color you see, or the text you see. The word and the ink never match. Each choice shows one color, and the word matches that color.\nArrow: pick the side it points to, or the side where it sits. Direction and place never match. Each choice's word, place, and arrow agree.\nPlace word: pick what the word says, or the side where it sits. Meaning and place never match. Each choice's word and place agree.\nDigits: what digit is written, or how many there are. There are 2 to 4 digits, and the digit never matches the count. That same digit string also appears as a choice. It is a distraction.\nSize: pick the larger number, or the bigger text. The numbers differ by 1 or 2, and the bigger text is the smaller number.\nCalculation: pick the correct result, or the number written after the equals sign. That number is huge, and it is not the real result.\nAnimal: choose the animal you see, or the text you see. The picture and the word never match. Each choice's picture and word agree.",
-                            my: "အရောင်။ မြင်ရသော အရောင်ကို ရွေးမလား၊ မြင်ရသော စာသားကို ရွေးမလား။ စာသားအဓိပ္ပာယ်နှင့် မင်အရောင် မတူပါ။ ရွေးစရာမှာ စာလုံးနှင့် အရောင် တူသည်။\nမြား။ ညွှန်သောဘက်ကို ရွေးမလား၊ မြားရှိသောဘက်ကို ရွေးမလား။ ဦးတည်ချက်နှင့် နေရာ မတူပါ။ ရွေးစရာမှာ စာလုံး၊ နေရာ၊ မြား တူသည်။\nနေရာစာလုံး။ ရေးထားသောစာလုံးကို ရွေးမလား၊ စာလုံးရှိသောဘက်ကို ရွေးမလား။ အဓိပ္ပာယ်နှင့် နေရာ မတူပါ။ ရွေးစရာမှာ စာလုံးနှင့် နေရာ တူသည်။\nဂဏန်း။ ရေးထားသောဂဏန်းက ဘာလဲ၊ သို့မဟုတ် ဘယ်နှစ်လုံးရှိသလဲ။ တစ်ကြိမ် ၂ လုံးမှ ၄ လုံးဖြစ်ပြီး ဂဏန်းနှင့် အရေအတွက် မတူပါ။ မျက်နှာပြင်ပေါ်က ဂဏန်းတန်းက ရွေးစရာထဲမှာလည်း ပါသည်။ အဲဒါက အနှောင့်အယှက်ဖြစ်ပြီး မနှိပ်ရပါ။\nအရွယ်။ ကိန်းပိုကြီးသောဘက်ကို ရွေးမလား၊ စာလုံးပိုကြီးသောဘက်ကို ရွေးမလား။ ကိန်းနှစ်ခုက ၁ သို့မဟုတ် ၂ ပဲ ကွာပြီး စာလုံးပိုကြီးတာက ကိန်းပိုငယ်သောဘက် ဖြစ်သည်။\nတွက်ချက်။ မှန်ကန်သော အဖြေကို ရွေးမလား၊ ညီမျှခြင်းညာဘက်တွင် ရေးထားသော ကိန်းကို ရွေးမလား။ ညာဘက်ကိန်းက ကြီးကြီးရေးထားသော်လည်း အဖြေအစစ် မဟုတ်ပါ။\nတိရစ္ဆာန်။ မြင်ရသော တိရစ္ဆာန်ကို ရွေးမလား၊ မြင်ရသော စာသားကို ရွေးမလား။ ပုံနှင့် စာသား မတူပါ။ ရွေးစရာမှာ ပုံနှင့် စာလုံး တူသည်။"
+                            ja: "色：見えている色を選ぶか、見えている文字を選ぶか。文字の意味とインクの色は違います。選択肢は、文字とその色が同じです。\n矢印：指している方を選ぶか、矢印がある場所を選ぶか。向きと場所は違います。選択肢は、文字と位置と矢印が同じです。\n文字の位置：書いてある字を選ぶか、字がある場所を選ぶか。意味と場所は違います。選択肢は、文字と位置が同じです。\n数字：書いてある数字か、何個あるか。2〜4個で、数字と個数は違います。画面の数字の並びも選択肢に出ますが、それは邪魔なので押してはいけません。\n大きさ：数の大きい方か、字の大きい方か。差は1か2で、字が大きいのは数の小さい方です。",
+                            zh: "颜色：选择你看到的颜色，或选择你看到的文字。字义和墨水颜色不会相同。选项上的字和颜色是一致的。\n箭头：选出箭头指向哪一边，或选出箭头在哪一边。指向和位置不会相同。选项上的字、位置和箭头是一致的。\n方位字：选出字写的是什么，或选出字在哪一边。字义和位置不会相同。选项上的字和位置是一致的。\n数字：写的是数字几，或一共有几个。每次 2 到 4 个，数字和个数不会相同。画面上的数字串也会出现在选项里，那是干扰，不要按。\n大小：选出数值更大的一边，或选出字体更大的一边。两数只差 1 或 2，字更大的是数值更小的那个。",
+                            en: "Color: choose the color you see, or the text you see. The word and the ink never match. Each choice shows one color, and the word matches that color.\nArrow: pick the side it points to, or the side where it sits. Direction and place never match. Each choice's word, place, and arrow agree.\nPlace word: pick what the word says, or the side where it sits. Meaning and place never match. Each choice's word and place agree.\nDigits: what digit is written, or how many there are. There are 2 to 4 digits, and the digit never matches the count. That same digit string also appears as a choice. It is a distraction.\nSize: pick the larger number, or the bigger text. The numbers differ by 1 or 2, and the bigger text is the smaller number.",
+                            my: "အရောင်။ မြင်ရသော အရောင်ကို ရွေးမလား၊ မြင်ရသော စာသားကို ရွေးမလား။ စာသားအဓိပ္ပာယ်နှင့် မင်အရောင် မတူပါ။ ရွေးစရာမှာ စာလုံးနှင့် အရောင် တူသည်။\nမြား။ ညွှန်သောဘက်ကို ရွေးမလား၊ မြားရှိသောဘက်ကို ရွေးမလား။ ဦးတည်ချက်နှင့် နေရာ မတူပါ။ ရွေးစရာမှာ စာလုံး၊ နေရာ၊ မြား တူသည်။\nနေရာစာလုံး။ ရေးထားသောစာလုံးကို ရွေးမလား၊ စာလုံးရှိသောဘက်ကို ရွေးမလား။ အဓိပ္ပာယ်နှင့် နေရာ မတူပါ။ ရွေးစရာမှာ စာလုံးနှင့် နေရာ တူသည်။\nဂဏန်း။ ရေးထားသောဂဏန်းက ဘာလဲ၊ သို့မဟုတ် ဘယ်နှစ်လုံးရှိသလဲ။ တစ်ကြိမ် ၂ လုံးမှ ၄ လုံးဖြစ်ပြီး ဂဏန်းနှင့် အရေအတွက် မတူပါ။ မျက်နှာပြင်ပေါ်က ဂဏန်းတန်းက ရွေးစရာထဲမှာလည်း ပါသည်။ အဲဒါက အနှောင့်အယှက်ဖြစ်ပြီး မနှိပ်ရပါ။\nအရွယ်။ ကိန်းပိုကြီးသောဘက်ကို ရွေးမလား၊ စာလုံးပိုကြီးသောဘက်ကို ရွေးမလား။ ကိန်းနှစ်ခုက ၁ သို့မဟုတ် ၂ ပဲ ကွာပြီး စာလုံးပိုကြီးတာက ကိန်းပိုငယ်သောဘက် ဖြစ်သည်။"
                         )
                     )
                     guide(
                         tr(ja: "出る順番", zh: "出题顺序", en: "Order", my: "ထွက်ပုံ"),
                         tr(
-                            ja: "最初はいちばん簡単な色の問題で、見えている色を選びます。連続で正解すると、問題は少しずつ難しくなり、新しい種類が加わっていきます。不正解か時間切れのあと、また簡単な色の問題に戻ります。同じ種類が続くと、問い方が変わります。",
-                            zh: "一开始是最简单的颜色题，问的是你看到的颜色。连续答对之后，题目会慢慢变难，新的题型会一点点加进来。答错或超时之后，又从简单的颜色题开始。同一类题如果接着出现，问法会换成另一种。",
-                            en: "It starts with the easiest color question: choose the color you see. If you keep answering correctly, the questions slowly get harder and new kinds are added. After a miss or a timeout, it returns to the easy color question. If the same kind appears again, the question flips.",
-                            my: "အစက အလွယ်ဆုံး အရောင်မေးခွန်းဖြစ်ပြီး မြင်ရသော အရောင်ကို ရွေးသည်။ ဆက်တိုက်မှန်လျှင် မေးခွန်းက တဖြည်းဖြည်း ခက်လာပြီး အမျိုးအစားသစ်တွေ တိုးလာသည်။ မှားလျှင် သို့မဟုတ် အချိန်ကုန်လျှင် အလွယ် အရောင်မေးခွန်း ပြန်ဖြစ်သည်။ တစ်မျိုးတည်း ဆက်ထွက်လျှင် မေးပုံ ပြောင်းသည်။"
+                            ja: "5種類の問題は毎回ランダムに出ます。同じ種類が続くと、問い方が変わります。",
+                            zh: "五种题目每次都会随机出现。同一类题如果接着出现，问法会换成另一种。",
+                            en: "All five kinds of questions appear at random. If the same kind appears again, the question flips.",
+                            my: "မေးခွန်း ၅ မျိုးကို တစ်ကြိမ်ချင်း အလျှောက်ကျကျ ထုတ်သည်။ တစ်မျိုးတည်း ဆက်ထွက်လျှင် မေးပုံ ပြောင်းသည်။"
                         )
                     )
                     guide(
@@ -1183,32 +1065,6 @@ struct StroopGameView: View {
                     .font(.system(size: leftUsesLargerFont ? 28 : 108, weight: .black, design: .rounded))
             }
             .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 160)
-        case .math(let left, let right, let add, let written):
-            HStack(alignment: .center, spacing: 12) {
-                Text("\(left) \(add ? "+" : "−") \(right)")
-                    .font(.system(size: 36, weight: .black, design: .rounded))
-                Text("=")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.45))
-                Text("\(written)")
-                    .font(.system(size: 84, weight: .black, design: .rounded))
-                    .foregroundStyle(Color(red: 0.98, green: 0.74, blue: 0.32))
-            }
-            .foregroundStyle(.white)
-            .minimumScaleFactor(0.5)
-            .lineLimit(1)
-            .frame(maxWidth: .infinity)
-            .frame(height: 140)
-        case .animal(let picture, let word):
-            VStack(spacing: 2) {
-                Text(picture.emoji)
-                    .font(.system(size: 88))
-                Text(word.name)
-                    .font(.system(size: 40, weight: .black))
-                    .foregroundStyle(Color(red: 0.98, green: 0.74, blue: 0.32))
-            }
             .frame(maxWidth: .infinity)
             .frame(height: 160)
         }
