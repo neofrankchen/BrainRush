@@ -1,0 +1,11 @@
+// 1. Copy this file:
+//    cp Config/Local.xcconfig.example Config/Local.xcconfig
+// 2. Fill in YOUR Apple Development Team ID below.
+// 3. Never commit Local.xcconfig.
+
+DEVELOPMENT_TEAM = YOUR_TEAM_ID
+
+// If Run on a real iPhone fails with:
+// "bundle identifier cannot be registered to your development team"
+// uncomment the next line and use a unique id for yourself only:
+// PRODUCT_BUNDLE_IDENTIFIER = com.yourname.brainrush

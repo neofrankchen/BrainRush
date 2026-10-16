@@ -1,0 +1,6 @@
+// Shared signing defaults for the whole team.
+// Personal Team / Bundle ID overrides go in Local.xcconfig (gitignored).
+
+PRODUCT_BUNDLE_IDENTIFIER = com.jec.brainrush
+
+#include? "Local.xcconfig"

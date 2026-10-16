@@ -217,6 +217,15 @@ enum Compass: String, CaseIterable {
         case .right: CGSize(width: 88, height: 0)
         }
     }
+
+    var quizOffset: CGSize {
+        switch self {
+        case .up: CGSize(width: 0, height: -48)
+        case .down: CGSize(width: 0, height: 48)
+        case .left: CGSize(width: -52, height: 0)
+        case .right: CGSize(width: 52, height: 0)
+        }
+    }
 }
 
 enum ChoiceStyle: Equatable {
@@ -268,7 +277,7 @@ struct StroopRound: Equatable {
                 ? tr(ja: "見えている文字を選べ", zh: "选择你看到的文字", en: "Choose the text you see", my: "မြင်ရသော စာသားကို ရွေးပါ")
                 : tr(ja: "見えている色を選べ", zh: "选择你看到的颜色", en: "Choose the color you see", my: "မြင်ရသော အရောင်ကို ရွေးပါ"),
             answerID: answer.rawValue,
-            choices: colorChoices(),
+            choices: colorPair(ink: ink, word: word),
             stimulus: .word(word, ink: ink)
         )
     }
@@ -282,7 +291,7 @@ struct StroopRound: Equatable {
                 ? tr(ja: "矢印がある場所を選べ", zh: "选出箭头在哪一边", en: "Pick the side where the arrow sits", my: "မြားရှိသောဘက်ကို ရွေးပါ")
                 : tr(ja: "矢印が指している方を選べ", zh: "选出箭头指向哪一边", en: "Pick the side the arrow points to", my: "မြားညွှန်သောဘက်ကို ရွေးပါ"),
             answerID: (trap ? place : direction).rawValue,
-            choices: scrambledCompassChoices(showArrow: true),
+            choices: compassPair(direction, place, showArrow: true),
             stimulus: .placedArrow(direction: direction, place: place)
         )
     }
@@ -296,7 +305,7 @@ struct StroopRound: Equatable {
                 ? tr(ja: "字がある場所を選べ", zh: "选出字在哪一边", en: "Pick the side where the word sits", my: "စာလုံးရှိသောဘက်ကို ရွေးပါ")
                 : tr(ja: "書いてある字を選べ", zh: "选出字写的是什么", en: "Pick what the word says", my: "ရေးထားသော စာလုံးကို ရွေးပါ"),
             answerID: (trap ? place : word).rawValue,
-            choices: scrambledCompassChoices(showArrow: false),
+            choices: compassPair(word, place, showArrow: false),
             stimulus: .placedWord(word: word, place: place)
         )
     }
@@ -304,22 +313,20 @@ struct StroopRound: Equatable {
     private static func numberCount(trap: Bool) -> StroopRound {
         let count = Int.random(in: 2...4)
         let value = other(count, in: Array(1...9))
+        let shown = String(repeating: "\(value)", count: count)
         return StroopRound(
             task: .numberCount,
             rule: trap
                 ? tr(ja: "数字は何個ある？", zh: "数字一共有几个？", en: "How many digits are there?", my: "ဂဏန်း ဘယ်နှစ်လုံး ရှိသလဲ။")
-                : tr(ja: "書いてある数字は？", zh: "写的是数字几？", en: "What digit is written?", my: "ရေးထားသော ဂဏန်းက ဘာလဲ။"),
-            answerID: "\(trap ? count : value)",
-            choices: numberChoices(value: value, count: count),
+                : tr(ja: "書いてある数字を選べ", zh: "选出画面上写着的数", en: "Pick the number written on screen", my: "မျက်နှာပြင်ပေါ် ရေးထားသော ကိန်းကို ရွေးပါ"),
+            answerID: trap ? "\(count)" : shown,
+            choices: numberChoices(shown: shown, count: count),
             stimulus: .digits(value: value, count: count)
         )
     }
 
-    private static func numberChoices(value: Int, count: Int) -> [AnswerChoice] {
-        let shown = String(repeating: "\(value)", count: count)
-        let filler = other(value, in: Array(1...9).filter { $0 != count })
-        let labels = ["\(value)", "\(count)", shown, "\(filler)"]
-        return labels.shuffled().map {
+    private static func numberChoices(shown: String, count: Int) -> [AnswerChoice] {
+        [shown, "\(count)"].shuffled().map {
             AnswerChoice(id: $0, title: $0, symbol: nil, style: .neutral)
         }
     }
@@ -347,20 +354,19 @@ struct StroopRound: Equatable {
         )
     }
 
-    private static func colorChoices() -> [AnswerChoice] {
-        StroopColor.allCases.shuffled().map { color in
+    private static func colorPair(ink: StroopColor, word: StroopColor) -> [AnswerChoice] {
+        [ink, word].shuffled().map { color in
             AnswerChoice(id: color.rawValue, title: color.name, symbol: nil, style: .ink(color))
         }
     }
 
-    private static func scrambledCompassChoices(showArrow: Bool) -> [AnswerChoice] {
-        Compass.allCases.shuffled().map { direction in
+    private static func compassPair(_ first: Compass, _ second: Compass, showArrow: Bool) -> [AnswerChoice] {
+        [first, second].shuffled().map { direction in
             AnswerChoice(
                 id: direction.rawValue,
                 title: direction.name,
                 symbol: showArrow ? direction.symbol : nil,
-                style: .neutral,
-                slot: direction
+                style: .neutral
             )
         }
     }
@@ -369,9 +375,6 @@ struct StroopRound: Equatable {
         pool.filter { $0 != value }.randomElement() ?? value
     }
 
-    var usesCompassPad: Bool {
-        choices.count == 4 && choices.allSatisfy { Compass(rawValue: $0.id) != nil }
-    }
 }
 
 private enum StroopCue {
@@ -708,7 +711,7 @@ struct StroopGameView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(StroopBackdrop())
+        .background(StroopBackdrop(light: session.phase == .playing))
         .navigationTitle(tr(ja: "ブレインラッシュ", zh: "脑乱挑战", en: "Brain Rush", my: "အနှောင့်အယှက်စိန်ခေါ်ပွဲ"))
         .modifier(StroopNavigationChrome(isPlaying: session.phase == .playing))
         .background {
@@ -805,10 +808,10 @@ struct StroopGameView: View {
                     guide(
                         tr(ja: "5種類の問題", zh: "五种题目", en: "Five kinds of questions", my: "မေးခွန်း ၅ မျိုး"),
                         tr(
-                            ja: "色：見えている色を選ぶか、見えている文字を選ぶか。文字の意味とインクの色は違います。選択肢は、文字とその色が同じです。\n矢印：指している方を選ぶか、矢印がある場所を選ぶか。向きと場所は違います。選択肢は、文字と位置と矢印が同じです。\n文字の位置：書いてある字を選ぶか、字がある場所を選ぶか。意味と場所は違います。選択肢は、文字と位置が同じです。\n数字：書いてある数字か、何個あるか。2〜4個で、数字と個数は違います。画面の数字の並びも選択肢に出ますが、それは邪魔なので押してはいけません。\n大きさ：数の大きい方か、字の大きい方か。差は1か2で、字が大きいのは数の小さい方です。",
-                            zh: "颜色：选择你看到的颜色，或选择你看到的文字。字义和墨水颜色不会相同。选项上的字和颜色是一致的。\n箭头：选出箭头指向哪一边，或选出箭头在哪一边。指向和位置不会相同。选项上的字、位置和箭头是一致的。\n方位字：选出字写的是什么，或选出字在哪一边。字义和位置不会相同。选项上的字和位置是一致的。\n数字：写的是数字几，或一共有几个。每次 2 到 4 个，数字和个数不会相同。画面上的数字串也会出现在选项里，那是干扰，不要按。\n大小：选出数值更大的一边，或选出字体更大的一边。两数只差 1 或 2，字更大的是数值更小的那个。",
-                            en: "Color: choose the color you see, or the text you see. The word and the ink never match. Each choice shows one color, and the word matches that color.\nArrow: pick the side it points to, or the side where it sits. Direction and place never match. Each choice's word, place, and arrow agree.\nPlace word: pick what the word says, or the side where it sits. Meaning and place never match. Each choice's word and place agree.\nDigits: what digit is written, or how many there are. There are 2 to 4 digits, and the digit never matches the count. That same digit string also appears as a choice. It is a distraction.\nSize: pick the larger number, or the bigger text. The numbers differ by 1 or 2, and the bigger text is the smaller number.",
-                            my: "အရောင်။ မြင်ရသော အရောင်ကို ရွေးမလား၊ မြင်ရသော စာသားကို ရွေးမလား။ စာသားအဓိပ္ပာယ်နှင့် မင်အရောင် မတူပါ။ ရွေးစရာမှာ စာလုံးနှင့် အရောင် တူသည်။\nမြား။ ညွှန်သောဘက်ကို ရွေးမလား၊ မြားရှိသောဘက်ကို ရွေးမလား။ ဦးတည်ချက်နှင့် နေရာ မတူပါ။ ရွေးစရာမှာ စာလုံး၊ နေရာ၊ မြား တူသည်။\nနေရာစာလုံး။ ရေးထားသောစာလုံးကို ရွေးမလား၊ စာလုံးရှိသောဘက်ကို ရွေးမလား။ အဓိပ္ပာယ်နှင့် နေရာ မတူပါ။ ရွေးစရာမှာ စာလုံးနှင့် နေရာ တူသည်။\nဂဏန်း။ ရေးထားသောဂဏန်းက ဘာလဲ၊ သို့မဟုတ် ဘယ်နှစ်လုံးရှိသလဲ။ တစ်ကြိမ် ၂ လုံးမှ ၄ လုံးဖြစ်ပြီး ဂဏန်းနှင့် အရေအတွက် မတူပါ။ မျက်နှာပြင်ပေါ်က ဂဏန်းတန်းက ရွေးစရာထဲမှာလည်း ပါသည်။ အဲဒါက အနှောင့်အယှက်ဖြစ်ပြီး မနှိပ်ရပါ။\nအရွယ်။ ကိန်းပိုကြီးသောဘက်ကို ရွေးမလား၊ စာလုံးပိုကြီးသောဘက်ကို ရွေးမလား။ ကိန်းနှစ်ခုက ၁ သို့မဟုတ် ၂ ပဲ ကွာပြီး စာလုံးပိုကြီးတာက ကိန်းပိုငယ်သောဘက် ဖြစ်သည်။"
+                            ja: "どの問題も二択です。\n色：見えている色か、見えている文字か。文字の意味とインクの色は違います。\n矢印：指している方か、矢印がある場所か。向きと場所は違います。\n文字の位置：書いてある字か、字がある場所か。意味と場所は違います。\n数字：画面に書いてある数（88など）か、何個あるか（2など）。2〜4個で、並びと個数は違います。\n大きさ：数の大きい方か、字の大きい方か。差は1か2で、字が大きいのは数の小さい方です。",
+                            zh: "每道题都是二选一。\n颜色：看到的颜色，还是看到的文字。字义和墨水颜色不会相同。\n箭头：箭头指向哪一边，还是箭头在哪一边。指向和位置不会相同。\n方位字：字写的是什么，还是字在哪一边。字义和位置不会相同。\n数字：画面上写着的数（例如 88），还是一共有几个（例如 2）。每次 2 到 4 个，数字串和个数不会相同。\n大小：数值更大的一边，还是字体更大的一边。两数只差 1 或 2，字更大的是数值更小的那个。",
+                            en: "Every question is a two-choice pick.\nColor: the color you see, or the text you see. The word and the ink never match.\nArrow: the side it points to, or the side where it sits. Direction and place never match.\nPlace word: what the word says, or the side where it sits. Meaning and place never match.\nDigits: the number written on screen (like 88), or how many digits there are (like 2). There are 2 to 4 digits, and the written number never matches the count.\nSize: the larger number, or the bigger text. The numbers differ by 1 or 2, and the bigger text is the smaller number.",
+                            my: "မေးခွန်းတိုင်းကို ရွေးစရာ ၂ ခုသာ ပေးသည်။\nအရောင်။ မြင်ရသော အရောင်၊ သို့မဟုတ် မြင်ရသော စာသား။ စာသားအဓိပ္ပာယ်နှင့် မင်အရောင် မတူပါ။\nမြား။ ညွှန်သောဘက်၊ သို့မဟုတ် မြားရှိသောဘက်။ ဦးတည်ချက်နှင့် နေရာ မတူပါ။\nနေရာစာလုံး။ ရေးထားသောစာလုံး၊ သို့မဟုတ် စာလုံးရှိသောဘက်။ အဓိပ္ပာယ်နှင့် နေရာ မတူပါ။\nဂဏန်း။ မျက်နှာပြင်ပေါ် ရေးထားသော ကိန်း (ဥပမာ ၈၈)၊ သို့မဟုတ် ဘယ်နှစ်လုံးရှိသလဲ (ဥပမာ ၂)။ တစ်ကြိမ် ၂ လုံးမှ ၄ လုံးဖြစ်ပြီး ရေးထားသောကိန်းနှင့် အရေအတွက် မတူပါ။\nအရွယ်။ ကိန်းပိုကြီးသောဘက်၊ သို့မဟုတ် စာလုံးပိုကြီးသောဘက်။ ကိန်းနှစ်ခုက ၁ သို့မဟုတ် ၂ ပဲ ကွာပြီး စာလုံးပိုကြီးတာက ကိန်းပိုငယ်သောဘက် ဖြစ်သည်။"
                         )
                     )
                     guide(
@@ -983,80 +986,172 @@ struct StroopGameView: View {
     }
 
     private var playfield: some View {
-        VStack(spacing: 16) {
-            statusBar
-            if session.showsTimer {
-                countdown
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 12) {
+                    quizHeader
+                    if session.testing {
+                        VStack(alignment: .leading, spacing: 8) {
+                            LanguagePicker(compact: true)
+                            testControls(showNote: false)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(RoundedRectangle(cornerRadius: 18).fill(CatQuizPalette.ink))
+                    }
+                    CatQuizHost(isMistake: session.lastAnswerWasCorrect == false)
+                        .padding(.bottom, -18)
+                        .zIndex(1)
+                    VStack(spacing: 4) {
+                        questionBanner
+                        stimulusPanel
+                    }
+                    .padding(12)
+                    .background {
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(LinearGradient(colors: [Color(red: 1, green: 0.98, blue: 0.93), CatQuizPalette.cream], startPoint: .top, endPoint: .bottom))
+                            .shadow(color: CatQuizPalette.wood.opacity(0.3), radius: 0, y: 4)
+                    }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 24)
+                            .strokeBorder(CatQuizPalette.wood, lineWidth: 2.5)
+                    }
+                    answers
+                        .frame(minHeight: max(220, min(320, geometry.size.height * 0.32)))
+                    Spacer(minLength: 0)
+                    quizFooter
+                }
+                .frame(maxWidth: 560)
+                .padding(.horizontal, 18)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
+                .frame(minHeight: geometry.size.height)
+                .frame(maxWidth: .infinity)
             }
-            if session.testing {
-                LanguagePicker(compact: true)
-            }
-            testControls(showNote: false)
-            Text(session.round.task.title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color(red: 0.98, green: 0.74, blue: 0.32))
-            if session.lastAnswerWasCorrect == false {
-                Text(session.lastMissWasTimeout
-                    ? tr(ja: "時間切れ", zh: "超时", en: "Time's up", my: "အချိန်ကုန်ပြီ")
-                    : tr(ja: "不正解", zh: "点错了", en: "Wrong", my: "မှားသည်"))
-                    .font(.headline)
-                    .foregroundStyle(Color(red: 0.95, green: 0.28, blue: 0.32))
-            }
-            Text(session.round.rule)
-                .font(.system(size: 34, weight: .bold))
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-            stimulus(session.round)
-                .accessibilityElement(children: .ignore)
-                .accessibilityIdentifier("stroop-answer-\(session.round.answerID)")
-                .accessibilityLabel(session.round.rule)
-            Spacer(minLength: 0)
-            answers
-            Button(tr(ja: "終了", zh: "结束", en: "End", my: "ထွက်ရန်")) { session.returnToMenu() }
-                .buttonStyle(.bordered)
-                .tint(.white)
+            .scrollIndicators(.hidden)
         }
-        .padding(20)
         .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(urgencyColor.opacity(session.questionRemaining <= urgentRemaining ? 0.95 : 0), lineWidth: 4)
-                .padding(6)
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .stroke(urgencyColor.opacity(session.questionRemaining <= urgentRemaining && session.showsTimer ? 0.9 : 0), lineWidth: 5)
+                .padding(4)
                 .scaleEffect(pulse)
-                .allowsHitTesting(false)
-        }
-        .background {
-            urgencyColor
-                .opacity(session.questionRemaining <= urgentRemaining ? 0.16 : 0)
-                .ignoresSafeArea()
                 .allowsHitTesting(false)
         }
     }
 
-    private var countdown: some View {
-        VStack(spacing: 6) {
-            HStack {
-                Text("\(secondsLeft)")
-                    .font(.system(size: session.questionRemaining <= urgentRemaining ? 34 : 20, weight: .black, design: .rounded))
-                    .foregroundStyle(urgencyColor)
-                    .scaleEffect(pulse)
-                    .contentTransition(.numericText())
-                Spacer()
+    private var quizHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Text("Q\(session.answerCount + 1)")
+                .font(.system(size: 22, weight: .black, design: .rounded))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 10)
+                .background(Capsule().fill(CatQuizPalette.ink))
+                .accessibilityIdentifier("stroop-score")
+                .accessibilityLabel(tr(ja: "得点 \(session.score)", zh: "得分 \(session.score)", en: "Score \(session.score)", my: "ရမှတ် \(session.score)"))
+
+            VStack(spacing: 4) {
+                hearts
+                Text(tr(ja: "得点 \(session.score)", zh: "得分 \(session.score)", en: "Score \(session.score)", my: "ရမှတ် \(session.score)"))
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(CatQuizPalette.ink)
             }
+            .frame(maxWidth: .infinity)
+
+            if session.showsTimer {
+                circularTimer
+            } else {
+                Color.clear.frame(width: 68, height: 68)
+            }
+        }
+    }
+
+    private var circularTimer: some View {
+        ZStack {
+            Circle()
+                .fill(CatQuizPalette.ink)
+                .overlay(Circle().strokeBorder(.white.opacity(0.7), lineWidth: 2))
+            Circle()
+                .stroke(Color.white.opacity(0.12), lineWidth: 7)
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(
+                    urgencyColor,
+                    style: StrokeStyle(lineWidth: 7, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .animation(.linear(duration: 0.05), value: session.questionRemaining)
+            Text("\(secondsLeft)")
+                .font(.system(size: session.questionRemaining <= urgentRemaining ? 26 : 22, weight: .black, design: .rounded))
+                .foregroundStyle(.white)
+                .scaleEffect(pulse)
+                .contentTransition(.numericText())
+        }
+        .frame(width: 68, height: 68)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(tr(ja: "残り \(secondsLeft) 秒", zh: "还剩 \(secondsLeft) 秒", en: "\(secondsLeft) seconds left", my: "\(secondsLeft) စက္ကန့်ကျန်သည်"))
+    }
+
+    private var questionBanner: some View {
+        VStack(spacing: 4) {
+            Text(session.round.rule)
+                .font(.system(size: 25, weight: .heavy, design: .rounded))
+                .foregroundStyle(CatQuizPalette.ink)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            if session.lastAnswerWasCorrect == false {
+                Text(session.lastMissWasTimeout
+                    ? tr(ja: "時間切れ", zh: "超时", en: "Time's up", my: "အချိန်ကုန်ပြီ")
+                    : tr(ja: "不正解", zh: "点错了", en: "Wrong", my: "မှားသည်"))
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color(red: 0.92, green: 0.28, blue: 0.34))
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 4)
+    }
+
+    private var stimulusPanel: some View {
+        stimulus(session.round)
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .ignore)
+            .accessibilityIdentifier("stroop-answer-\(session.round.answerID)")
+            .accessibilityLabel(session.round.rule)
+    }
+
+    private var quizFooter: some View {
+        VStack(spacing: 10) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(Color.white.opacity(0.1))
+                        .fill(CatQuizPalette.ink)
                     Capsule()
-                        .fill(urgencyColor)
-                        .frame(width: max(8, geo.size.width * progress))
+                        .fill(LinearGradient(colors: [Color(red: 0.58, green: 0.95, blue: 0.2), Color(red: 0.25, green: 0.85, blue: 0.48)], startPoint: .leading, endPoint: .trailing))
+                        .frame(width: max(18, (geo.size.width - 8) * heartProgress))
+                        .overlay(Capsule().strokeBorder(.white, lineWidth: 2))
+                        .padding(4)
                 }
             }
-            .frame(height: session.questionRemaining <= urgentRemaining ? 16 : 8)
-            .animation(.linear(duration: 0.05), value: session.questionRemaining)
+            .frame(height: 25)
+            .overlay(Capsule().strokeBorder(.white.opacity(0.85), lineWidth: 1.5))
+            .accessibilityLabel(tr(ja: "ハート \(session.hearts)", zh: "\(session.hearts) 颗爱心", en: "\(session.hearts) hearts", my: "နှလုံး \(session.hearts)"))
+
+            HStack {
+                Text(tr(ja: "連続 \(session.streak)", zh: "连对 \(session.streak)", en: "Streak \(session.streak)", my: "ဆက်တိုက် \(session.streak)"))
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(CatQuizPalette.ink)
+                Spacer()
+                Button(tr(ja: "終了", zh: "结束", en: "End", my: "ထွက်ရန်")) { session.returnToMenu() }
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(CatQuizPalette.ink)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(CatQuizPalette.cream))
+            }
+            .padding(.horizontal, 6)
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(tr(ja: "残り \(secondsLeft) 秒", zh: "还剩 \(secondsLeft) 秒", en: "\(secondsLeft) seconds left", my: "\(secondsLeft) စက္ကန့်ကျန်သည်"))
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 22).fill(CatQuizPalette.cream.opacity(0.92)))
     }
 
     private var urgentRemaining: TimeInterval {
@@ -1069,6 +1164,10 @@ struct StroopGameView: View {
 
     private var progress: CGFloat {
         CGFloat(min(1, max(0, session.questionRemaining / session.questionLimit)))
+    }
+
+    private var heartProgress: CGFloat {
+        CGFloat(min(1, max(0, Double(session.hearts) / 5)))
     }
 
     private var secondsLeft: Int {
@@ -1085,23 +1184,10 @@ struct StroopGameView: View {
         if session.questionRemaining <= urgentRemaining {
             Color(red: 0.95, green: 0.22, blue: 0.28)
         } else if session.questionRemaining <= warningRemaining {
-            Color(red: 0.98, green: 0.48, blue: 0.18)
+            Color(red: 0.98, green: 0.72, blue: 0.2)
         } else {
-            Color(red: 0.98, green: 0.74, blue: 0.32)
+            Color(red: 0.98, green: 0.82, blue: 0.22)
         }
-    }
-
-    private var statusBar: some View {
-        HStack {
-            Text(tr(ja: "得点 \(session.score)", zh: "得分 \(session.score)", en: "Score \(session.score)", my: "ရမှတ် \(session.score)"))
-                .accessibilityIdentifier("stroop-score")
-            Spacer()
-            Text(tr(ja: "連続 \(session.streak)", zh: "连对 \(session.streak)", en: "Streak \(session.streak)", my: "ဆက်တိုက် \(session.streak)"))
-            Spacer()
-            hearts
-        }
-        .font(.headline)
-        .foregroundStyle(.white)
     }
 
     private var hearts: some View {
@@ -1115,8 +1201,10 @@ struct StroopGameView: View {
                 Image(systemName: "heart.fill")
                     .symbolEffect(.bounce, value: session.heartGain)
                 Text("\(session.hearts)")
+                    .font(.caption.bold())
             }
         }
+        .font(.system(size: 16, weight: .bold))
         .foregroundStyle(Color(red: 0.95, green: 0.28, blue: 0.32))
         .animation(.spring(response: 0.32, dampingFraction: 0.55), value: session.hearts)
         .accessibilityLabel(tr(ja: "ハート \(session.hearts)", zh: "\(session.hearts) 颗爱心", en: "\(session.hearts) hearts", my: "နှလုံး \(session.hearts)"))
@@ -1127,122 +1215,130 @@ struct StroopGameView: View {
         switch round.stimulus {
         case .word(let word, let ink):
             Text(word.name)
-                .font(.system(size: 88, weight: .black))
+                .font(.system(size: 72, weight: .black))
                 .foregroundStyle(ink.color)
                 .frame(maxWidth: .infinity)
-                .frame(height: 160)
+                .frame(height: 120)
         case .placedArrow(let direction, let place):
             ZStack {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color.white.opacity(0.55))
                 Image(systemName: direction.symbol)
-                    .font(.system(size: 52, weight: .bold))
-                    .foregroundStyle(.white)
-                    .offset(place.offset)
+                    .font(.system(size: 44, weight: .bold))
+                    .foregroundStyle(Color(red: 0.16, green: 0.16, blue: 0.18))
+                    .offset(place.quizOffset)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 230)
+            .frame(height: 150)
         case .placedWord(let word, let place):
             ZStack {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color.white.opacity(0.55))
                 Text(word.name)
-                    .font(.system(size: 64, weight: .black))
-                    .foregroundStyle(.white)
-                    .offset(place.offset)
+                    .font(.system(size: 48, weight: .black))
+                    .foregroundStyle(Color(red: 0.16, green: 0.16, blue: 0.18))
+                    .offset(place.quizOffset)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 230)
+            .frame(height: 150)
         case .digits(let value, let count):
             Text(String(repeating: "\(value)", count: count))
-                .font(.system(size: 64, weight: .black, design: .rounded))
+                .font(.system(size: 56, weight: .black, design: .rounded))
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
-                .foregroundStyle(.white)
+                .foregroundStyle(Color(red: 0.16, green: 0.16, blue: 0.18))
                 .frame(maxWidth: .infinity)
-                .frame(height: 120)
+                .frame(height: 100)
         case .pair(let left, let right, let leftUsesLargerFont):
             HStack(alignment: .center, spacing: 28) {
                 Text("\(left)")
-                    .font(.system(size: leftUsesLargerFont ? 108 : 28, weight: .black, design: .rounded))
+                    .font(.system(size: leftUsesLargerFont ? 88 : 28, weight: .black, design: .rounded))
                 Text("\(right)")
-                    .font(.system(size: leftUsesLargerFont ? 28 : 108, weight: .black, design: .rounded))
+                    .font(.system(size: leftUsesLargerFont ? 28 : 88, weight: .black, design: .rounded))
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(Color(red: 0.16, green: 0.16, blue: 0.18))
             .frame(maxWidth: .infinity)
-            .frame(height: 160)
+            .frame(height: 120)
         }
     }
 
-    @ViewBuilder
     private var answers: some View {
-        if session.round.usesCompassPad {
-            VStack(spacing: 10) {
-                slotButton(.up)
-                HStack(spacing: 10) {
-                    slotButton(.left)
-                    slotButton(.right)
-                }
-                slotButton(.down)
-            }
-        } else {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: session.round.choices.count > 4 ? 3 : 2), spacing: 12) {
-                ForEach(session.round.choices) { choice in
-                    choiceButton(choice)
-                }
+        HStack(spacing: 14) {
+            ForEach(Array(session.round.choices.enumerated()), id: \.element.id) { index, choice in
+                choiceCard(choice, mark: index == 0 ? "A" : "B", accent: index == 0
+                    ? Color(red: 0.95, green: 0.32, blue: 0.38)
+                    : Color(red: 0.28, green: 0.52, blue: 0.98))
             }
         }
     }
 
-    @ViewBuilder
-    private func slotButton(_ slot: Compass) -> some View {
-        if let choice = session.round.choices.first(where: { $0.slot == slot }) {
-            choiceButton(choice)
-        }
-    }
-
-    private func choiceButton(_ choice: AnswerChoice) -> some View {
+    private func choiceCard(_ choice: AnswerChoice, mark: String, accent: Color) -> some View {
         Button {
             session.choose(choice.id)
         } label: {
-            HStack(spacing: 8) {
-                if let badge = choice.badge {
-                    Text(badge)
-                } else if let symbol = choice.symbol {
-                    Image(systemName: symbol)
+            VStack(spacing: 0) {
+                HStack {
+                    Text(mark)
+                        .font(.system(size: 27, weight: .black, design: .rounded))
+                        .foregroundStyle(.white)
+                        .frame(width: 46, height: 46)
+                        .background(Circle().fill(LinearGradient(colors: [accent, accent.opacity(0.8)], startPoint: .top, endPoint: .bottom)))
+                        .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: 2))
+                        .shadow(color: accent.opacity(0.3), radius: 0, y: 3)
+                    Spacer(minLength: 0)
                 }
-                Text(choice.title)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.4)
+                .padding(.horizontal, 12)
+                .padding(.top, 12)
+
+                Spacer(minLength: 4)
+
+                choiceVisual(choice)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 120)
+
+                Spacer(minLength: 12)
             }
-            .font(.title2.bold())
-            .foregroundStyle(foreground(choice.style))
             .frame(maxWidth: .infinity)
-            .frame(height: 64)
-            .background(fill(choice.style), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .frame(minHeight: 220, maxHeight: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .fill(LinearGradient(colors: [.white, Color(red: 0.96, green: 0.95, blue: 0.97)], startPoint: .topLeading, endPoint: .bottomTrailing))
+            )
             .overlay {
-                if case .ink(let color) = choice.style {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(color.color, lineWidth: 2)
-                }
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .strokeBorder(CatQuizPalette.ink.opacity(0.55), lineWidth: 2)
             }
+            .shadow(color: CatQuizPalette.wood.opacity(0.25), radius: 0, y: 5)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ArcadePressStyle())
         .accessibilityIdentifier("stroop-choice-\(choice.id)")
-        .accessibilityLabel(choice.title)
+        .accessibilityLabel("\(mark). \(choice.title)")
     }
 
-    private func fill(_ style: ChoiceStyle) -> Color {
-        switch style {
-        case .neutral: Color.white.opacity(0.08)
-        case .ink(let color): color.color.opacity(0.22)
-        }
-    }
-
-    private func foreground(_ style: ChoiceStyle) -> Color {
-        switch style {
-        case .neutral: .white
-        case .ink(let color): color.color
+    @ViewBuilder
+    private func choiceVisual(_ choice: AnswerChoice) -> some View {
+        if let badge = choice.badge {
+            Text(badge)
+                .font(.system(size: 64))
+        } else if let symbol = choice.symbol {
+            Image(systemName: symbol)
+                .font(.system(size: 54, weight: .bold))
+                .foregroundStyle(Color(red: 0.16, green: 0.16, blue: 0.18))
+        } else if case .ink(let color) = choice.style {
+            Text(choice.title)
+                .font(.system(size: 40, weight: .black))
+                .foregroundStyle(color.color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.35)
+                .padding(18)
+                .background(Circle().fill(color.color.opacity(0.16)))
+        } else {
+            Text(choice.title)
+                .font(.system(size: 44, weight: .black, design: .rounded))
+                .foregroundStyle(Color(red: 0.16, green: 0.16, blue: 0.18))
+                .minimumScaleFactor(0.4)
+                .lineLimit(1)
+                .padding(.horizontal, 8)
         }
     }
 
@@ -1296,15 +1392,30 @@ private struct StroopNavigationChrome: ViewModifier {
 }
 
 private struct StroopBackdrop: View {
+    var light = false
+
     var body: some View {
-        LinearGradient(
-            colors: [
-                Color(red: 0.09, green: 0.11, blue: 0.18),
-                Color(red: 0.05, green: 0.06, blue: 0.09),
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
+        Group {
+            if light {
+                GeometryReader { geometry in
+                    Image("CatRoomBackground")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
+                        .overlay(Color(red: 1, green: 0.95, blue: 0.85).opacity(0.08))
+                }
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.09, green: 0.11, blue: 0.18),
+                        Color(red: 0.05, green: 0.06, blue: 0.09),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+        }
         .ignoresSafeArea()
     }
 }
