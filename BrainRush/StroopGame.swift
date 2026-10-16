@@ -736,22 +736,18 @@ struct StroopGameView: View {
                 Color(red: 0.07, green: 0.10, blue: 0.30).ignoresSafeArea()
                 Image("StartScreenArt")
                     .resizable()
-                    .ignoresSafeArea(.container, edges: .all)
+                    .frame(
+                        width: geometry.size.width,
+                        height: geometry.size.height + geometry.safeAreaInsets.top + geometry.safeAreaInsets.bottom
+                    )
+                    .offset(y: -geometry.safeAreaInsets.top)
                     .accessibilityLabel("Brain Rush — ブレインラッシュ")
-                ScrollView {
-                    VStack(spacing: 18) {
-                        HStack {
-                            Spacer()
-                            Button { showsPractice = true } label: {
-                                Image(systemName: "gearshape.fill")
-                                    .font(.title2)
-                                    .padding(12)
-                                    .background(.white.opacity(0.2), in: Circle())
-                                    .overlay { Circle().strokeBorder(.white.opacity(0.35), lineWidth: 2) }
-                            }
-                            .accessibilityLabel(tr(ja: "設定", zh: "设置", en: "Settings", my: "ဆက်တင်"))
-                        }
-                        Spacer(minLength: max(220, geometry.size.height * 0.52))
+                VStack(spacing: 18) {
+                        Spacer(minLength: 0)
+                            .frame(height: max(0, min(
+                                (geometry.size.height + geometry.safeAreaInsets.top + geometry.safeAreaInsets.bottom) * 0.60 - geometry.safeAreaInsets.top,
+                                geometry.size.height - 245
+                            )))
                         Button { session.start() } label: {
                             HStack(spacing: 16) {
                                 Text("START").font(.system(size: 38, weight: .black, design: .rounded))
@@ -778,14 +774,12 @@ struct StroopGameView: View {
                             arcadeShortcut("gearshape.fill", tr(ja: "設定", zh: "设置", en: "Settings", my: "ဆက်တင်"), .white) { showsPractice = true }
                         }
                         .padding(.top, 10)
-                        Spacer(minLength: 20)
+                        Spacer(minLength: 0)
                     }
-                    .padding(.horizontal, 26)
-                    .padding(.top, 8)
-                    .frame(maxWidth: 520)
-                    .frame(minHeight: geometry.size.height)
+                    .padding(.horizontal, max(20, geometry.size.width * 0.10))
+                    .frame(maxWidth: 600)
+                    .frame(height: geometry.size.height)
                     .frame(maxWidth: .infinity)
-                }
             }
         }
         .foregroundStyle(.white)
