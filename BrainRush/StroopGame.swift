@@ -140,6 +140,7 @@ enum InterferenceTask: String, CaseIterable {
     case wordPlace
     case numberCount
     case valueSize
+    case brainTeaser
 
     var title: String {
         switch self {
@@ -148,6 +149,7 @@ enum InterferenceTask: String, CaseIterable {
         case .wordPlace: tr(ja: "文字と位置", zh: "字和位置", en: "Word and place", my: "စာလုံးနှင့် နေရာ")
         case .numberCount: tr(ja: "数字と個数", zh: "数字和数量", en: "Number and count", my: "ဂဏန်းနှင့် အရေအတွက်")
         case .valueSize: tr(ja: "数値と大きさ", zh: "数值和字号", en: "Value and size", my: "တန်ဖိုးနှင့် အရွယ်")
+        case .brainTeaser: tr(ja: "ひっかけ問題", zh: "脑筋急转弯", en: "Brain teaser", my: "ပဟေဠိ")
         }
     }
 
@@ -158,6 +160,7 @@ enum InterferenceTask: String, CaseIterable {
         case .wordPlace: tr(ja: "位置", zh: "方位", en: "Place", my: "နေရာ")
         case .numberCount: tr(ja: "個数", zh: "数量", en: "Count", my: "အရေအတွက်")
         case .valueSize: tr(ja: "大きさ", zh: "大小", en: "Size", my: "အရွယ်")
+        case .brainTeaser: tr(ja: "ひっかけ", zh: "急转弯", en: "Teaser", my: "ပဟေဠိ")
         }
     }
 }
@@ -248,6 +251,7 @@ enum Stimulus: Equatable {
     case placedWord(word: Compass, place: Compass)
     case digits(value: Int, count: Int)
     case pair(left: Int, right: Int, leftUsesLargerFont: Bool)
+    case emblem(id: String, symbol: String)
 }
 
 struct StroopRound: Equatable {
@@ -257,14 +261,26 @@ struct StroopRound: Equatable {
     var choices: [AnswerChoice]
     var stimulus: Stimulus
 
-    static func make(_ task: InterferenceTask, trap: Bool = false) -> StroopRound {
+    static func make(
+        _ task: InterferenceTask,
+        trap: Bool = false,
+        excludingTeaserIDs: Set<String> = []
+    ) -> StroopRound {
         switch task {
         case .colorWord: colorWord(trap: trap)
         case .arrowPlace: arrowPlace(trap: trap)
         case .wordPlace: wordPlace(trap: trap)
         case .numberCount: numberCount(trap: trap)
         case .valueSize: valueSize(trap: trap)
+        case .brainTeaser: brainTeaser(excluding: excludingTeaserIDs)
         }
+    }
+
+    static var brainTeaserCount: Int { teaserPool().count }
+
+    static func teaserID(from stimulus: Stimulus) -> String? {
+        if case .emblem(let id, _) = stimulus { return id }
+        return nil
     }
 
     private static func colorWord(trap: Bool) -> StroopRound {
@@ -352,6 +368,263 @@ struct StroopRound: Equatable {
             answerID: "\(answer)",
             choices: numericChoices(including: ["\(left)", "\(right)"]),
             stimulus: .pair(left: left, right: right, leftUsesLargerFont: leftUsesLargerFont)
+        )
+    }
+
+    private static func brainTeaser(excluding usedIDs: Set<String>) -> StroopRound {
+        let pool = teaserPool()
+        let available = pool.filter { round in
+            guard let id = teaserID(from: round.stimulus) else { return true }
+            return !usedIDs.contains(id)
+        }
+        return (available.randomElement() ?? pool.randomElement()) ?? pool[0]
+    }
+
+    private static func teaserPool() -> [StroopRound] {
+        [
+            teaser(
+                id: "race",
+                emblem: "🏃‍♂️",
+                rule: tr(
+                    ja: "徒競走に出て、2位の人を抜いた。今は何位？",
+                    zh: "你参加赛跑，超过第二名，现在第几名？",
+                    en: "You join a race and overtake second place. What place are you in now?",
+                    my: "ပြေးပွဲဝင်ပြီး ဒုတိယကို ကျော်လိုက်သည်။ ယခု ဘယ်အဆင့်လဲ။"
+                ),
+                answerID: "second",
+                choices: [
+                    ("first", tr(ja: "1位", zh: "第一名", en: "1st", my: "ပထမ")),
+                    ("second", tr(ja: "2位", zh: "第二名", en: "2nd", my: "ဒုတိယ")),
+                ]
+            ),
+            teaser(
+                id: "iron-cotton",
+                emblem: "⚖️",
+                rule: tr(
+                    ja: "鉄1キロと綿1キロ、どちらが重い？",
+                    zh: "一公斤铁和一公斤棉花哪个重？",
+                    en: "Which is heavier: 1 kg of iron or 1 kg of cotton?",
+                    my: "သံ တစ်ကီလို နှင့် ချည် တစ်ကီလို ဘယ်ဟာ ပိုလေးလဲ။"
+                ),
+                answerID: "same",
+                choices: [
+                    ("iron", tr(ja: "鉄の方が重い", zh: "铁更重", en: "Iron is heavier", my: "သံ ပိုလေးသည်")),
+                    ("same", tr(ja: "同じ重さ", zh: "一样重", en: "Same weight", my: "အလေးချိန်တူသည်")),
+                ]
+            ),
+            teaser(
+                id: "apples",
+                emblem: "🍎",
+                rule: tr(
+                    ja: "テーブルにリンゴが3個ある。2個持っていったら、自分は何個持っている？",
+                    zh: "桌上有3个苹果，你拿走2个，你有几个？",
+                    en: "There are 3 apples on the table. You take 2. How many do you have?",
+                    my: "စားပွဲပေါ် ပန်းသီး ၃ လုံးရှိသည်။ ၂ လုံးယူလိုက်ရင် မင်းဆီ ဘယ်နှစ်လုံးရှိလဲ။"
+                ),
+                answerID: "two",
+                choices: [
+                    ("one", tr(ja: "1個", zh: "1个", en: "1", my: "၁ လုံး")),
+                    ("two", tr(ja: "2個", zh: "2个", en: "2", my: "၂ လုံး")),
+                ]
+            ),
+            teaser(
+                id: "pills",
+                emblem: "💊",
+                rule: tr(
+                    ja: "医者に薬を3錠もらった。30分ごとに1錠飲むと、全部飲み終わるまで何分？",
+                    zh: "一个医生给你3颗药，每隔30分钟吃一颗，多久吃完？",
+                    en: "A doctor gives you 3 pills. You take one every 30 minutes. How long until they are all gone?",
+                    my: "ဆရာဝန်က ဆေးလုံး ၃ လုံး ပေးသည်။ ၃၀ မိနစ်ခြား တစ်လုံးစားရင် အားလုံးကုန်ဖို့ ဘယ်လောက်ကြာလဲ။"
+                ),
+                answerID: "sixty",
+                choices: [
+                    ("ninety", tr(ja: "90分", zh: "90分钟", en: "90 minutes", my: "၉၀ မိနစ်")),
+                    ("sixty", tr(ja: "60分", zh: "60分钟", en: "60 minutes", my: "၆၀ မိနစ်")),
+                ]
+            ),
+            teaser(
+                id: "machines",
+                emblem: "🏭",
+                rule: tr(
+                    ja: "機械5台が5分で製品5個作る。機械100台で製品100個作るには何分？",
+                    zh: "5台机器5分钟生产5个产品，100台机器生产100个需要多久？",
+                    en: "5 machines make 5 products in 5 minutes. How long for 100 machines to make 100 products?",
+                    my: "စက် ၅ လုံးက ၅ မိနစ်တွင် ပစ္စည်း ၅ ခု ထုတ်သည်။ စက် ၁၀၀ ဖြင့် ပစ္စည်း ၁၀၀ ထုတ်ရန် ဘယ်လောက်ကြာလဲ။"
+                ),
+                answerID: "five",
+                choices: [
+                    ("hundred", tr(ja: "100分", zh: "100分钟", en: "100 minutes", my: "၁၀၀ မိနစ်")),
+                    ("five", tr(ja: "5分", zh: "5分钟", en: "5 minutes", my: "၅ မိနစ်")),
+                ]
+            ),
+            teaser(
+                id: "months-28",
+                emblem: "📅",
+                rule: tr(
+                    ja: "1年のうち、28日を含む月は何個ある？",
+                    zh: "一年中有几个月包含28天？",
+                    en: "How many months in a year have 28 days?",
+                    my: "တစ်နှစ်တွင် ၂၈ ရက်ပါသော လ ဘယ်နှစ်လ ရှိသလဲ။"
+                ),
+                answerID: "twelve",
+                choices: [
+                    ("one", tr(ja: "1か月", zh: "1个月", en: "1 month", my: "၁ လ")),
+                    ("twelve", tr(ja: "12か月", zh: "12个月", en: "12 months", my: "၁၂ လ")),
+                ]
+            ),
+            teaser(
+                id: "snail-teeth",
+                emblem: "🐌",
+                rule: tr(
+                    ja: "カタツムリの歯はだいたい何本？",
+                    zh: "蜗牛大约有多少颗牙齿？",
+                    en: "About how many teeth does a snail have?",
+                    my: "ပက်ကျိမှာ သွား ဘယ်နှစ်ချောင်းလောက် ရှိသလဲ။"
+                ),
+                answerID: "ten-thousand",
+                choices: [
+                    ("hundred", tr(ja: "100本", zh: "100颗", en: "100", my: "၁၀၀ ချောင်း")),
+                    ("ten-thousand", tr(ja: "10000本", zh: "10000颗", en: "10,000", my: "၁၀၀၀၀ ချောင်း")),
+                ]
+            ),
+            teaser(
+                id: "ostrich-eye",
+                emblem: "🐦",
+                rule: tr(
+                    ja: "ダチョウの眼球と脳、小さいのはどっち？",
+                    zh: "鸵鸟的眼球和大脑，哪个更小？",
+                    en: "Which is smaller for an ostrich: its eye or its brain?",
+                    my: "ငှက်ကုလားအုပ်ရဲ့ မျက်လုံးနှင့် ဦးနှောက်၊ ဘယ်ဟာ ပိုသေးလဲ။"
+                ),
+                answerID: "brain",
+                choices: [
+                    ("brain", tr(ja: "脳", zh: "大脑", en: "Brain", my: "ဦးနှောက်")),
+                    ("eye", tr(ja: "眼球", zh: "眼球", en: "Eye", my: "မျက်လုံး")),
+                ]
+            ),
+            teaser(
+                id: "firework-whistle",
+                emblem: "🎆",
+                rule: tr(
+                    ja: "花火が上がるときの「シュー」音はどこから？",
+                    zh: "烟花升空时的「咻——」声从哪里来？",
+                    en: "Where does the whoosh of a firework going up come from?",
+                    my: "မီးပန်းတက်စဉ် \"ရှူး——\" အသံ ဘယ်ကလာသလဲ။"
+                ),
+                answerID: "whistle",
+                choices: [
+                    ("friction", tr(ja: "空気との摩擦", zh: "空气摩擦", en: "Air friction", my: "လေနှင့် ပွတ်တိုက်မှု")),
+                    ("whistle", tr(ja: "わざと付けた笛", zh: "特意安装的哨子", en: "A whistle built in on purpose", my: "တမင်တပ်ထားသော နှုတ်သီး")),
+                ]
+            ),
+            teaser(
+                id: "bus-bunk",
+                emblem: "🚌",
+                rule: tr(
+                    ja: "日本の一部の長距離バスに隠れているものは？",
+                    zh: "日本某些长途巴士里面隐藏着什么？",
+                    en: "What is hidden on some long-distance buses in Japan?",
+                    my: "ဂျပန်က အချို့ ခရီးရှည်ဘတ်စကားထဲမှာ ဘာကို ဖုံးထားသလဲ။"
+                ),
+                answerID: "bunk",
+                choices: [
+                    ("bunk", tr(ja: "運転手が休む小部屋", zh: "司机休息睡觉的小房间", en: "A small room for the driver to rest", my: "ယာဉ်မောင်း အနားယူအိပ်သော အခန်းငယ်")),
+                    ("boat", tr(ja: "バスを船に変える装置", zh: "能让巴士变成船的装置", en: "A device that turns the bus into a boat", my: "ဘတ်စကားကို သင်္ဘော ဖြစ်အောင် လုပ်သော ကိရိယာ")),
+                ]
+            ),
+            teaser(
+                id: "lion-room",
+                emblem: "🦁",
+                rule: tr(
+                    ja: "ライオンがいる部屋。もう3年何も食べていない。入っても安全？",
+                    zh: "一个房间里有狮子，已经3年没吃东西。进去安全吗？",
+                    en: "A room has a lion that hasn't eaten in 3 years. Is it safe to go in?",
+                    my: "အခန်းထဲမှာ ခြင်္သေ့ရှိပြီး ၃ နှစ် စားမထား။ ဝင်လို့ အန္တရာယ်ကင်းသလား။"
+                ),
+                answerID: "safe",
+                choices: [
+                    ("safe", tr(ja: "安全", zh: "安全", en: "Safe", my: "အန္တရာယ်ကင်း")),
+                    ("danger", tr(ja: "危険", zh: "危险", en: "Dangerous", my: "အန္တရာယ်ရှိ")),
+                ]
+            ),
+            teaser(
+                id: "prison-visitor",
+                emblem: "🏛️",
+                rule: tr(
+                    ja: "刑務所で弁護士と話していたのに、保釈は却下された。なのに彼は普通に出ていった。なぜ？",
+                    zh: "一个人在监狱里和律师谈话，法官拒绝保释，他却顺利离开监狱。为什么？",
+                    en: "A man talks with a lawyer in prison. Bail is denied, but he leaves the prison easily. Why?",
+                    my: "အကျဉ်းထောင်ထဲမှာ ရှေ့နေနှင့် စကားပြောနေသည်။ အာမခံငြင်းခံရသော်လည်း သူ ထောင်ကနေ အေးအေးဆေးဆေး ထွက်သွားသည်။ ဘာကြောင့်လဲ။"
+                ),
+                answerID: "visitor",
+                choices: [
+                    ("visitor", tr(ja: "彼は面会者だった", zh: "他是探监者", en: "He was a visitor", my: "သူက လာတွေ့သူ")),
+                    ("escape", tr(ja: "脱獄した", zh: "他越狱了", en: "He escaped", my: "သူ ထောင်ဖောက်ထွက်သည်")),
+                ]
+            ),
+            teaser(
+                id: "newborn",
+                emblem: "👶",
+                rule: tr(
+                    ja: "男が帰宅すると妻のそばに別の人がいるのに、とても喜んだ。なぜ？",
+                    zh: "男人下班回家，看到妻子身边有另一个人，却非常开心。为什么？",
+                    en: "A man comes home from work, sees someone beside his wife, and is very happy. Why?",
+                    my: "အမျိုးသား အလုပ်ကနေ အိမ်ပြန်လာပြီး မယားဘေးမှာ တစ်ယောက်ရှိနေတာ မြင်သော်လည်း အရမ်းပျော်သည်။ ဘာကြောင့်လဲ။"
+                ),
+                answerID: "baby",
+                choices: [
+                    ("baby", tr(ja: "妻が子どもを産んだ", zh: "妻子刚生了孩子", en: "His wife just had a baby", my: "မယား ကလေး မွေးခါစ")),
+                    ("affair", tr(ja: "浮気を気にしない", zh: "他完全不介意妻子出轨", en: "He doesn't mind an affair at all", my: "မယား သစ္စာဖောက်တာ သူ လုံးဝ မမှု")),
+                ]
+            ),
+            teaser(
+                id: "pink-house",
+                emblem: "🏠",
+                rule: tr(
+                    ja: "平屋の家が全部ピンク色。階段は何色？",
+                    zh: "一栋单层房屋全是粉红色，楼梯是什么颜色？",
+                    en: "A one-story house is all pink. What color are the stairs?",
+                    my: "တစ်ထပ်အိမ် အားလုံး ပန်းရောင်။ လှေကား ဘာအရောင်လဲ။"
+                ),
+                answerID: "none",
+                choices: [
+                    ("pink", tr(ja: "ピンク", zh: "粉红色", en: "Pink", my: "ပန်းရောင်")),
+                    ("none", tr(ja: "階段はない", zh: "没有楼梯", en: "There are no stairs", my: "လှေကား မရှိ")),
+                ]
+            ),
+            teaser(
+                id: "open-eyes",
+                emblem: "😴",
+                rule: tr(
+                    ja: "寝ているところに親が朝食を持ってノックした。まず開けるべきなのは？",
+                    zh: "你正在睡觉，父母来敲门送早餐。应该先打开什么？",
+                    en: "You're asleep. Your parents knock with breakfast. What should you open first?",
+                    my: "မင်း အိပ်နေစဉ် မိဘက မနက်စာနှင့် တံခါးခေါက်သည်။ ဘာကို အရင်ဖွင့်သင့်လဲ။"
+                ),
+                answerID: "eyes",
+                choices: [
+                    ("door", tr(ja: "ドア", zh: "房门", en: "The door", my: "တံခါး")),
+                    ("eyes", tr(ja: "目", zh: "眼睛", en: "Your eyes", my: "မျက်လုံး")),
+                ]
+            ),
+        ]
+    }
+
+    private static func teaser(
+        id: String,
+        emblem: String,
+        rule: String,
+        answerID: String,
+        choices: [(id: String, title: String)]
+    ) -> StroopRound {
+        StroopRound(
+            task: .brainTeaser,
+            rule: rule,
+            answerID: answerID,
+            choices: choices.shuffled().map {
+                AnswerChoice(id: $0.id, title: $0.title, symbol: nil, style: .neutral)
+            },
+            stimulus: .emblem(id: id, symbol: emblem)
         )
     }
 
@@ -523,6 +796,8 @@ final class StroopSession {
     private var testTrap = false
     private var questionEndsAt: Date?
     private var previousTrial: ScriptedTrial?
+    private var usedTeaserIDs = Set<String>()
+    private var seenQuestionKeys = Set<String>()
 
     private struct ScriptedTrial {
         var task: InterferenceTask
@@ -546,6 +821,8 @@ final class StroopSession {
 
     func start() {
         previousTrial = nil
+        usedTeaserIDs = []
+        seenQuestionKeys = []
         score = 0
         streak = 0
         hearts = 3
@@ -682,12 +959,20 @@ final class StroopSession {
         lastAnswerWasCorrect = nil
         lastMissWasTimeout = false
         let trial = nextTrial()
-        var next = StroopRound.make(trial.task, trap: trial.trap)
+        if trial.task == .brainTeaser, usedTeaserIDs.count >= StroopRound.brainTeaserCount {
+            usedTeaserIDs.removeAll()
+            seenQuestionKeys = seenQuestionKeys.filter { !$0.hasPrefix("teaser:") }
+        }
+        var next = makeRound(for: trial)
         var tries = 0
-        while next.stimulus == round.stimulus && tries < 6 {
-            next = StroopRound.make(trial.task, trap: trial.trap)
+        while seenQuestionKeys.contains(questionKey(next)) && tries < 24 {
+            next = makeRound(for: trial)
             tries += 1
         }
+        if let teaserID = StroopRound.teaserID(from: next.stimulus) {
+            usedTeaserIDs.insert(teaserID)
+        }
+        seenQuestionKeys.insert(questionKey(next))
         round = next
         questionRemaining = questionLimit
         if showsTimer {
@@ -695,6 +980,17 @@ final class StroopSession {
         } else {
             questionEndsAt = nil
         }
+    }
+
+    private func makeRound(for trial: ScriptedTrial) -> StroopRound {
+        StroopRound.make(trial.task, trap: trial.trap, excludingTeaserIDs: usedTeaserIDs)
+    }
+
+    private func questionKey(_ round: StroopRound) -> String {
+        if let teaserID = StroopRound.teaserID(from: round.stimulus) {
+            return "teaser:\(teaserID)"
+        }
+        return "\(round.task.rawValue)|\(round.rule)|\(round.answerID)|\(String(describing: round.stimulus))"
     }
 
     private func nextTrial() -> ScriptedTrial {
@@ -845,21 +1141,21 @@ struct StroopGameView: View {
                         )
                     )
                     guide(
-                        tr(ja: "5種類の問題", zh: "五种题目", en: "Five kinds of questions", my: "မေးခွန်း ၅ မျိုး"),
+                        tr(ja: "6種類の問題", zh: "六种题目", en: "Six kinds of questions", my: "မေးခွန်း ၆ မျိုး"),
                         tr(
-                            ja: "どの問題も2つの選択肢から答えます。\n色：見えている色か、見えている文字か。文字の意味とインクの色は違います。\n矢印：指している方か、矢印がある場所か。向きと場所は違います。\n文字の位置：書いてある字か、字がある場所か。意味と場所は違います。\n数字と個数：例えば画面が111なら、選択肢には111と3が含まれます。「数字は？」なら111、「数字は何個ある？」なら3。並びと個数は違います。\n大きさ：数の大きい方の数字か、字の大きい方の数字を選びます。差は1か2で、字が大きいのは数の小さい方です。",
-                            zh: "每道题都有两个选项。\n颜色：看到的颜色，还是看到的文字。字义和墨水颜色不会相同。\n箭头：箭头指向哪一边，还是箭头在哪一边。指向和位置不会相同。\n方位字：字写的是什么，还是字在哪一边。字义和位置不会相同。\n数字和数量：例如画面是 111，选项包含 111 和 3。问「数字是几？」选 111，问「有几个数字？」选 3。数字串和数量不会相同。\n大小：选择数值更大的数字，或字体更大的数字。两数只差 1 或 2，字更大的是数值更小的那个。",
-                            en: "Every question has two choices.\nColor: the color you see, or the text you see. The word and the ink never match.\nArrow: the side it points to, or the side where it sits. Direction and place never match.\nPlace word: what the word says, or the side where it sits. Meaning and place never match.\nNumber and count: if the screen shows 111, the choices include 111 and 3. \"What is the number?\" means 111. \"How many digits are there?\" means 3. The written number and the count never match.\nSize: choose the larger number, or the number displayed in bigger text. The numbers differ by 1 or 2, and the bigger text is the smaller number.",
-                            my: "မေးခွန်းတိုင်းကို ရွေးစရာ ၂ ခု ပေးသည်။\nအရောင်။ မြင်ရသော အရောင်၊ သို့မဟုတ် မြင်ရသော စာသား။ စာသားအဓိပ္ပာယ်နှင့် မင်အရောင် မတူပါ။\nမြား။ ညွှန်သောဘက်၊ သို့မဟုတ် မြားရှိသောဘက်။ ဦးတည်ချက်နှင့် နေရာ မတူပါ။\nနေရာစာလုံး။ ရေးထားသောစာလုံး၊ သို့မဟုတ် စာလုံးရှိသောဘက်။ အဓိပ္ပာယ်နှင့် နေရာ မတူပါ။\nဂဏန်းနှင့် အရေအတွက်။ ဥပမာ မျက်နှာပြင်မှာ ၁၁၁ ဖြစ်လျှင် ရွေးစရာက ၁၁၁ နှင့် ၃။ \"ဂဏန်းက ဘယ်လဲ\" ဆိုရင် ၁၁၁၊ \"ဂဏန်း ဘယ်နှစ်လုံး ရှိသလဲ\" ဆိုရင် ၃။ ရေးထားသောကိန်းနှင့် အရေအတွက် မတူပါ။\nအရွယ်။ ကိန်းပိုကြီးသောဘက်၊ သို့မဟုတ် စာလုံးပိုကြီးသောဘက်။ ကိန်းနှစ်ခုက ၁ သို့မဟုတ် ၂ ပဲ ကွာပြီး စာလုံးပိုကြီးတာက ကိန်းပိုငယ်သောဘက် ဖြစ်သည်။"
+                            ja: "どの問題も2つの選択肢から答えます。\n色：見えている色か、見えている文字か。文字の意味とインクの色は違います。\n矢印：指している方か、矢印がある場所か。向きと場所は違います。\n文字の位置：書いてある字か、字がある場所か。意味と場所は違います。\n数字と個数：例えば画面が111なら、選択肢には111と3が含まれます。「数字は？」なら111、「数字は何個ある？」なら3。並びと個数は違います。\n大きさ：数の大きい方の数字か、字の大きい方の数字を選びます。差は1か2で、字が大きいのは数の小さい方です。\nひっかけ：正解ともっとも間違えやすい答えの二択。例）2位を抜く→2位。鉄と綿1kg→同じ。リンゴ2個持っていく→2個。薬3錠を30分ごと→60分。機械→5分。28日を含む月→12か月。",
+                            zh: "每道题都有两个选项。\n颜色：看到的颜色，还是看到的文字。字义和墨水颜色不会相同。\n箭头：箭头指向哪一边，还是箭头在哪一边。指向和位置不会相同。\n方位字：字写的是什么，还是字在哪一边。字义和位置不会相同。\n数字和数量：例如画面是 111，选项包含 111 和 3。问「数字是几？」选 111，问「有几个数字？」选 3。数字串和数量不会相同。\n大小：选择数值更大的数字，或字体更大的数字。两数只差 1 或 2，字更大的是数值更小的那个。\n脑筋急转弯：两个选项里，一个是正确答案，另一个是最容易想错的答案。同一局里出过的急转弯题不会再出，抽完一轮后才会重新洗入。",
+                            en: "Every question has two choices.\nColor: the color you see, or the text you see. The word and the ink never match.\nArrow: the side it points to, or the side where it sits. Direction and place never match.\nPlace word: what the word says, or the side where it sits. Meaning and place never match.\nNumber and count: if the screen shows 111, the choices include 111 and 3. \"What is the number?\" means 111. \"How many digits are there?\" means 3. The written number and the count never match.\nSize: choose the larger number, or the number displayed in bigger text. The numbers differ by 1 or 2, and the bigger text is the smaller number.\nBrain teasers: one correct answer and the most tempting wrong answer. Overtake 2nd → 2nd. 1 kg iron vs cotton → same. Take 2 apples → 2. 3 pills every 30 minutes → 60 minutes. 100 machines → 5 minutes. Months with 28 days → 12.",
+                            my: "မေးခွန်းတိုင်းကို ရွေးစရာ ၂ ခု ပေးသည်။\nအရောင်။ မြင်ရသော အရောင်၊ သို့မဟုတ် မြင်ရသော စာသား။ စာသားအဓိပ္ပာယ်နှင့် မင်အရောင် မတူပါ။\nမြား။ ညွှန်သောဘက်၊ သို့မဟုတ် မြားရှိသောဘက်။ ဦးတည်ချက်နှင့် နေရာ မတူပါ။\nနေရာစာလုံး။ ရေးထားသောစာလုံး၊ သို့မဟုတ် စာလုံးရှိသောဘက်။ အဓိပ္ပာယ်နှင့် နေရာ မတူပါ။\nဂဏန်းနှင့် အရေအတွက်။ ဥပမာ မျက်နှာပြင်မှာ ၁၁၁ ဖြစ်လျှင် ရွေးစရာက ၁၁၁ နှင့် ၃။ \"ဂဏန်းက ဘယ်လဲ\" ဆိုရင် ၁၁၁၊ \"ဂဏန်း ဘယ်နှစ်လုံး ရှိသလဲ\" ဆိုရင် ၃။ ရေးထားသောကိန်းနှင့် အရေအတွက် မတူပါ။\nအရွယ်။ ကိန်းပိုကြီးသောဘက်၊ သို့မဟုတ် စာလုံးပိုကြီးသောဘက်။ ကိန်းနှစ်ခုက ၁ သို့မဟုတ် ၂ ပဲ ကွာပြီး စာလုံးပိုကြီးတာက ကိန်းပိုငယ်သောဘက် ဖြစ်သည်။\nပဟေဠိ။ ဒုတိယကျော် → ဒုတိယ။ သံ/ချည် တစ်ကီလို → အလေးချိန်တူ။ ပန်းသီး ၂ လုံးယူ → ၂ လုံး။ ဆေး ၃၀ မိနစ်ခြား → ၆၀ မိနစ်။ စက် ၁၀၀ → ၅ မိနစ်။"
                         )
                     )
                     guide(
                         tr(ja: "出る順番", zh: "出题顺序", en: "Order", my: "ထွက်ပုံ"),
                         tr(
-                            ja: "5種類の問題は毎回ランダムに出ます。同じ種類が続くと、問い方が変わります。",
-                            zh: "五种题目每次都会随机出现。同一类题如果接着出现，问法会换成另一种。",
-                            en: "All five kinds of questions appear at random. If the same kind appears again, the question flips.",
-                            my: "မေးခွန်း ၅ မျိုးကို တစ်ကြိမ်ချင်း အလျှောက်ကျကျ ထုတ်သည်။ တစ်မျိုးတည်း ဆက်ထွက်လျှင် မေးပုံ ပြောင်းသည်။"
+                            ja: "6種類の問題は毎回ランダムに出ます。同じ種類が続くと、問い方が変わります。",
+                            zh: "六种题目每次都会随机出现。同一类题如果接着出现，问法会换成另一种。",
+                            en: "All six kinds of questions appear at random. If the same kind appears again, the question flips.",
+                            my: "မေးခွန်း ၆ မျိုးကို တစ်ကြိမ်ချင်း အလျှောက်ကျကျ ထုတ်သည်။ တစ်မျိုးတည်း ဆက်ထွက်လျှင် မေးပုံ ပြောင်းသည်။"
                         )
                     )
                     guide(
@@ -1300,6 +1596,11 @@ struct StroopGameView: View {
             .foregroundStyle(Color(red: 0.16, green: 0.16, blue: 0.18))
             .frame(maxWidth: .infinity)
             .frame(height: 120)
+        case .emblem(_, let symbol):
+            Text(symbol)
+                .font(.system(size: 72))
+                .frame(maxWidth: .infinity)
+                .frame(height: 120)
         }
     }
 
