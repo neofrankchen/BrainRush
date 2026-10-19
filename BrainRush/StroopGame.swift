@@ -760,63 +760,79 @@ struct StroopGameView: View {
 
     private var menu: some View {
         GeometryReader { geometry in
-            ZStack(alignment: .top) {
-                Color(red: 0.07, green: 0.10, blue: 0.30).ignoresSafeArea()
-                Image("StartScreenArt")
-                    .resizable()
-                    .ignoresSafeArea(.container, edges: .all)
-                    .accessibilityLabel("Brain Rush — ブレインラッシュ")
-                ScrollView {
+            ScrollView {
+                VStack(spacing: 20) {
+                    Spacer(minLength: 0)
+                    VStack(spacing: 10) {
+                        Image("QuizCat")
+                            .resizable().scaledToFit()
+                            .frame(height: 150)
+                            .accessibilityHidden(true)
+                        Text(tr(ja: "ブレインラッシュ", zh: "脑乱挑战", en: "Brain Rush", my: "အနှောင့်အယှက်စိန်ခေါ်ပွဲ"))
+                            .font(.system(size: 30, weight: .heavy, design: .rounded))
+                            .minimumScaleFactor(0.6)
+                            .lineLimit(1)
+                        Text(tr(ja: "よ〜く見て、4つから選ぼう！", zh: "仔细看看，从四个选项中选择！", en: "Look closely. Choose from four!", my: "သေချာကြည့်ပြီး လေးခုမှ ရွေးပါ။"))
+                            .font(.subheadline.weight(.semibold))
+                            .multilineTextAlignment(.center)
+                    }
+                    .foregroundStyle(CatQuizPalette.ink)
+                    .padding(24)
+                    .frame(maxWidth: .infinity)
+                    .background(.white.opacity(0.95), in: RoundedRectangle(cornerRadius: 28))
+
                     VStack(spacing: 18) {
                         HStack {
+                            Label(tr(ja: "自己ベスト", zh: "个人最佳", en: "Personal best", my: "အကောင်းဆုံး"), systemImage: "trophy.fill")
+                                .font(.subheadline.bold())
                             Spacer()
-                            Button { showsPractice = true } label: {
-                                Image(systemName: "gearshape.fill")
-                                    .font(.title2)
-                                    .padding(12)
-                                    .background(.white.opacity(0.2), in: Circle())
-                                    .overlay { Circle().strokeBorder(.white.opacity(0.35), lineWidth: 2) }
-                            }
-                            .accessibilityLabel(tr(ja: "設定", zh: "设置", en: "Settings", my: "ဆက်တင်"))
+                            Text("\(ScoreBoard.records(for: "stroop").map(\.score).max() ?? 0)")
+                                .font(.system(.title2, design: .rounded, weight: .heavy))
+                                .monospacedDigit()
                         }
-                        Spacer(minLength: max(220, geometry.size.height * 0.52))
-                        Button { session.start() } label: {
-                            HStack(spacing: 16) {
-                                Text("START").font(.system(size: 38, weight: .black, design: .rounded))
-                                Image(systemName: "play.fill").font(.system(size: 28, weight: .black))
-                            }
-                            .foregroundStyle(Color(red: 0.04, green: 0.07, blue: 0.22))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 24)
-                            .background {
-                                Capsule().fill(LinearGradient(colors: [Color(red: 1, green: 0.94, blue: 0.37), .yellow, .orange], startPoint: .top, endPoint: .bottom))
-                            }
-                            .overlay { Capsule().strokeBorder(.white.opacity(0.75), lineWidth: 3).padding(4) }
-                            .padding(6)
-                            .background(Capsule().fill(Color(red: 0.03, green: 0.05, blue: 0.18)))
-                            .overlay { Capsule().strokeBorder(Color(red: 0.36, green: 0.50, blue: 1), lineWidth: 3) }
-                            .shadow(color: .black.opacity(0.4), radius: 0, y: 7)
+                        Divider().overlay(CatQuizPalette.wood.opacity(0.2))
+                        HStack {
+                            Label(tr(ja: "ハート3つ", zh: "3颗爱心", en: "3 hearts", my: "နှလုံး ၃ ခု"), systemImage: "heart.fill")
+                                .foregroundStyle(Color(red: 0.9, green: 0.28, blue: 0.35))
+                            Spacer()
+                            Label(tr(ja: "4つの選択肢", zh: "四个选项", en: "4 choices", my: "ရွေးစရာ ၄ ခု"), systemImage: "square.grid.2x2.fill")
                         }
-                        .buttonStyle(ArcadePressStyle())
-                        .accessibilityIdentifier("stroop-start")
-                        .accessibilityLabel(tr(ja: "開始", zh: "开始", en: "Start", my: "စတင်မည်"))
-                        HStack(spacing: 10) {
-                            arcadeShortcut("crown.fill", tr(ja: "ランキング", zh: "排行榜", en: "Ranking", my: "အဆင့်"), .yellow) { showsRanking = true }
-                            arcadeShortcut("chart.bar.fill", tr(ja: "遊び方", zh: "怎么玩", en: "How to play", my: "ကစားနည်း"), .cyan) { showsGuide = true }
-                            arcadeShortcut("gearshape.fill", tr(ja: "設定", zh: "设置", en: "Settings", my: "ဆက်တင်"), .white) { showsPractice = true }
-                        }
-                        .padding(.top, 10)
-                        Spacer(minLength: 20)
+                        .font(.caption.weight(.bold))
                     }
-                    .padding(.horizontal, 26)
-                    .padding(.top, 8)
-                    .frame(maxWidth: 520)
-                    .frame(minHeight: geometry.size.height)
-                    .frame(maxWidth: .infinity)
+                    .foregroundStyle(CatQuizPalette.wood)
+                    .padding(22)
+                    .background(CatQuizPalette.cream, in: RoundedRectangle(cornerRadius: 26))
+                    .overlay { RoundedRectangle(cornerRadius: 26).strokeBorder(CatQuizPalette.wood.opacity(0.5), lineWidth: 2) }
+
+                    Button { session.start() } label: {
+                        Label(tr(ja: "あそぶ", zh: "开始游戏", en: "Let’s play", my: "ကစားမည်"), systemImage: "play.fill")
+                            .font(.system(.title3, design: .rounded, weight: .heavy))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 20)
+                            .foregroundStyle(CatQuizPalette.ink)
+                            .background(LinearGradient(colors: [Color(red: 1, green: 0.88, blue: 0.38), Color(red: 1, green: 0.69, blue: 0.23)], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 20))
+                            .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(.white.opacity(0.8), lineWidth: 2) }
+                            .shadow(color: CatQuizPalette.wood.opacity(0.25), radius: 0, y: 4)
+                    }
+                    .buttonStyle(ArcadePressStyle())
+                    .accessibilityIdentifier("stroop-start")
+                    .accessibilityLabel(tr(ja: "開始", zh: "开始", en: "Start", my: "စတင်မည်"))
+
+                    HStack(spacing: 10) {
+                        arcadeShortcut("crown.fill", tr(ja: "ランキング", zh: "排行榜", en: "Ranking", my: "အဆင့်"), CatQuizPalette.wood) { showsRanking = true }
+                        arcadeShortcut("book.fill", tr(ja: "遊び方", zh: "怎么玩", en: "How to play", my: "ကစားနည်း"), CatQuizPalette.ink) { showsGuide = true }
+                        arcadeShortcut("gearshape.fill", tr(ja: "設定", zh: "设置", en: "Settings", my: "ဆက်တင်"), CatQuizPalette.ink) { showsPractice = true }
+                    }
+                    Spacer(minLength: 0)
                 }
+                .padding(20)
+                .frame(maxWidth: 520)
+                .frame(minHeight: geometry.size.height)
+                .frame(maxWidth: .infinity)
             }
+            .scrollIndicators(.hidden)
         }
-        .foregroundStyle(.white)
+        .background(StroopBackdrop(light: true))
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showsGuide) {
             menuSheet(tr(ja: "遊び方", zh: "怎么玩", en: "How to play", my: "ကစားနည်း")) {
@@ -888,14 +904,15 @@ struct StroopGameView: View {
         Button(action: action) {
             VStack(spacing: 10) {
                 Image(systemName: symbol).font(.system(size: 30, weight: .bold)).foregroundStyle(color)
-                    .shadow(color: color.opacity(0.4), radius: 8)
+                    .shadow(color: color.opacity(0.1), radius: 3)
                 Text(title).font(.system(.caption, design: .rounded, weight: .heavy))
+                    .foregroundStyle(CatQuizPalette.ink)
                     .lineLimit(1).minimumScaleFactor(0.6)
             }
             .frame(maxWidth: .infinity)
             .frame(minHeight: 92)
-            .background(Color(red: 0.08, green: 0.12, blue: 0.34).opacity(0.95), in: RoundedRectangle(cornerRadius: 22))
-            .overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(Color(red: 0.35, green: 0.43, blue: 0.85), lineWidth: 2) }
+            .background(.white.opacity(0.96), in: RoundedRectangle(cornerRadius: 22))
+            .overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(CatQuizPalette.wood.opacity(0.25), lineWidth: 1) }
         }
         .buttonStyle(ArcadePressStyle())
     }
@@ -1504,7 +1521,7 @@ private struct StroopNavigationChrome: ViewModifier {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .navigationBarBackButtonHidden(isPlaying)
-            .toolbar(isPlaying ? .hidden : .visible, for: .navigationBar)
+            .toolbar(.hidden, for: .navigationBar)
         #else
         content
         #endif
