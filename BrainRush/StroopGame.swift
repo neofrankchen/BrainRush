@@ -291,7 +291,7 @@ struct StroopRound: Equatable {
                 ? tr(ja: "矢印がある場所を選べ", zh: "选出箭头在哪一边", en: "Pick the side where the arrow sits", my: "မြားရှိသောဘက်ကို ရွေးပါ")
                 : tr(ja: "矢印が指している方を選べ", zh: "选出箭头指向哪一边", en: "Pick the side the arrow points to", my: "မြားညွှန်သောဘက်ကို ရွေးပါ"),
             answerID: (trap ? place : direction).rawValue,
-            choices: compassChoices(showArrow: true),
+            choices: compassChoices(direction, place, showArrow: true),
             stimulus: .placedArrow(direction: direction, place: place)
         )
     }
@@ -305,7 +305,7 @@ struct StroopRound: Equatable {
                 ? tr(ja: "字がある場所を選べ", zh: "选出字在哪一边", en: "Pick the side where the word sits", my: "စာလုံးရှိသောဘက်ကို ရွေးပါ")
                 : tr(ja: "書いてある字を選べ", zh: "选出字写的是什么", en: "Pick what the word says", my: "ရေးထားသော စာလုံးကို ရွေးပါ"),
             answerID: (trap ? place : word).rawValue,
-            choices: compassChoices(showArrow: false),
+            choices: compassChoices(word, place, showArrow: false),
             stimulus: .placedWord(word: word, place: place)
         )
     }
@@ -327,12 +327,11 @@ struct StroopRound: Equatable {
     }
 
     private static func numberChoices(shown: String, count: Int) -> [AnswerChoice] {
-        numericChoices(including: [shown, "\(count)", String(shown.prefix(1))])
+        numericChoices(including: [shown, "\(count)"])
     }
 
     private static func numericChoices(including required: [String]) -> [AnswerChoice] {
-        let distractors = (1...12).map { "\($0)" }.filter { !required.contains($0) }.shuffled()
-        return Array((required + distractors).prefix(4)).shuffled().map {
+        required.shuffled().map {
             AnswerChoice(id: $0, title: $0, symbol: nil, style: .neutral)
         }
     }
@@ -357,14 +356,13 @@ struct StroopRound: Equatable {
     }
 
     private static func colorChoices(ink: StroopColor, word: StroopColor) -> [AnswerChoice] {
-        let distractors = StroopColor.allCases.filter { $0 != ink && $0 != word }.shuffled().prefix(2)
-        return ([ink, word] + distractors).shuffled().map { color in
+        [ink, word].shuffled().map { color in
             AnswerChoice(id: color.rawValue, title: color.name, symbol: nil, style: .ink(color))
         }
     }
 
-    private static func compassChoices(showArrow: Bool) -> [AnswerChoice] {
-        Compass.allCases.shuffled().map { direction in
+    private static func compassChoices(_ first: Compass, _ second: Compass, showArrow: Bool) -> [AnswerChoice] {
+        [first, second].shuffled().map { direction in
             AnswerChoice(
                 id: direction.rawValue,
                 title: direction.name,
@@ -772,7 +770,7 @@ struct StroopGameView: View {
                             .font(.system(size: 30, weight: .heavy, design: .rounded))
                             .minimumScaleFactor(0.6)
                             .lineLimit(1)
-                        Text(tr(ja: "よ〜く見て、4つから選ぼう！", zh: "仔细看看，从四个选项中选择！", en: "Look closely. Choose from four!", my: "သေချာကြည့်ပြီး လေးခုမှ ရွေးပါ။"))
+                        Text(tr(ja: "よ〜く見て、2つから選ぼう！", zh: "仔细看看，从两个选项中选择！", en: "Look closely. Choose from two!", my: "သေချာကြည့်ပြီး နှစ်ခုမှ ရွေးပါ။"))
                             .font(.subheadline.weight(.semibold))
                             .multilineTextAlignment(.center)
                     }
@@ -795,7 +793,7 @@ struct StroopGameView: View {
                             Label(tr(ja: "ハート3つ", zh: "3颗爱心", en: "3 hearts", my: "နှလုံး ၃ ခု"), systemImage: "heart.fill")
                                 .foregroundStyle(Color(red: 0.9, green: 0.28, blue: 0.35))
                             Spacer()
-                            Label(tr(ja: "4つの選択肢", zh: "四个选项", en: "4 choices", my: "ရွေးစရာ ၄ ခု"), systemImage: "square.grid.2x2.fill")
+                            Label(tr(ja: "2つの選択肢", zh: "两个选项", en: "2 choices", my: "ရွေးစရာ ၂ ခု"), systemImage: "square.grid.2x2.fill")
                         }
                         .font(.caption.weight(.bold))
                     }
@@ -849,10 +847,10 @@ struct StroopGameView: View {
                     guide(
                         tr(ja: "5種類の問題", zh: "五种题目", en: "Five kinds of questions", my: "မေးခွန်း ၅ မျိုး"),
                         tr(
-                            ja: "どの問題も4つの選択肢から答えます。\n色：見えている色か、見えている文字か。文字の意味とインクの色は違います。\n矢印：指している方か、矢印がある場所か。向きと場所は違います。\n文字の位置：書いてある字か、字がある場所か。意味と場所は違います。\n数字と個数：例えば画面が111なら、選択肢には111と3が含まれます。「数字は？」なら111、「数字は何個ある？」なら3。並びと個数は違います。\n大きさ：数の大きい方の数字か、字の大きい方の数字を選びます。差は1か2で、字が大きいのは数の小さい方です。",
-                            zh: "每道题都有四个选项。\n颜色：看到的颜色，还是看到的文字。字义和墨水颜色不会相同。\n箭头：箭头指向哪一边，还是箭头在哪一边。指向和位置不会相同。\n方位字：字写的是什么，还是字在哪一边。字义和位置不会相同。\n数字和数量：例如画面是 111，选项包含 111 和 3。问「数字是几？」选 111，问「有几个数字？」选 3。数字串和数量不会相同。\n大小：选择数值更大的数字，或字体更大的数字。两数只差 1 或 2，字更大的是数值更小的那个。",
-                            en: "Every question has four choices.\nColor: the color you see, or the text you see. The word and the ink never match.\nArrow: the side it points to, or the side where it sits. Direction and place never match.\nPlace word: what the word says, or the side where it sits. Meaning and place never match.\nNumber and count: if the screen shows 111, the choices include 111 and 3. \"What is the number?\" means 111. \"How many digits are there?\" means 3. The written number and the count never match.\nSize: choose the larger number, or the number displayed in bigger text. The numbers differ by 1 or 2, and the bigger text is the smaller number.",
-                            my: "မေးခွန်းတိုင်းကို ရွေးစရာ ၄ ခု ပေးသည်။\nအရောင်။ မြင်ရသော အရောင်၊ သို့မဟုတ် မြင်ရသော စာသား။ စာသားအဓိပ္ပာယ်နှင့် မင်အရောင် မတူပါ။\nမြား။ ညွှန်သောဘက်၊ သို့မဟုတ် မြားရှိသောဘက်။ ဦးတည်ချက်နှင့် နေရာ မတူပါ။\nနေရာစာလုံး။ ရေးထားသောစာလုံး၊ သို့မဟုတ် စာလုံးရှိသောဘက်။ အဓိပ္ပာယ်နှင့် နေရာ မတူပါ။\nဂဏန်းနှင့် အရေအတွက်။ ဥပမာ မျက်နှာပြင်မှာ ၁၁၁ ဖြစ်လျှင် ရွေးစရာက ၁၁၁ နှင့် ၃။ \"ဂဏန်းက ဘယ်လဲ\" ဆိုရင် ၁၁၁၊ \"ဂဏန်း ဘယ်နှစ်လုံး ရှိသလဲ\" ဆိုရင် ၃။ ရေးထားသောကိန်းနှင့် အရေအတွက် မတူပါ။\nအရွယ်။ ကိန်းပိုကြီးသောဘက်၊ သို့မဟုတ် စာလုံးပိုကြီးသောဘက်။ ကိန်းနှစ်ခုက ၁ သို့မဟုတ် ၂ ပဲ ကွာပြီး စာလုံးပိုကြီးတာက ကိန်းပိုငယ်သောဘက် ဖြစ်သည်။"
+                            ja: "どの問題も2つの選択肢から答えます。\n色：見えている色か、見えている文字か。文字の意味とインクの色は違います。\n矢印：指している方か、矢印がある場所か。向きと場所は違います。\n文字の位置：書いてある字か、字がある場所か。意味と場所は違います。\n数字と個数：例えば画面が111なら、選択肢には111と3が含まれます。「数字は？」なら111、「数字は何個ある？」なら3。並びと個数は違います。\n大きさ：数の大きい方の数字か、字の大きい方の数字を選びます。差は1か2で、字が大きいのは数の小さい方です。",
+                            zh: "每道题都有两个选项。\n颜色：看到的颜色，还是看到的文字。字义和墨水颜色不会相同。\n箭头：箭头指向哪一边，还是箭头在哪一边。指向和位置不会相同。\n方位字：字写的是什么，还是字在哪一边。字义和位置不会相同。\n数字和数量：例如画面是 111，选项包含 111 和 3。问「数字是几？」选 111，问「有几个数字？」选 3。数字串和数量不会相同。\n大小：选择数值更大的数字，或字体更大的数字。两数只差 1 或 2，字更大的是数值更小的那个。",
+                            en: "Every question has two choices.\nColor: the color you see, or the text you see. The word and the ink never match.\nArrow: the side it points to, or the side where it sits. Direction and place never match.\nPlace word: what the word says, or the side where it sits. Meaning and place never match.\nNumber and count: if the screen shows 111, the choices include 111 and 3. \"What is the number?\" means 111. \"How many digits are there?\" means 3. The written number and the count never match.\nSize: choose the larger number, or the number displayed in bigger text. The numbers differ by 1 or 2, and the bigger text is the smaller number.",
+                            my: "မေးခွန်းတိုင်းကို ရွေးစရာ ၂ ခု ပေးသည်။\nအရောင်။ မြင်ရသော အရောင်၊ သို့မဟုတ် မြင်ရသော စာသား။ စာသားအဓိပ္ပာယ်နှင့် မင်အရောင် မတူပါ။\nမြား။ ညွှန်သောဘက်၊ သို့မဟုတ် မြားရှိသောဘက်။ ဦးတည်ချက်နှင့် နေရာ မတူပါ။\nနေရာစာလုံး။ ရေးထားသောစာလုံး၊ သို့မဟုတ် စာလုံးရှိသောဘက်။ အဓိပ္ပာယ်နှင့် နေရာ မတူပါ။\nဂဏန်းနှင့် အရေအတွက်။ ဥပမာ မျက်နှာပြင်မှာ ၁၁၁ ဖြစ်လျှင် ရွေးစရာက ၁၁၁ နှင့် ၃။ \"ဂဏန်းက ဘယ်လဲ\" ဆိုရင် ၁၁၁၊ \"ဂဏန်း ဘယ်နှစ်လုံး ရှိသလဲ\" ဆိုရင် ၃။ ရေးထားသောကိန်းနှင့် အရေအတွက် မတူပါ။\nအရွယ်။ ကိန်းပိုကြီးသောဘက်၊ သို့မဟုတ် စာလုံးပိုကြီးသောဘက်။ ကိန်းနှစ်ခုက ၁ သို့မဟုတ် ၂ ပဲ ကွာပြီး စာလုံးပိုကြီးတာက ကိန်းပိုငယ်သောဘက် ဖြစ်သည်။"
                         )
                     )
                     guide(
@@ -1306,9 +1304,9 @@ struct StroopGameView: View {
     }
 
     private var answers: some View {
-        let marks = ["A", "B", "C", "D"]
-        let accents: [Color] = [.pink, .blue, .orange, .purple]
-        return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+        let marks = ["A", "B"]
+        let accents: [Color] = [.pink, .blue]
+        return HStack(spacing: 12) {
             ForEach(Array(session.round.choices.enumerated()), id: \.element.id) { index, choice in
                 choiceCard(choice, mark: marks[index], accent: accents[index])
             }
@@ -1337,12 +1335,12 @@ struct StroopGameView: View {
 
                 choiceVisual(choice)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 62)
+                    .frame(height: 110)
 
                 Spacer(minLength: 8)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 124)
+            .frame(height: 200)
             .background(
                 RoundedRectangle(cornerRadius: 26, style: .continuous)
                     .fill(LinearGradient(colors: [.white, Color(red: 0.96, green: 0.95, blue: 0.97)], startPoint: .topLeading, endPoint: .bottomTrailing))
