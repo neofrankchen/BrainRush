@@ -995,6 +995,7 @@ struct StroopGameView: View {
     }
 
     private var playfield: some View {
+        GeometryReader { viewport in
         ScrollView {
         VStack(spacing: 16) {
             statusBar
@@ -1006,8 +1007,12 @@ struct StroopGameView: View {
             }
             if session.testing { testControls(showNote: false) }
             Text(session.round.task.title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color(red: 0.98, green: 0.74, blue: 0.32))
+                .font(.system(.caption, design: .rounded, weight: .heavy))
+                .foregroundStyle(taskAccent)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 8)
+                .background(taskAccent.opacity(0.12), in: Capsule())
+                .overlay { Capsule().strokeBorder(taskAccent.opacity(0.4)) }
             Text(session.round.rule)
                 .font(.system(size: 28, weight: .heavy, design: .rounded))
                 .shadow(color: .cyan.opacity(0.25), radius: 12)
@@ -1015,6 +1020,12 @@ struct StroopGameView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             stimulus(session.round)
+                .padding(.vertical, 8)
+                .background {
+                    RoundedRectangle(cornerRadius: 30)
+                        .fill(LinearGradient(colors: [.white.opacity(0.055), taskAccent.opacity(0.045)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .overlay { RoundedRectangle(cornerRadius: 30).strokeBorder(LinearGradient(colors: [taskAccent.opacity(0.45), .white.opacity(0.04), taskAccent.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing)) }
+                }
                 .shadow(color: taskAccent.opacity(0.6), radius: 18)
                 .scaleEffect(stimulusAppeared || reduceMotion ? 1 : 0.82)
                 .opacity(stimulusAppeared ? 1 : 0)
@@ -1038,6 +1049,7 @@ struct StroopGameView: View {
                 .padding(.top, 6)
         }
         .padding(20)
+        .frame(minHeight: viewport.size.height)
         .frame(maxWidth: 560)
         .frame(maxWidth: .infinity)
         }
@@ -1055,6 +1067,7 @@ struct StroopGameView: View {
                 .opacity(session.questionRemaining <= urgentRemaining ? 0.16 : 0)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
+        }
         }
     }
 
@@ -1158,12 +1171,14 @@ struct StroopGameView: View {
         HStack {
             Text(tr(ja: "得点 \(session.score)", zh: "得分 \(session.score)", en: "Score \(session.score)", my: "ရမှတ် \(session.score)"))
                 .accessibilityIdentifier("stroop-score")
+                .padding(.horizontal, 12).padding(.vertical, 10)
+                .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
             Spacer()
             Text(tr(ja: "連続 \(session.streak)", zh: "连对 \(session.streak)", en: "Streak \(session.streak)", my: "ဆက်တိုက် \(session.streak)"))
             Spacer()
             hearts
         }
-        .font(.headline)
+        .font(.system(.subheadline, design: .rounded, weight: .bold))
         .foregroundStyle(.white)
     }
 
@@ -1369,17 +1384,30 @@ private struct GameAtmosphere: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color(red: 0.025, green: 0.04, blue: 0.10), Color(red: 0.035, green: 0.06, blue: 0.16), Color(red: 0.025, green: 0.04, blue: 0.09)], startPoint: .top, endPoint: .bottom)
-            RadialGradient(colors: [accent.opacity(0.20), .clear], center: .init(x: 0.15, y: 0.55), startRadius: 0, endRadius: 280)
-            RadialGradient(colors: [Color.blue.opacity(0.15), .clear], center: .init(x: 0.95, y: 0.80), startRadius: 0, endRadius: 260)
+            LinearGradient(colors: [Color(red: 0.025, green: 0.04, blue: 0.10), Color(red: 0.07, green: 0.075, blue: 0.23), Color(red: 0.025, green: 0.04, blue: 0.09)], startPoint: .top, endPoint: .bottom)
+            RadialGradient(colors: [accent.opacity(0.30), .clear], center: .init(x: 0.15, y: 0.55), startRadius: 0, endRadius: 280)
+            RadialGradient(colors: [Color.blue.opacity(0.28), .clear], center: .init(x: 0.95, y: 0.80), startRadius: 0, endRadius: 260)
             Canvas { context, size in
+                // Keep decorative lines behind the lower controls, away from question content.
+                for line in 0..<12 {
+                    let y = size.height * 0.75 + CGFloat(line) * 26
+                    var path = Path()
+                    path.move(to: CGPoint(x: 0, y: y))
+                    path.addLine(to: CGPoint(x: size.width, y: y - 50))
+                    context.stroke(path, with: .color(.cyan.opacity(0.045)), lineWidth: 1)
+                }
+                for ring in 0..<3 {
+                    let diameter = size.width * (0.9 + CGFloat(ring) * 0.4)
+                    let rect = CGRect(x: size.width * 0.5 - diameter / 2, y: size.height * 0.88, width: diameter, height: diameter * 0.4)
+                    context.stroke(Path(ellipseIn: rect), with: .color(accent.opacity(0.10)), lineWidth: 2)
+                }
                 for index in 0..<30 {
                     let left = index.isMultiple(of: 2)
                     let x = (left ? CGFloat((index * 7) % 13) / 100 : 0.87 + CGFloat((index * 3) % 13) / 100) * size.width
                     let y = (0.24 + CGFloat((index * 29) % 68) / 100) * size.height
                     let symbol = index.isMultiple(of: 4) ? "✦" : (index.isMultiple(of: 3) ? "·" : "╱")
                     let tint: Color = index.isMultiple(of: 4) ? .yellow : (left ? .purple : .cyan)
-                    context.draw(Text(symbol).font(.system(size: index.isMultiple(of: 4) ? 18 : 24, weight: .heavy)).foregroundStyle(tint.opacity(index.isMultiple(of: 4) ? 0.50 : 0.22)), at: CGPoint(x: x, y: y))
+                    context.draw(Text(symbol).font(.system(size: index.isMultiple(of: 4) ? 18 : 24, weight: .heavy)).foregroundStyle(tint.opacity(index.isMultiple(of: 4) ? 0.70 : 0.35)), at: CGPoint(x: x, y: y))
                 }
             }
         }
