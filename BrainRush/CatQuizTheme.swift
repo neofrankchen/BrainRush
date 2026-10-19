@@ -27,14 +27,13 @@ struct CatQuizHost: View {
                 .padding(.vertical, 12)
                 .background {
                     CatSpeechBubble()
-                        .fill(.white)
+                        .fill(CatQuizPalette.cream)
                         .shadow(color: CatQuizPalette.wood.opacity(0.15), radius: 0, y: 3)
                 }
-                .overlay(CatSpeechBubble().stroke(CatQuizPalette.ink, lineWidth: 2))
+                .overlay(CatSpeechBubble().stroke(CatQuizPalette.wood, lineWidth: 2))
                 .padding(.bottom, 20)
         }
         .frame(maxWidth: .infinity)
-        .animation(.easeInOut(duration: 0.2), value: isMistake)
     }
 }
 

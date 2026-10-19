@@ -71,17 +71,18 @@ struct ScoreBoardList: View {
     let game: String
     var rank: ScoreRank = .high
     var title: String?
+    var textColor: Color = .white
 
     var body: some View {
         let rows = ScoreBoard.records(for: game)
         VStack(alignment: .leading, spacing: 6) {
             Text(title ?? tr(ja: "ランキング", zh: "排行榜", en: "Leaderboard", my: "အဆင့်စာရင်း"))
                 .font(.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(textColor)
             if rows.isEmpty {
                 Text(tr(ja: "まだ記録がない", zh: "还没有记录", en: "No scores yet", my: "မှတ်တမ်းမရှိသေးပါ"))
                     .font(.caption)
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(textColor.opacity(0.62))
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 4) {
@@ -94,7 +95,7 @@ struct ScoreBoardList: View {
                                 Spacer(minLength: 0)
                             }
                             .font(.subheadline.weight(index == 0 ? .bold : .regular))
-                            .foregroundStyle(.white.opacity(index == 0 ? 1 : 0.78))
+                            .foregroundStyle(textColor.opacity(index == 0 ? 1 : 0.78))
                         }
                     }
                 }

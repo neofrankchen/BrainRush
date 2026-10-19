@@ -55,14 +55,14 @@ struct LanguagePicker: View {
                 }
                 .buttonStyle(.plain)
                 .font(compact ? .caption2.weight(.semibold) : .subheadline.weight(.semibold))
-                .foregroundStyle(selected == language ? .black : .white)
+                .foregroundStyle(CatQuizPalette.wood)
                 .padding(.horizontal, compact ? 8 : 12)
                 .padding(.vertical, compact ? 4 : 6)
                 .background {
                     Capsule().fill(
                         selected == language
                             ? Color(red: 0.98, green: 0.74, blue: 0.32)
-                            : Color.white.opacity(0.08)
+                            : CatQuizPalette.cream.opacity(0.9)
                     )
                 }
                 .accessibilityAddTraits(selected == language ? .isSelected : [])
@@ -1047,72 +1047,34 @@ struct StroopGameView: View {
         .sensoryFeedback(.success, trigger: session.correctCount)
         .sensoryFeedback(.increase, trigger: session.heartGain)
         .sensoryFeedback(.error, trigger: session.answerCount - session.correctCount)
-        .overlay {
-            HeartGainPop(token: session.heartGain)
-        }
     }
 
     private var menu: some View {
         GeometryReader { geometry in
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 14) {
                     Spacer(minLength: 0)
-                    VStack(spacing: 10) {
-                        StaticQuizCat(height: 150)
-                        Text(tr(ja: "ブレインラッシュ", zh: "脑乱挑战", en: "Brain Rush", my: "အနှောင့်အယှက်စိန်ခေါ်ပွဲ"))
-                            .font(.system(size: 30, weight: .heavy, design: .rounded))
-                            .minimumScaleFactor(0.6)
-                            .lineLimit(1)
-                        Text(tr(ja: "よ〜く見て、2つから選ぼう！", zh: "仔细看看，从两个选项中选择！", en: "Look closely. Choose from two!", my: "သေချာကြည့်ပြီး နှစ်ခုမှ ရွေးပါ။"))
-                            .font(.subheadline.weight(.semibold))
-                            .multilineTextAlignment(.center)
+                    WoodlandTitle(height: min(340, geometry.size.height * 0.46))
+                    HStack(spacing: 0) {
+                        menuMetric("trophy.fill", tr(ja: "ベストスコア", zh: "最高分", en: "Best score", my: "အကောင်းဆုံး"), "\(ScoreBoard.records(for: "stroop").map(\.score).max() ?? 0)", .orange)
+                        Divider().frame(height: 42).overlay(CatQuizPalette.wood.opacity(0.2))
+                        menuMetric("heart.fill", tr(ja: "ライフ", zh: "爱心", en: "Lives", my: "နှလုံး"), "♥ ♥ ♥", .pink)
+                        Divider().frame(height: 42).overlay(CatQuizPalette.wood.opacity(0.2))
+                        menuMetric("square.grid.2x2.fill", tr(ja: "2択クイズ", zh: "二选一", en: "Two choices", my: "ရွေးစရာ ၂ ခု"), "A / B", CatQuizPalette.wood)
                     }
-                    .foregroundStyle(CatQuizPalette.ink)
-                    .padding(24)
-                    .frame(maxWidth: .infinity)
-                    .shadow(color: CatQuizPalette.cream.opacity(0.95), radius: 5)
-                    .shadow(color: CatQuizPalette.cream.opacity(0.8), radius: 12)
-
-                    VStack(spacing: 18) {
-                        HStack {
-                            Label(tr(ja: "自己ベスト", zh: "个人最佳", en: "Personal best", my: "အကောင်းဆုံး"), systemImage: "trophy.fill")
-                                .font(.subheadline.bold())
-                            Spacer()
-                            Text("\(ScoreBoard.records(for: "stroop").map(\.score).max() ?? 0)")
-                                .font(.system(.title2, design: .rounded, weight: .heavy))
-                                .monospacedDigit()
-                        }
-                        Divider().overlay(CatQuizPalette.wood.opacity(0.2))
-                        HStack {
-                            Label(tr(ja: "ハート3つ", zh: "3颗爱心", en: "3 hearts", my: "နှလုံး ၃ ခု"), systemImage: "heart.fill")
-                                .foregroundStyle(Color(red: 0.9, green: 0.28, blue: 0.35))
-                            Spacer()
-                            Label(tr(ja: "2つの選択肢", zh: "两个选项", en: "2 choices", my: "ရွေးစရာ ၂ ခု"), systemImage: "square.grid.2x2.fill")
-                        }
-                        .font(.caption.weight(.bold))
-                    }
-                    .foregroundStyle(CatQuizPalette.wood)
-                    .padding(22)
-                    .background(CatQuizPalette.cream, in: RoundedRectangle(cornerRadius: 26))
-                    .overlay { RoundedRectangle(cornerRadius: 26).strokeBorder(CatQuizPalette.wood.opacity(0.5), lineWidth: 2) }
+                    .padding(.vertical, 14)
+                    .modifier(WoodlandPanel())
 
                     Button { session.start() } label: {
-                        Label(tr(ja: "あそぶ", zh: "开始游戏", en: "Let’s play", my: "ကစားမည်"), systemImage: "play.fill")
-                            .font(.system(.title3, design: .rounded, weight: .heavy))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 20)
-                            .foregroundStyle(CatQuizPalette.ink)
-                            .background(LinearGradient(colors: [Color(red: 1, green: 0.88, blue: 0.38), Color(red: 1, green: 0.69, blue: 0.23)], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 20))
-                            .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(.white.opacity(0.8), lineWidth: 2) }
-                            .shadow(color: CatQuizPalette.wood.opacity(0.25), radius: 0, y: 4)
+                        WoodlandAction(title: tr(ja: "ゲームを始める", zh: "开始游戏", en: "Let’s play", my: "ကစားမည်"), symbol: "play.fill")
                     }
                     .buttonStyle(ArcadePressStyle())
                     .accessibilityIdentifier("stroop-start")
                     .accessibilityLabel(tr(ja: "開始", zh: "开始", en: "Start", my: "စတင်မည်"))
 
                     HStack(spacing: 10) {
-                        arcadeShortcut("crown.fill", tr(ja: "ランキング", zh: "排行榜", en: "Ranking", my: "အဆင့်"), CatQuizPalette.wood) { showsRanking = true }
-                        arcadeShortcut("book.fill", tr(ja: "遊び方", zh: "怎么玩", en: "How to play", my: "ကစားနည်း"), CatQuizPalette.ink) { showsGuide = true }
+                        arcadeShortcut("crown.fill", tr(ja: "ランキング", zh: "排行榜", en: "Ranking", my: "အဆင့်"), .orange) { showsRanking = true }
+                        arcadeShortcut("book.fill", tr(ja: "遊び方", zh: "怎么玩", en: "How to play", my: "ကစားနည်း"), .blue) { showsGuide = true }
                         arcadeShortcut("gearshape.fill", tr(ja: "設定", zh: "设置", en: "Settings", my: "ဆက်တင်"), CatQuizPalette.ink) { showsPractice = true }
                     }
                     Spacer(minLength: 0)
@@ -1179,7 +1141,7 @@ struct StroopGameView: View {
         }
         .sheet(isPresented: $showsRanking) {
             menuSheet(tr(ja: "ランキング", zh: "排行榜", en: "Leaderboard", my: "အဆင့်စာရင်း")) {
-                ScoreBoardList(game: "stroop")
+                ScoreBoardList(game: "stroop", textColor: CatQuizPalette.wood)
             }
         }
         .sheet(isPresented: $showsPractice) {
@@ -1190,6 +1152,17 @@ struct StroopGameView: View {
                 }
             }
         }
+    }
+
+    private func menuMetric(_ symbol: String, _ title: String, _ value: String, _ color: Color) -> some View {
+        VStack(spacing: 5) {
+            Label(title, systemImage: symbol).font(.system(size: 10, weight: .bold, design: .rounded))
+                .foregroundStyle(CatQuizPalette.wood)
+            Text(value).font(.system(size: 20, weight: .heavy, design: .rounded))
+                .foregroundStyle(color).minimumScaleFactor(0.5).lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 
     private func arcadeShortcut(_ symbol: String, _ title: String, _ color: Color, action: @escaping () -> Void) -> some View {
@@ -1203,8 +1176,7 @@ struct StroopGameView: View {
             }
             .frame(maxWidth: .infinity)
             .frame(minHeight: 92)
-            .background(CatQuizPalette.cream.opacity(0.88), in: RoundedRectangle(cornerRadius: 22))
-            .overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(CatQuizPalette.wood.opacity(0.25), lineWidth: 1) }
+            .modifier(WoodlandPanel())
         }
         .buttonStyle(ArcadePressStyle())
     }
@@ -1213,9 +1185,16 @@ struct StroopGameView: View {
         let sheetContent = content()
         return NavigationStack {
             ScrollView {
-                sheetContent.padding(24).frame(maxWidth: 560).frame(maxWidth: .infinity)
+                sheetContent
+                    .foregroundStyle(CatQuizPalette.wood)
+                    .padding(20)
+                    .frame(maxWidth: .infinity)
+                    .modifier(WoodlandPanel())
+                    .padding(20)
+                    .frame(maxWidth: 560).frame(maxWidth: .infinity)
             }
-            .background(StroopBackdrop())
+            .background(StroopBackdrop(light: true))
+            .tint(CatQuizPalette.wood)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1228,7 +1207,7 @@ struct StroopGameView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
     }
 
     private func testControls(showNote: Bool) -> some View {
@@ -1242,7 +1221,7 @@ struct StroopGameView: View {
                     .font(.subheadline.weight(.semibold))
             }
             .buttonStyle(.bordered)
-            .tint(session.testing ? Color(red: 0.98, green: 0.74, blue: 0.32) : .white)
+            .tint(session.testing ? Color(red: 0.98, green: 0.74, blue: 0.32) : CatQuizPalette.wood)
             .accessibilityIdentifier("stroop-test-mode")
             if session.testing {
                 if showNote {
@@ -1253,13 +1232,13 @@ struct StroopGameView: View {
                         my: "အမျိုးအစား၊ မေးပုံ၊ ဘာသာစကားကို ကိုယ်တိုင် ပြောင်းနိုင်သည်။ အချိန်ရေတွက်မှု ပိတ်ထားသည်။ မှားလျှင် နှလုံးမလျော့ပါ။"
                     ))
                     .font(.caption)
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(CatQuizPalette.wood.opacity(0.72))
                     .fixedSize(horizontal: false, vertical: true)
                 }
                 if showNote {
                     Text(tr(ja: "すべての問題", zh: "全部题型", en: "All question types", my: "မေးခွန်းအမျိုးအစားအားလုံး"))
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.72))
+                        .foregroundStyle(CatQuizPalette.wood.opacity(0.72))
                 }
                 LanguageWrap(spacing: showNote ? 8 : 6) {
                     ForEach(InterferenceTask.allCases, id: \.rawValue) { task in
@@ -1270,7 +1249,7 @@ struct StroopGameView: View {
                             Text(task.chipTitle)
                                 .font(showNote ? .caption.weight(.semibold) : .caption2.weight(.semibold))
                                 .lineLimit(1)
-                                .foregroundStyle(selected ? .black : .white)
+                                .foregroundStyle(selected ? .black : CatQuizPalette.wood)
                                 .padding(.horizontal, showNote ? 10 : 8)
                                 .padding(.vertical, showNote ? 6 : 4)
                                 .background {
@@ -1294,14 +1273,14 @@ struct StroopGameView: View {
                 }
                 .font(.caption.weight(.semibold))
                 .buttonStyle(.bordered)
-                .tint(session.testUsesTimer ? Color(red: 0.98, green: 0.74, blue: 0.32) : .white)
+                .tint(session.testUsesTimer ? Color(red: 0.98, green: 0.74, blue: 0.32) : CatQuizPalette.wood)
                 .accessibilityIdentifier("stroop-test-timer")
                 Button(tr(ja: "問い方を変える", zh: "换问法", en: "Switch question", my: "မေးပုံပြောင်း")) {
                     session.flipTestQuestion()
                 }
                 .font(.caption.weight(.semibold))
                 .buttonStyle(.bordered)
-                .tint(.white)
+                .tint(CatQuizPalette.wood)
                 .accessibilityIdentifier("stroop-test-flip")
             }
         }
@@ -1311,10 +1290,10 @@ struct StroopGameView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(CatQuizPalette.wood)
             Text(body)
                 .font(.body)
-                .foregroundStyle(.white.opacity(0.78))
+                .foregroundStyle(CatQuizPalette.wood.opacity(0.78))
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1332,7 +1311,7 @@ struct StroopGameView: View {
                         }
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: 18).fill(CatQuizPalette.ink))
+                        .modifier(WoodlandPanel())
                     }
                     CatQuizHost(isMistake: session.lastAnswerWasCorrect == false)
                         .padding(.bottom, -18)
@@ -1342,15 +1321,7 @@ struct StroopGameView: View {
                         stimulusPanel
                     }
                     .padding(12)
-                    .background {
-                        RoundedRectangle(cornerRadius: 24)
-                            .fill(LinearGradient(colors: [Color(red: 1, green: 0.98, blue: 0.93), CatQuizPalette.cream], startPoint: .top, endPoint: .bottom))
-                            .shadow(color: CatQuizPalette.wood.opacity(0.3), radius: 0, y: 4)
-                    }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 24)
-                            .strokeBorder(CatQuizPalette.wood, lineWidth: 2.5)
-                    }
+                    .modifier(WoodlandPanel())
                     answers
                         .frame(minHeight: max(220, min(320, geometry.size.height * 0.32)))
                     Spacer(minLength: 0)
@@ -1369,7 +1340,6 @@ struct StroopGameView: View {
             RoundedRectangle(cornerRadius: 32, style: .continuous)
                 .stroke(urgencyColor.opacity(session.questionRemaining <= urgentRemaining && session.showsTimer ? 0.9 : 0), lineWidth: 5)
                 .padding(4)
-                .scaleEffect(pulse)
                 .allowsHitTesting(false)
         }
     }
@@ -1381,7 +1351,7 @@ struct StroopGameView: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 18)
                 .padding(.vertical, 10)
-                .background(Capsule().fill(CatQuizPalette.ink))
+                .background(Capsule().fill(CatQuizPalette.wood))
                 .accessibilityIdentifier("stroop-score")
                 .accessibilityLabel(tr(ja: "得点 \(session.score)", zh: "得分 \(session.score)", en: "Score \(session.score)", my: "ရမှတ် \(session.score)"))
 
@@ -1404,7 +1374,7 @@ struct StroopGameView: View {
     private var circularTimer: some View {
         ZStack {
             Circle()
-                .fill(CatQuizPalette.ink)
+                .fill(CatQuizPalette.wood)
                 .overlay(Circle().strokeBorder(.white.opacity(0.7), lineWidth: 2))
             Circle()
                 .stroke(Color.white.opacity(0.12), lineWidth: 7)
@@ -1415,12 +1385,9 @@ struct StroopGameView: View {
                     style: StrokeStyle(lineWidth: 7, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
-                .animation(.linear(duration: 0.05), value: session.questionRemaining)
             Text("\(secondsLeft)")
                 .font(.system(size: session.questionRemaining <= urgentRemaining ? 26 : 22, weight: .black, design: .rounded))
                 .foregroundStyle(.white)
-                .scaleEffect(pulse)
-                .contentTransition(.numericText())
         }
         .frame(width: 68, height: 68)
         .accessibilityElement(children: .ignore)
@@ -1459,7 +1426,7 @@ struct StroopGameView: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(CatQuizPalette.ink)
+                        .fill(CatQuizPalette.wood)
                     Capsule()
                         .fill(LinearGradient(colors: [Color(red: 0.58, green: 0.95, blue: 0.2), Color(red: 0.25, green: 0.85, blue: 0.48)], startPoint: .leading, endPoint: .trailing))
                         .frame(width: max(18, (geo.size.width - 8) * heartProgress))
@@ -1486,7 +1453,7 @@ struct StroopGameView: View {
             .padding(.horizontal, 6)
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 22).fill(CatQuizPalette.cream.opacity(0.92)))
+        .modifier(WoodlandPanel())
     }
 
     private var urgentRemaining: TimeInterval {
@@ -1509,12 +1476,6 @@ struct StroopGameView: View {
         max(0, Int(ceil(session.questionRemaining - 0.001)))
     }
 
-    private var pulse: CGFloat {
-        guard session.questionRemaining <= urgentRemaining, session.questionRemaining > 0 else { return 1 }
-        let beat = (session.questionRemaining * 3).truncatingRemainder(dividingBy: 1)
-        return beat < 0.45 ? 1.08 : 0.96
-    }
-
     private var urgencyColor: Color {
         if session.questionRemaining <= urgentRemaining {
             Color(red: 0.95, green: 0.22, blue: 0.28)
@@ -1530,18 +1491,15 @@ struct StroopGameView: View {
             if session.hearts <= 6 {
                 ForEach(0..<session.hearts, id: \.self) { index in
                     Image(systemName: "heart.fill")
-                        .symbolEffect(.bounce, value: index == session.hearts - 1 ? session.heartGain : 0)
                 }
             } else {
                 Image(systemName: "heart.fill")
-                    .symbolEffect(.bounce, value: session.heartGain)
                 Text("\(session.hearts)")
                     .font(.caption.bold())
             }
         }
         .font(.system(size: 16, weight: .bold))
         .foregroundStyle(Color(red: 0.95, green: 0.28, blue: 0.32))
-        .animation(.spring(response: 0.32, dampingFraction: 0.55), value: session.hearts)
         .accessibilityLabel(tr(ja: "ハート \(session.hearts)", zh: "\(session.hearts) 颗爱心", en: "\(session.hearts) hearts", my: "နှလုံး \(session.hearts)"))
     }
 
@@ -1613,48 +1571,33 @@ struct StroopGameView: View {
     }
 
     private func choiceCard(_ choice: AnswerChoice, mark: String, accent: Color) -> some View {
-        Button {
-            session.choose(choice.id)
-        } label: {
-            VStack(spacing: 0) {
+        Button { session.choose(choice.id) } label: {
+            VStack(spacing: 12) {
                 HStack {
                     Text(mark)
                         .font(.system(size: 20, weight: .black, design: .rounded))
                         .foregroundStyle(.white)
                         .frame(width: 34, height: 34)
-                        .background(Circle().fill(LinearGradient(colors: [accent, accent.opacity(0.8)], startPoint: .top, endPoint: .bottom)))
-                        .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: 2))
-                        .shadow(color: accent.opacity(0.3), radius: 0, y: 3)
-                    Spacer(minLength: 0)
+                        .background(accent, in: Circle())
+                        .overlay { Circle().strokeBorder(CatQuizPalette.cream, lineWidth: 2) }
+                    Spacer()
+                    Image(systemName: "pawprint.fill")
+                        .foregroundStyle(CatQuizPalette.wood.opacity(0.18))
                 }
-                .padding(.horizontal, 12)
-                .padding(.top, 8)
-
-                Spacer(minLength: 4)
-
                 choiceVisual(choice)
                     .frame(maxWidth: .infinity)
                     .frame(height: 110)
-
-                Spacer(minLength: 8)
             }
+            .padding(14)
             .frame(maxWidth: .infinity)
             .frame(height: 200)
-            .background(
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(LinearGradient(colors: [.white, Color(red: 0.96, green: 0.95, blue: 0.97)], startPoint: .topLeading, endPoint: .bottomTrailing))
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .strokeBorder(CatQuizPalette.ink.opacity(0.55), lineWidth: 2)
-            }
-            .shadow(color: CatQuizPalette.wood.opacity(0.25), radius: 0, y: 5)
+            .modifier(WoodlandPanel())
         }
         .buttonStyle(ArcadePressStyle())
         .disabled(session.isResolving)
         .overlay {
             if session.selectedChoiceID == choice.id {
-                RoundedRectangle(cornerRadius: 26)
+                RoundedRectangle(cornerRadius: 24)
                     .strokeBorder(session.lastAnswerWasCorrect == true ? Color.green : Color.red, lineWidth: 4)
                     .allowsHitTesting(false)
             }
@@ -1693,30 +1636,21 @@ struct StroopGameView: View {
     private var result: some View {
         ScrollView {
             VStack(spacing: 20) {
-                VStack(spacing: 6) {
-                    StaticQuizCat(height: 116)
+                VStack(spacing: 2) {
+                    WoodlandTitle(height: 190)
                     Text(tr(ja: "おつかれさま！", zh: "辛苦啦！", en: "Nicely played!", my: "ကြိုးစားမှုကောင်းပါတယ်။"))
-                        .font(.system(size: 28, weight: .heavy, design: .rounded))
-                    Text(tr(ja: "また一緒にチャレンジしよう", zh: "再一起挑战一次吧", en: "Ready for another challenge?", my: "နောက်တစ်ကြိမ် စိန်ခေါ်ကြမလား။"))
-                        .font(.subheadline.weight(.medium))
+                        .font(.system(size: 25, weight: .heavy, design: .rounded))
+                        .foregroundStyle(CatQuizPalette.wood)
+                        .padding(.horizontal, 24).padding(.vertical, 8)
+                        .background(Color(red: 1, green: 0.88, blue: 0.54), in: Capsule())
+                        .overlay { Capsule().strokeBorder(CatQuizPalette.wood.opacity(0.5), lineWidth: 1.5) }
                 }
-                .foregroundStyle(CatQuizPalette.ink)
-                .frame(maxWidth: .infinity)
-                .padding(18)
-                .shadow(color: CatQuizPalette.cream.opacity(0.95), radius: 5)
-                .shadow(color: CatQuizPalette.cream.opacity(0.8), radius: 12)
 
                 resultScoreCard
 
                 VStack(spacing: 12) {
                     Button { session.start() } label: {
-                        Label(tr(ja: "もう一度あそぶ", zh: "再玩一次", en: "Play again", my: "နောက်တစ်ပွဲ"), systemImage: "arrow.clockwise")
-                            .font(.system(.headline, design: .rounded, weight: .heavy))
-                            .frame(maxWidth: .infinity).padding(.vertical, 18)
-                            .foregroundStyle(CatQuizPalette.ink)
-                            .background(LinearGradient(colors: [Color(red: 1, green: 0.88, blue: 0.38), Color(red: 1, green: 0.69, blue: 0.23)], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 20))
-                            .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(.white.opacity(0.8), lineWidth: 2) }
-                            .shadow(color: CatQuizPalette.wood.opacity(0.25), radius: 0, y: 4)
+                        WoodlandAction(title: tr(ja: "もう一度あそぶ", zh: "再玩一次", en: "Play again", my: "နောက်တစ်ပွဲ"), symbol: "arrow.clockwise")
                     }
                     .buttonStyle(ArcadePressStyle())
                     .accessibilityIdentifier("stroop-play-again")
@@ -1767,8 +1701,7 @@ struct StroopGameView: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity)
-        .background(CatQuizPalette.cream, in: RoundedRectangle(cornerRadius: 26))
-        .overlay { RoundedRectangle(cornerRadius: 26).strokeBorder(CatQuizPalette.wood.opacity(0.5), lineWidth: 2) }
+        .modifier(WoodlandPanel())
     }
 
     private var resultRanking: some View {
@@ -1793,29 +1726,70 @@ struct StroopGameView: View {
         .foregroundStyle(CatQuizPalette.ink)
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(CatQuizPalette.cream.opacity(0.92), in: RoundedRectangle(cornerRadius: 26))
+        .modifier(WoodlandPanel())
     }
 
 }
 
-private struct StaticQuizCat: View {
+private struct WoodlandTitle: View {
     let height: CGFloat
-
     var body: some View {
-        Image("QuizCat")
+        Image("WoodlandTitle")
             .resizable().scaledToFit()
-            .frame(height: height + 12)
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .overlay(alignment: .bottom) {
+                Text(tr(ja: "よく見て、どっちかを選ぼう！", zh: "仔细看，选择正确答案！", en: "Look closely. Choose A or B!", my: "သေချာကြည့်ပြီး A သို့မဟုတ် B ကို ရွေးပါ။"))
+                    .font(.system(size: max(9, height * 0.039), weight: .heavy, design: .rounded))
+                    .foregroundStyle(CatQuizPalette.wood)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                    .frame(width: height * 0.64)
+                    .padding(.bottom, height * 0.095)
+            }
             .shadow(color: CatQuizPalette.wood.opacity(0.25), radius: 8, y: 5)
-            .accessibilityHidden(true)
+            .accessibilityLabel("Brain Rush")
+    }
+}
+
+private struct WoodlandPanel: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background {
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(LinearGradient(colors: [Color(red: 1, green: 0.96, blue: 0.84), Color(red: 0.98, green: 0.87, blue: 0.69)], startPoint: .top, endPoint: .bottom))
+            }
+            .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(Color(red: 0.67, green: 0.40, blue: 0.20), lineWidth: 2) }
+            .overlay { RoundedRectangle(cornerRadius: 21).strokeBorder(Color(red: 1, green: 0.98, blue: 0.87), lineWidth: 1.5).padding(4) }
+            .shadow(color: CatQuizPalette.wood.opacity(0.28), radius: 0, y: 4)
+    }
+}
+
+private struct WoodlandAction: View {
+    let title: String
+    let symbol: String
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "pawprint.fill").font(.caption).opacity(0.45)
+            Spacer(minLength: 0)
+            Label(title, systemImage: symbol)
+                .font(.system(size: 20, weight: .heavy, design: .rounded))
+                .minimumScaleFactor(0.65).lineLimit(1)
+            Spacer(minLength: 0)
+            Image(systemName: "pawprint.fill").font(.caption).opacity(0.45)
+        }
+        .foregroundStyle(CatQuizPalette.wood)
+        .padding(.horizontal, 18).padding(.vertical, 18)
+        .background(LinearGradient(colors: [Color(red: 1, green: 0.92, blue: 0.39), Color(red: 1, green: 0.70, blue: 0.22)], startPoint: .top, endPoint: .bottom), in: Capsule())
+        .overlay { Capsule().strokeBorder(CatQuizPalette.wood.opacity(0.8), lineWidth: 2) }
+        .overlay { Capsule().strokeBorder(Color(red: 1, green: 0.98, blue: 0.76), lineWidth: 2).padding(4) }
+        .shadow(color: CatQuizPalette.wood.opacity(0.35), radius: 0, y: 4)
     }
 }
 
 private struct ArcadePressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
             .brightness(configuration.isPressed ? -0.06 : 0)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
 
@@ -1861,45 +1835,6 @@ private struct StroopBackdrop: View {
             }
         }
         .ignoresSafeArea()
-    }
-}
-
-private struct HeartGainPop: View {
-    let token: Int
-
-    @State private var scale: CGFloat = 0.2
-    @State private var opacity: Double = 0
-    @State private var shownToken = 0
-
-    var body: some View {
-        VStack(spacing: 4) {
-            Image(systemName: "heart.fill")
-                .font(.system(size: 68))
-            Text("+1")
-                .font(.title.bold())
-        }
-        .foregroundStyle(Color(red: 0.95, green: 0.28, blue: 0.32))
-        .scaleEffect(scale)
-        .opacity(opacity)
-        .allowsHitTesting(false)
-        .onChange(of: token) { _, newValue in
-            guard newValue > 0 else { return }
-            shownToken = newValue
-            scale = 0.2
-            opacity = 0
-            withAnimation(.spring(response: 0.28, dampingFraction: 0.52)) {
-                scale = 1
-                opacity = 1
-            }
-            Task {
-                try? await Task.sleep(for: .milliseconds(560))
-                guard shownToken == newValue else { return }
-                withAnimation(.easeOut(duration: 0.28)) {
-                    scale = 1.45
-                    opacity = 0
-                }
-            }
-        }
     }
 }
 
