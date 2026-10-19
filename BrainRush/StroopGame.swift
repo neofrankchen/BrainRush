@@ -277,7 +277,7 @@ struct StroopRound: Equatable {
                 ? tr(ja: "見えている文字を選べ", zh: "选择你看到的文字", en: "Choose the text you see", my: "မြင်ရသော စာသားကို ရွေးပါ")
                 : tr(ja: "見えている色を選べ", zh: "选择你看到的颜色", en: "Choose the color you see", my: "မြင်ရသော အရောင်ကို ရွေးပါ"),
             answerID: answer.rawValue,
-            choices: colorPair(ink: ink, word: word),
+            choices: colorChoices(ink: ink, word: word),
             stimulus: .word(word, ink: ink)
         )
     }
@@ -291,7 +291,7 @@ struct StroopRound: Equatable {
                 ? tr(ja: "矢印がある場所を選べ", zh: "选出箭头在哪一边", en: "Pick the side where the arrow sits", my: "မြားရှိသောဘက်ကို ရွေးပါ")
                 : tr(ja: "矢印が指している方を選べ", zh: "选出箭头指向哪一边", en: "Pick the side the arrow points to", my: "မြားညွှန်သောဘက်ကို ရွေးပါ"),
             answerID: (trap ? place : direction).rawValue,
-            choices: compassPair(direction, place, showArrow: true),
+            choices: compassChoices(showArrow: true),
             stimulus: .placedArrow(direction: direction, place: place)
         )
     }
@@ -305,7 +305,7 @@ struct StroopRound: Equatable {
                 ? tr(ja: "字がある場所を選べ", zh: "选出字在哪一边", en: "Pick the side where the word sits", my: "စာလုံးရှိသောဘက်ကို ရွေးပါ")
                 : tr(ja: "書いてある字を選べ", zh: "选出字写的是什么", en: "Pick what the word says", my: "ရေးထားသော စာလုံးကို ရွေးပါ"),
             answerID: (trap ? place : word).rawValue,
-            choices: compassPair(word, place, showArrow: false),
+            choices: compassChoices(showArrow: false),
             stimulus: .placedWord(word: word, place: place)
         )
     }
@@ -327,7 +327,12 @@ struct StroopRound: Equatable {
     }
 
     private static func numberChoices(shown: String, count: Int) -> [AnswerChoice] {
-        [shown, "\(count)"].shuffled().map {
+        numericChoices(including: [shown, "\(count)", String(shown.prefix(1))])
+    }
+
+    private static func numericChoices(including required: [String]) -> [AnswerChoice] {
+        let distractors = (1...12).map { "\($0)" }.filter { !required.contains($0) }.shuffled()
+        return Array((required + distractors).prefix(4)).shuffled().map {
             AnswerChoice(id: $0, title: $0, symbol: nil, style: .neutral)
         }
     }
@@ -339,30 +344,27 @@ struct StroopRound: Equatable {
         let left = largerOnLeft ? larger : smaller
         let right = largerOnLeft ? smaller : larger
         let leftUsesLargerFont = left < right
-        let numericSide = largerOnLeft ? "left" : "right"
-        let visualSide = leftUsesLargerFont ? "left" : "right"
+        let answer = trap ? smaller : larger
         return StroopRound(
             task: .valueSize,
             rule: trap
-                ? tr(ja: "字が大きい方を選べ", zh: "选出字体更大的一边", en: "Pick the side with bigger text", my: "စာလုံးပိုကြီးသောဘက်ကို ရွေးပါ")
-                : tr(ja: "数の大きい方を選べ", zh: "选出数值更大的一边", en: "Pick the side with the larger number", my: "ကိန်းပိုကြီးသောဘက်ကို ရွေးပါ"),
-            answerID: trap ? visualSide : numericSide,
-            choices: [
-                AnswerChoice(id: "left", title: tr(ja: "左", zh: "左边", en: "Left", my: "ဘယ်ဘက်"), symbol: nil, style: .neutral),
-                AnswerChoice(id: "right", title: tr(ja: "右", zh: "右边", en: "Right", my: "ညာဘက်"), symbol: nil, style: .neutral),
-            ],
+                ? tr(ja: "字が大きい方の数字を選べ", zh: "选择字体更大的数字", en: "Choose the number in bigger text", my: "စာလုံးပိုကြီးသော ဂဏန်းကို ရွေးပါ")
+                : tr(ja: "数の大きい方の数字を選べ", zh: "选择数值更大的数字", en: "Choose the larger number", my: "ပိုကြီးသော ကိန်းကို ရွေးပါ"),
+            answerID: "\(answer)",
+            choices: numericChoices(including: ["\(left)", "\(right)"]),
             stimulus: .pair(left: left, right: right, leftUsesLargerFont: leftUsesLargerFont)
         )
     }
 
-    private static func colorPair(ink: StroopColor, word: StroopColor) -> [AnswerChoice] {
-        [ink, word].shuffled().map { color in
+    private static func colorChoices(ink: StroopColor, word: StroopColor) -> [AnswerChoice] {
+        let distractors = StroopColor.allCases.filter { $0 != ink && $0 != word }.shuffled().prefix(2)
+        return ([ink, word] + distractors).shuffled().map { color in
             AnswerChoice(id: color.rawValue, title: color.name, symbol: nil, style: .ink(color))
         }
     }
 
-    private static func compassPair(_ first: Compass, _ second: Compass, showArrow: Bool) -> [AnswerChoice] {
-        [first, second].shuffled().map { direction in
+    private static func compassChoices(showArrow: Bool) -> [AnswerChoice] {
+        Compass.allCases.shuffled().map { direction in
             AnswerChoice(
                 id: direction.rawValue,
                 title: direction.name,
@@ -734,7 +736,7 @@ struct StroopGameView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(StroopBackdrop(light: session.phase == .playing))
+        .background(StroopBackdrop(light: session.phase != .ready))
         .navigationTitle(tr(ja: "ブレインラッシュ", zh: "脑乱挑战", en: "Brain Rush", my: "အနှောင့်အယှက်စိန်ခေါ်ပွဲ"))
         .modifier(StroopNavigationChrome(isPlaying: session.phase == .playing))
         .background {
@@ -831,10 +833,10 @@ struct StroopGameView: View {
                     guide(
                         tr(ja: "5種類の問題", zh: "五种题目", en: "Five kinds of questions", my: "မေးခွန်း ၅ မျိုး"),
                         tr(
-                            ja: "どの問題も二択です。\n色：見えている色か、見えている文字か。文字の意味とインクの色は違います。\n矢印：指している方か、矢印がある場所か。向きと場所は違います。\n文字の位置：書いてある字か、字がある場所か。意味と場所は違います。\n数字と個数：例えば画面が111なら、選択肢は111と3。「数字は？」なら111、「数字は何個ある？」なら3。並びと個数は違います。\n大きさ：数の大きい方か、字の大きい方か。差は1か2で、字が大きいのは数の小さい方です。",
-                            zh: "每道题都是二选一。\n颜色：看到的颜色，还是看到的文字。字义和墨水颜色不会相同。\n箭头：箭头指向哪一边，还是箭头在哪一边。指向和位置不会相同。\n方位字：字写的是什么，还是字在哪一边。字义和位置不会相同。\n数字和数量：例如画面是 111，选项是 111 和 3。问「数字是几？」选 111，问「有几个数字？」选 3。数字串和数量不会相同。\n大小：数值更大的一边，还是字体更大的一边。两数只差 1 或 2，字更大的是数值更小的那个。",
-                            en: "Every question is a two-choice pick.\nColor: the color you see, or the text you see. The word and the ink never match.\nArrow: the side it points to, or the side where it sits. Direction and place never match.\nPlace word: what the word says, or the side where it sits. Meaning and place never match.\nNumber and count: if the screen shows 111, the choices are 111 and 3. \"What is the number?\" means 111. \"How many digits are there?\" means 3. The written number and the count never match.\nSize: the larger number, or the bigger text. The numbers differ by 1 or 2, and the bigger text is the smaller number.",
-                            my: "မေးခွန်းတိုင်းကို ရွေးစရာ ၂ ခုသာ ပေးသည်။\nအရောင်။ မြင်ရသော အရောင်၊ သို့မဟုတ် မြင်ရသော စာသား။ စာသားအဓိပ္ပာယ်နှင့် မင်အရောင် မတူပါ။\nမြား။ ညွှန်သောဘက်၊ သို့မဟုတ် မြားရှိသောဘက်။ ဦးတည်ချက်နှင့် နေရာ မတူပါ။\nနေရာစာလုံး။ ရေးထားသောစာလုံး၊ သို့မဟုတ် စာလုံးရှိသောဘက်။ အဓိပ္ပာယ်နှင့် နေရာ မတူပါ။\nဂဏန်းနှင့် အရေအတွက်။ ဥပမာ မျက်နှာပြင်မှာ ၁၁၁ ဖြစ်လျှင် ရွေးစရာက ၁၁၁ နှင့် ၃။ \"ဂဏန်းက ဘယ်လဲ\" ဆိုရင် ၁၁၁၊ \"ဂဏန်း ဘယ်နှစ်လုံး ရှိသလဲ\" ဆိုရင် ၃။ ရေးထားသောကိန်းနှင့် အရေအတွက် မတူပါ။\nအရွယ်။ ကိန်းပိုကြီးသောဘက်၊ သို့မဟုတ် စာလုံးပိုကြီးသောဘက်။ ကိန်းနှစ်ခုက ၁ သို့မဟုတ် ၂ ပဲ ကွာပြီး စာလုံးပိုကြီးတာက ကိန်းပိုငယ်သောဘက် ဖြစ်သည်။"
+                            ja: "どの問題も4つの選択肢から答えます。\n色：見えている色か、見えている文字か。文字の意味とインクの色は違います。\n矢印：指している方か、矢印がある場所か。向きと場所は違います。\n文字の位置：書いてある字か、字がある場所か。意味と場所は違います。\n数字と個数：例えば画面が111なら、選択肢には111と3が含まれます。「数字は？」なら111、「数字は何個ある？」なら3。並びと個数は違います。\n大きさ：数の大きい方の数字か、字の大きい方の数字を選びます。差は1か2で、字が大きいのは数の小さい方です。",
+                            zh: "每道题都有四个选项。\n颜色：看到的颜色，还是看到的文字。字义和墨水颜色不会相同。\n箭头：箭头指向哪一边，还是箭头在哪一边。指向和位置不会相同。\n方位字：字写的是什么，还是字在哪一边。字义和位置不会相同。\n数字和数量：例如画面是 111，选项包含 111 和 3。问「数字是几？」选 111，问「有几个数字？」选 3。数字串和数量不会相同。\n大小：选择数值更大的数字，或字体更大的数字。两数只差 1 或 2，字更大的是数值更小的那个。",
+                            en: "Every question has four choices.\nColor: the color you see, or the text you see. The word and the ink never match.\nArrow: the side it points to, or the side where it sits. Direction and place never match.\nPlace word: what the word says, or the side where it sits. Meaning and place never match.\nNumber and count: if the screen shows 111, the choices include 111 and 3. \"What is the number?\" means 111. \"How many digits are there?\" means 3. The written number and the count never match.\nSize: choose the larger number, or the number displayed in bigger text. The numbers differ by 1 or 2, and the bigger text is the smaller number.",
+                            my: "မေးခွန်းတိုင်းကို ရွေးစရာ ၄ ခု ပေးသည်။\nအရောင်။ မြင်ရသော အရောင်၊ သို့မဟုတ် မြင်ရသော စာသား။ စာသားအဓိပ္ပာယ်နှင့် မင်အရောင် မတူပါ။\nမြား။ ညွှန်သောဘက်၊ သို့မဟုတ် မြားရှိသောဘက်။ ဦးတည်ချက်နှင့် နေရာ မတူပါ။\nနေရာစာလုံး။ ရေးထားသောစာလုံး၊ သို့မဟုတ် စာလုံးရှိသောဘက်။ အဓိပ္ပာယ်နှင့် နေရာ မတူပါ။\nဂဏန်းနှင့် အရေအတွက်။ ဥပမာ မျက်နှာပြင်မှာ ၁၁၁ ဖြစ်လျှင် ရွေးစရာက ၁၁၁ နှင့် ၃။ \"ဂဏန်းက ဘယ်လဲ\" ဆိုရင် ၁၁၁၊ \"ဂဏန်း ဘယ်နှစ်လုံး ရှိသလဲ\" ဆိုရင် ၃။ ရေးထားသောကိန်းနှင့် အရေအတွက် မတူပါ။\nအရွယ်။ ကိန်းပိုကြီးသောဘက်၊ သို့မဟုတ် စာလုံးပိုကြီးသောဘက်။ ကိန်းနှစ်ခုက ၁ သို့မဟုတ် ၂ ပဲ ကွာပြီး စာလုံးပိုကြီးတာက ကိန်းပိုငယ်သောဘက် ဖြစ်သည်။"
                         )
                     )
                     guide(
@@ -1287,11 +1289,11 @@ struct StroopGameView: View {
     }
 
     private var answers: some View {
-        HStack(spacing: 14) {
+        let marks = ["A", "B", "C", "D"]
+        let accents: [Color] = [.pink, .blue, .orange, .purple]
+        return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
             ForEach(Array(session.round.choices.enumerated()), id: \.element.id) { index, choice in
-                choiceCard(choice, mark: index == 0 ? "A" : "B", accent: index == 0
-                    ? Color(red: 0.95, green: 0.32, blue: 0.38)
-                    : Color(red: 0.28, green: 0.52, blue: 0.98))
+                choiceCard(choice, mark: marks[index], accent: accents[index])
             }
         }
     }
@@ -1303,27 +1305,27 @@ struct StroopGameView: View {
             VStack(spacing: 0) {
                 HStack {
                     Text(mark)
-                        .font(.system(size: 27, weight: .black, design: .rounded))
+                        .font(.system(size: 20, weight: .black, design: .rounded))
                         .foregroundStyle(.white)
-                        .frame(width: 46, height: 46)
+                        .frame(width: 34, height: 34)
                         .background(Circle().fill(LinearGradient(colors: [accent, accent.opacity(0.8)], startPoint: .top, endPoint: .bottom)))
                         .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: 2))
                         .shadow(color: accent.opacity(0.3), radius: 0, y: 3)
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 12)
-                .padding(.top, 12)
+                .padding(.top, 8)
 
                 Spacer(minLength: 4)
 
                 choiceVisual(choice)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 120)
+                    .frame(height: 62)
 
-                Spacer(minLength: 12)
+                Spacer(minLength: 8)
             }
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 220, maxHeight: .infinity)
+            .frame(height: 124)
             .background(
                 RoundedRectangle(cornerRadius: 26, style: .continuous)
                     .fill(LinearGradient(colors: [.white, Color(red: 0.96, green: 0.95, blue: 0.97)], startPoint: .topLeading, endPoint: .bottomTrailing))
@@ -1375,27 +1377,112 @@ struct StroopGameView: View {
     }
 
     private var result: some View {
-        VStack(spacing: 16) {
-            Text(tr(ja: "ハートがなくなった", zh: "爱心用完了", en: "No hearts left", my: "နှလုံးကုန်ပြီ"))
-                .font(.title2.bold())
-                .foregroundStyle(.white)
+        ScrollView {
+            VStack(spacing: 20) {
+                VStack(spacing: 6) {
+                    Image("QuizCat")
+                        .resizable().scaledToFit()
+                        .frame(height: 116)
+                        .accessibilityHidden(true)
+                    Text(tr(ja: "おつかれさま！", zh: "辛苦啦！", en: "Nicely played!", my: "ကြိုးစားမှုကောင်းပါတယ်။"))
+                        .font(.system(size: 28, weight: .heavy, design: .rounded))
+                    Text(tr(ja: "また一緒にチャレンジしよう", zh: "再一起挑战一次吧", en: "Ready for another challenge?", my: "နောက်တစ်ကြိမ် စိန်ခေါ်ကြမလား။"))
+                        .font(.subheadline.weight(.medium))
+                }
+                .foregroundStyle(CatQuizPalette.ink)
+                .frame(maxWidth: .infinity)
+                .padding(18)
+                .background(.white.opacity(0.94), in: RoundedRectangle(cornerRadius: 28))
+
+                resultScoreCard
+                resultRanking
+
+                VStack(spacing: 12) {
+                    Button { session.start() } label: {
+                        Label(tr(ja: "もう一度あそぶ", zh: "再玩一次", en: "Play again", my: "နောက်တစ်ပွဲ"), systemImage: "arrow.clockwise")
+                            .font(.system(.headline, design: .rounded, weight: .heavy))
+                            .frame(maxWidth: .infinity).padding(.vertical, 18)
+                            .foregroundStyle(CatQuizPalette.ink)
+                            .background(LinearGradient(colors: [Color(red: 1, green: 0.88, blue: 0.38), Color(red: 1, green: 0.69, blue: 0.23)], startPoint: .top, endPoint: .bottom), in: RoundedRectangle(cornerRadius: 20))
+                            .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(.white.opacity(0.8), lineWidth: 2) }
+                            .shadow(color: CatQuizPalette.wood.opacity(0.25), radius: 0, y: 4)
+                    }
+                    .buttonStyle(ArcadePressStyle())
+                    .accessibilityIdentifier("stroop-play-again")
+                    Button { session.returnToMenu() } label: {
+                        Label(tr(ja: "スタート画面へ", zh: "返回首页", en: "Back to start", my: "အစသို့ ပြန်ရန်"), systemImage: "house.fill")
+                            .font(.subheadline.bold())
+                            .frame(maxWidth: .infinity).padding(.vertical, 16)
+                            .foregroundStyle(CatQuizPalette.ink)
+                            .background(.white.opacity(0.95), in: RoundedRectangle(cornerRadius: 20))
+                    }
+                    .buttonStyle(ArcadePressStyle())
+                    .accessibilityIdentifier("stroop-result-back")
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: 520)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollIndicators(.hidden)
+        .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private var resultScoreCard: some View {
+        VStack(spacing: 12) {
+            Label(tr(ja: "今回のスコア", zh: "本次得分", en: "Your score", my: "သင့်ရမှတ်"), systemImage: "star.fill")
+                .font(.subheadline.bold())
+                .foregroundStyle(CatQuizPalette.wood)
             Text("\(session.score)")
                 .font(.system(size: 72, weight: .black, design: .rounded))
-                .foregroundStyle(.white)
+                .monospacedDigit()
+                .foregroundStyle(CatQuizPalette.ink)
+                .accessibilityIdentifier("stroop-result-score")
             Text(session.accuracyText)
-                .font(.body)
-                .foregroundStyle(.white.opacity(0.72))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(CatQuizPalette.ink.opacity(0.8))
                 .multilineTextAlignment(.center)
-            ScoreBoardList(game: "stroop")
-            Button(tr(ja: "もう一度", zh: "再来一局", en: "Play again", my: "နောက်တစ်ပွဲ")) { session.start() }
-                .buttonStyle(.borderedProminent)
-                .tint(Color(red: 0.98, green: 0.74, blue: 0.32))
-            Button(tr(ja: "戻る", zh: "返回", en: "Back", my: "ပြန်ရန်")) { session.returnToMenu() }
-                .buttonStyle(.bordered)
-                .tint(.white)
+            Divider().overlay(CatQuizPalette.wood.opacity(0.2))
+            HStack {
+                Label(tr(ja: "自己ベスト", zh: "个人最佳", en: "Personal best", my: "အကောင်းဆုံး"), systemImage: "trophy.fill")
+                Spacer()
+                Text("\(ScoreBoard.records(for: "stroop").map(\.score).max() ?? session.score)")
+                    .monospacedDigit()
+            }
+            .font(.subheadline.bold())
+            .foregroundStyle(CatQuizPalette.wood)
         }
         .padding(24)
+        .frame(maxWidth: .infinity)
+        .background(CatQuizPalette.cream, in: RoundedRectangle(cornerRadius: 26))
+        .overlay { RoundedRectangle(cornerRadius: 26).strokeBorder(CatQuizPalette.wood.opacity(0.5), lineWidth: 2) }
     }
+
+    private var resultRanking: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label(tr(ja: "ランキング", zh: "排行榜", en: "Leaderboard", my: "အဆင့်စာရင်း"), systemImage: "crown.fill")
+                .font(.system(.headline, design: .rounded, weight: .bold))
+            ForEach(Array(ScoreBoard.records(for: "stroop").enumerated()), id: \.element.id) { index, record in
+                HStack {
+                    Text("\(index + 1)")
+                        .font(.system(.caption, design: .rounded, weight: .black))
+                        .frame(width: 28, height: 28)
+                        .background(index == 0 ? Color.yellow.opacity(0.6) : CatQuizPalette.cream, in: Circle())
+                    Text("\(record.score)")
+                        .font(.system(.body, design: .rounded, weight: index == 0 ? .heavy : .medium))
+                        .monospacedDigit()
+                    Spacer()
+                    if index == 0 { Image(systemName: "trophy.fill").foregroundStyle(CatQuizPalette.wood) }
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
+        .foregroundStyle(CatQuizPalette.ink)
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white.opacity(0.96), in: RoundedRectangle(cornerRadius: 26))
+    }
+
 }
 
 private struct ArcadePressStyle: ButtonStyle {
