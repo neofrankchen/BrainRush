@@ -622,6 +622,12 @@ final class StroopSession {
 
     func returnToMenu() {
         audio.stop()
+        questionEndsAt = nil
+        roundID = UUID()
+        isResolving = false
+        selectedChoiceID = nil
+        lastAnswerWasCorrect = nil
+        lastMissWasTimeout = false
         phase = .ready
     }
 
@@ -1019,6 +1025,40 @@ struct StroopGameView: View {
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+            questionDisplay
+            Spacer(minLength: 0)
+            answers
+            Button(tr(ja: "終了", zh: "结束", en: "End", my: "ထွက်ရန်")) { session.returnToMenu() }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .tint(.white)
+                .padding(.top, 6)
+        }
+        .padding(20)
+        .frame(minHeight: viewport.size.height)
+        .frame(maxWidth: 560)
+        .frame(maxWidth: .infinity)
+        }
+        .background { GameAtmosphere(accent: taskAccent).ignoresSafeArea() }
+        .overlay { feedbackOverlay.allowsHitTesting(false) }
+        .overlay {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(urgencyColor.opacity(session.showsTimer && session.questionRemaining <= urgentRemaining ? 0.95 : 0), lineWidth: 4)
+                .padding(6)
+                .scaleEffect(pulse)
+                .allowsHitTesting(false)
+        }
+        .overlay {
+            Color.red
+                .opacity(session.showsTimer && session.questionRemaining <= urgentRemaining ? 0.07 : 0)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+        }
+    }
+
+    private var questionDisplay: some View {
             stimulus(session.round)
                 .padding(.vertical, 8)
                 .background {
@@ -1040,35 +1080,6 @@ struct StroopGameView: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityIdentifier("stroop-answer-\(session.round.answerID)")
                 .accessibilityLabel(session.round.rule)
-            Spacer(minLength: 0)
-            answers
-            Button(tr(ja: "終了", zh: "结束", en: "End", my: "ထွက်ရန်")) { session.returnToMenu() }
-                .buttonStyle(.bordered)
-                .buttonBorderShape(.capsule)
-                .tint(.white)
-                .padding(.top, 6)
-        }
-        .padding(20)
-        .frame(minHeight: viewport.size.height)
-        .frame(maxWidth: 560)
-        .frame(maxWidth: .infinity)
-        }
-        .background { GameAtmosphere(accent: taskAccent).ignoresSafeArea() }
-        .overlay { feedbackOverlay.allowsHitTesting(false) }
-        .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(urgencyColor.opacity(session.questionRemaining <= urgentRemaining ? 0.95 : 0), lineWidth: 4)
-                .padding(6)
-                .scaleEffect(pulse)
-                .allowsHitTesting(false)
-        }
-        .background {
-            urgencyColor
-                .opacity(session.questionRemaining <= urgentRemaining ? 0.16 : 0)
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
-        }
-        }
     }
 
     private var taskAccent: Color {
@@ -1152,6 +1163,7 @@ struct StroopGameView: View {
     }
 
     private var pulse: CGFloat {
+        guard !reduceMotion else { return 1 }
         guard session.questionRemaining <= urgentRemaining, session.questionRemaining > 0 else { return 1 }
         let beat = (session.questionRemaining * 3).truncatingRemainder(dividingBy: 1)
         return beat < 0.45 ? 1.08 : 0.96
@@ -1260,7 +1272,7 @@ struct StroopGameView: View {
         GeometryReader { geometry in
             ZStack {
                 RoundedRectangle(cornerRadius: 26)
-                    .fill(LinearGradient(colors: [Color.purple.opacity(0.10), Color.indigo.opacity(0.30)], startPoint: .top, endPoint: .bottom))
+                    .fill(LinearGradient(colors: [Color(red: 0.10, green: 0.06, blue: 0.22), Color(red: 0.15, green: 0.12, blue: 0.34)], startPoint: .top, endPoint: .bottom))
                     .overlay { RoundedRectangle(cornerRadius: 26).strokeBorder(LinearGradient(colors: [.purple.opacity(0.35), .purple, .indigo], startPoint: .top, endPoint: .bottom), lineWidth: 2) }
                     .shadow(color: .purple.opacity(0.25), radius: 14)
                 content()
@@ -1388,6 +1400,14 @@ private struct GameAtmosphere: View {
             RadialGradient(colors: [accent.opacity(0.30), .clear], center: .init(x: 0.15, y: 0.55), startRadius: 0, endRadius: 280)
             RadialGradient(colors: [Color.blue.opacity(0.28), .clear], center: .init(x: 0.95, y: 0.80), startRadius: 0, endRadius: 260)
             Canvas { context, size in
+                // Edge ribbons leave the central question unobstructed.
+                for ribbon in 0..<4 {
+                    let offset = CGFloat(ribbon) * 34
+                    var ribbonPath = Path()
+                    ribbonPath.move(to: CGPoint(x: -60, y: size.height * 0.62 + offset))
+                    ribbonPath.addCurve(to: CGPoint(x: size.width + 60, y: size.height + offset), control1: CGPoint(x: size.width * 0.20, y: size.height * 0.90 + offset), control2: CGPoint(x: size.width * 0.75, y: size.height * 0.68 + offset))
+                    context.stroke(ribbonPath, with: .color((ribbon.isMultiple(of: 2) ? Color.indigo : accent).opacity(0.14)), style: StrokeStyle(lineWidth: 14, lineCap: .round))
+                }
                 // Keep decorative lines behind the lower controls, away from question content.
                 for line in 0..<12 {
                     let y = size.height * 0.75 + CGFloat(line) * 26
@@ -1494,8 +1514,8 @@ private struct StroopBackdrop: View {
     var body: some View {
         LinearGradient(
             colors: [
-                Color(red: 0.09, green: 0.11, blue: 0.18),
-                Color(red: 0.05, green: 0.06, blue: 0.09),
+                Color(red: 0.045, green: 0.055, blue: 0.16),
+                Color(red: 0.025, green: 0.04, blue: 0.10),
             ],
             startPoint: .top,
             endPoint: .bottom
