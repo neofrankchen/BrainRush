@@ -1017,6 +1017,8 @@ struct StroopGameView: View {
     @State private var showsGuide = false
     @State private var showsPractice = false
     @State private var showsRanking = false
+    @State private var displayedResultScore = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Group {
@@ -1058,10 +1060,7 @@ struct StroopGameView: View {
                 VStack(spacing: 20) {
                     Spacer(minLength: 0)
                     VStack(spacing: 10) {
-                        Image("QuizCat")
-                            .resizable().scaledToFit()
-                            .frame(height: 150)
-                            .accessibilityHidden(true)
+                        LivelyQuizCat(height: 150)
                         Text(tr(ja: "ブレインラッシュ", zh: "脑乱挑战", en: "Brain Rush", my: "အနှောင့်အယှက်စိန်ခေါ်ပွဲ"))
                             .font(.system(size: 30, weight: .heavy, design: .rounded))
                             .minimumScaleFactor(0.6)
@@ -1073,7 +1072,8 @@ struct StroopGameView: View {
                     .foregroundStyle(CatQuizPalette.ink)
                     .padding(24)
                     .frame(maxWidth: .infinity)
-                    .background(.white.opacity(0.95), in: RoundedRectangle(cornerRadius: 28))
+                    .shadow(color: CatQuizPalette.cream.opacity(0.95), radius: 5)
+                    .shadow(color: CatQuizPalette.cream.opacity(0.8), radius: 12)
 
                     VStack(spacing: 18) {
                         HStack {
@@ -1109,6 +1109,7 @@ struct StroopGameView: View {
                             .shadow(color: CatQuizPalette.wood.opacity(0.25), radius: 0, y: 4)
                     }
                     .buttonStyle(ArcadePressStyle())
+                    .modifier(PlayButtonPulse())
                     .accessibilityIdentifier("stroop-start")
                     .accessibilityLabel(tr(ja: "開始", zh: "开始", en: "Start", my: "စတင်မည်"))
 
@@ -1205,7 +1206,7 @@ struct StroopGameView: View {
             }
             .frame(maxWidth: .infinity)
             .frame(minHeight: 92)
-            .background(.white.opacity(0.96), in: RoundedRectangle(cornerRadius: 22))
+            .background(CatQuizPalette.cream.opacity(0.88), in: RoundedRectangle(cornerRadius: 22))
             .overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(CatQuizPalette.wood.opacity(0.25), lineWidth: 1) }
         }
         .buttonStyle(ArcadePressStyle())
@@ -1696,10 +1697,7 @@ struct StroopGameView: View {
         ScrollView {
             VStack(spacing: 20) {
                 VStack(spacing: 6) {
-                    Image("QuizCat")
-                        .resizable().scaledToFit()
-                        .frame(height: 116)
-                        .accessibilityHidden(true)
+                    LivelyQuizCat(height: 116)
                     Text(tr(ja: "おつかれさま！", zh: "辛苦啦！", en: "Nicely played!", my: "ကြိုးစားမှုကောင်းပါတယ်။"))
                         .font(.system(size: 28, weight: .heavy, design: .rounded))
                     Text(tr(ja: "また一緒にチャレンジしよう", zh: "再一起挑战一次吧", en: "Ready for another challenge?", my: "နောက်တစ်ကြိမ် စိန်ခေါ်ကြမလား။"))
@@ -1708,7 +1706,8 @@ struct StroopGameView: View {
                 .foregroundStyle(CatQuizPalette.ink)
                 .frame(maxWidth: .infinity)
                 .padding(18)
-                .background(.white.opacity(0.94), in: RoundedRectangle(cornerRadius: 28))
+                .shadow(color: CatQuizPalette.cream.opacity(0.95), radius: 5)
+                .shadow(color: CatQuizPalette.cream.opacity(0.8), radius: 12)
 
                 resultScoreCard
 
@@ -1723,13 +1722,14 @@ struct StroopGameView: View {
                             .shadow(color: CatQuizPalette.wood.opacity(0.25), radius: 0, y: 4)
                     }
                     .buttonStyle(ArcadePressStyle())
+                    .modifier(PlayButtonPulse())
                     .accessibilityIdentifier("stroop-play-again")
                     Button { session.returnToMenu() } label: {
                         Label(tr(ja: "スタート画面へ", zh: "返回首页", en: "Back to start", my: "အစသို့ ပြန်ရန်"), systemImage: "house.fill")
                             .font(.subheadline.bold())
                             .frame(maxWidth: .infinity).padding(.vertical, 16)
                             .foregroundStyle(CatQuizPalette.ink)
-                            .background(.white.opacity(0.95), in: RoundedRectangle(cornerRadius: 20))
+                            .background(CatQuizPalette.cream.opacity(0.9), in: RoundedRectangle(cornerRadius: 20))
                     }
                     .buttonStyle(ArcadePressStyle())
                     .accessibilityIdentifier("stroop-result-back")
@@ -1750,9 +1750,11 @@ struct StroopGameView: View {
             Label(tr(ja: "今回のスコア", zh: "本次得分", en: "Your score", my: "သင့်ရမှတ်"), systemImage: "star.fill")
                 .font(.subheadline.bold())
                 .foregroundStyle(CatQuizPalette.wood)
-            Text("\(session.score)")
+            Text("\(displayedResultScore)")
                 .font(.system(size: 72, weight: .black, design: .rounded))
                 .monospacedDigit()
+                .contentTransition(.numericText())
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.10), value: displayedResultScore)
                 .foregroundStyle(CatQuizPalette.ink)
                 .accessibilityIdentifier("stroop-result-score")
             Text(session.accuracyText)
@@ -1768,6 +1770,19 @@ struct StroopGameView: View {
             }
             .font(.subheadline.bold())
             .foregroundStyle(CatQuizPalette.wood)
+        }
+        .task {
+            let target = session.score
+            guard !reduceMotion, target > 0 else {
+                displayedResultScore = target
+                return
+            }
+            displayedResultScore = 0
+            for step in 1...24 {
+                try? await Task.sleep(for: .milliseconds(25))
+                guard !Task.isCancelled else { return }
+                displayedResultScore = Int(Double(target) * Double(step) / 24)
+            }
         }
         .padding(24)
         .frame(maxWidth: .infinity)
@@ -1797,9 +1812,52 @@ struct StroopGameView: View {
         .foregroundStyle(CatQuizPalette.ink)
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.white.opacity(0.96), in: RoundedRectangle(cornerRadius: 26))
+        .background(CatQuizPalette.cream.opacity(0.92), in: RoundedRectangle(cornerRadius: 26))
     }
 
+}
+
+private struct LivelyQuizCat: View {
+    let height: CGFloat
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var floating = false
+
+    var body: some View {
+        ZStack {
+            Image("QuizCat")
+                .resizable().scaledToFit()
+                .frame(height: height)
+                .rotationEffect(.degrees(reduceMotion ? 0 : (floating ? 2 : -2)))
+                .offset(y: floating && !reduceMotion ? -6 : 0)
+                .shadow(color: CatQuizPalette.wood.opacity(0.25), radius: 8, y: 5)
+            ForEach(0..<4, id: \.self) { index in
+                Image(systemName: index.isMultiple(of: 2) ? "sparkle" : "star.fill")
+                    .font(.system(size: index.isMultiple(of: 2) ? 22 : 12, weight: .bold))
+                    .foregroundStyle(index.isMultiple(of: 2) ? Color.orange : Color.yellow)
+                    .shadow(color: .yellow.opacity(0.5), radius: 5)
+                    .scaleEffect(floating && !reduceMotion ? 1.12 : 0.85)
+                    .offset(x: (index.isMultiple(of: 2) ? -1 : 1) * height * 0.8,
+                            y: index < 2 ? -height * 0.25 : height * 0.25)
+            }
+        }
+        .frame(height: height + 12)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 1.8).repeatForever(autoreverses: true), value: floating)
+        .onAppear { floating = true }
+        .accessibilityHidden(true)
+    }
+}
+
+private struct PlayButtonPulse: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var glowing = false
+
+    func body(content: Content) -> some View {
+        content
+            .shadow(color: .orange.opacity(glowing ? 0.35 : 0.12), radius: glowing ? 12 : 4)
+            .scaleEffect(glowing && !reduceMotion ? 1.015 : 1)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: glowing)
+            .onAppear { glowing = true }
+    }
 }
 
 private struct ArcadePressStyle: ButtonStyle {
