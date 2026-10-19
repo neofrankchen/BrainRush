@@ -891,9 +891,10 @@ struct StroopGameView: View {
     }
 
     private func menuSheet<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        NavigationStack {
+        let sheetContent = content()
+        return NavigationStack {
             ScrollView {
-                content().padding(24).frame(maxWidth: 560).frame(maxWidth: .infinity)
+                sheetContent.padding(24).frame(maxWidth: 560).frame(maxWidth: .infinity)
             }
             .background(StroopBackdrop())
             .navigationTitle(title)
@@ -1269,13 +1270,14 @@ struct StroopGameView: View {
     }
 
     private func positionPanel<Content: View>(place: Compass, @ViewBuilder content: () -> Content) -> some View {
-        GeometryReader { geometry in
+        let panelContent = content()
+        return GeometryReader { geometry in
             ZStack {
                 RoundedRectangle(cornerRadius: 26)
                     .fill(LinearGradient(colors: [Color(red: 0.10, green: 0.06, blue: 0.22), Color(red: 0.15, green: 0.12, blue: 0.34)], startPoint: .top, endPoint: .bottom))
                     .overlay { RoundedRectangle(cornerRadius: 26).strokeBorder(LinearGradient(colors: [.purple.opacity(0.35), .purple, .indigo], startPoint: .top, endPoint: .bottom), lineWidth: 2) }
                     .shadow(color: .purple.opacity(0.25), radius: 14)
-                content()
+                panelContent
                     .frame(width: geometry.size.width * 0.56, height: 80)
                     .offset(x: place.offset.width / 88 * geometry.size.width * 0.20, y: place.offset.height / 88 * 65)
             }
