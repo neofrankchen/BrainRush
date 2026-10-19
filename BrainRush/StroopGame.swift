@@ -1190,53 +1190,70 @@ struct StroopGameView: View {
         switch round.stimulus {
         case .word(let word, let ink):
             Text(word.name)
-                .font(.system(size: 88, weight: .black))
+                .font(.system(size: 92, weight: .black, design: .rounded))
+                .minimumScaleFactor(0.45)
+                .lineLimit(1)
                 .foregroundStyle(ink.color)
+                .shadow(color: ink.color.opacity(0.7), radius: 20)
                 .frame(maxWidth: .infinity)
-                .frame(height: 160)
+                .frame(height: 200)
         case .placedArrow(let direction, let place):
-            ZStack {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color.purple.opacity(0.10))
-                    .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(Color.purple.opacity(0.55), lineWidth: 2) }
+            positionPanel(place: place) {
                 Image(systemName: direction.symbol)
-                    .font(.system(size: 52, weight: .bold))
+                    .font(.system(size: 58, weight: .black))
                     .foregroundStyle(.white)
-                    .offset(place.offset)
+                    .shadow(color: .purple, radius: 12)
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 230)
         case .placedWord(let word, let place):
-            ZStack {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color.purple.opacity(0.10))
-                    .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(Color.purple.opacity(0.55), lineWidth: 2) }
+            positionPanel(place: place) {
                 Text(word.name)
-                    .font(.system(size: 64, weight: .black))
+                    .font(.system(size: 60, weight: .heavy, design: .rounded))
+                    .minimumScaleFactor(0.4)
+                    .lineLimit(1)
                     .foregroundStyle(.white)
-                    .offset(place.offset)
+                    .shadow(color: .purple, radius: 8)
+                    .shadow(color: .pink.opacity(0.6), radius: 18)
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 230)
         case .digits(let value, let count):
             Text(String(repeating: "\(value)", count: count))
-                .font(.system(size: 96, weight: .black, design: .rounded))
-                .minimumScaleFactor(0.5)
+                .font(.system(size: 104, weight: .black, design: .rounded))
+                .minimumScaleFactor(0.4)
                 .lineLimit(1)
                 .foregroundStyle(.white)
+                .shadow(color: .blue, radius: 8)
+                .shadow(color: .purple.opacity(0.7), radius: 22)
                 .frame(maxWidth: .infinity)
-                .frame(height: 120)
+                .frame(height: 210)
+                .background { StimulusHalo(accent: .cyan) }
         case .pair(let left, let right, let leftUsesLargerFont):
             HStack(alignment: .center, spacing: 28) {
                 Text("\(left)")
-                    .font(.system(size: leftUsesLargerFont ? 108 : 28, weight: .black, design: .rounded))
+                    .font(.system(size: leftUsesLargerFont ? 116 : 32, weight: .black, design: .rounded))
+                    .shadow(color: .yellow.opacity(leftUsesLargerFont ? 0.65 : 0), radius: 22)
                 Text("\(right)")
-                    .font(.system(size: leftUsesLargerFont ? 28 : 108, weight: .black, design: .rounded))
+                    .font(.system(size: leftUsesLargerFont ? 32 : 116, weight: .black, design: .rounded))
+                    .shadow(color: .yellow.opacity(leftUsesLargerFont ? 0 : 0.65), radius: 22)
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 160)
+            .frame(height: 210)
+            .background { StimulusHalo(accent: .yellow) }
         }
+    }
+
+    private func positionPanel<Content: View>(place: Compass, @ViewBuilder content: () -> Content) -> some View {
+        GeometryReader { geometry in
+            ZStack {
+                RoundedRectangle(cornerRadius: 26)
+                    .fill(LinearGradient(colors: [Color.purple.opacity(0.10), Color.indigo.opacity(0.30)], startPoint: .top, endPoint: .bottom))
+                    .overlay { RoundedRectangle(cornerRadius: 26).strokeBorder(LinearGradient(colors: [.purple.opacity(0.35), .purple, .indigo], startPoint: .top, endPoint: .bottom), lineWidth: 2) }
+                    .shadow(color: .purple.opacity(0.25), radius: 14)
+                content()
+                    .frame(width: geometry.size.width * 0.56, height: 80)
+                    .offset(x: place.offset.width / 88 * geometry.size.width * 0.20, y: place.offset.height / 88 * 65)
+            }
+        }
+        .frame(height: 240)
     }
 
     @ViewBuilder
@@ -1352,16 +1369,42 @@ private struct GameAtmosphere: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.025, green: 0.045, blue: 0.10)
-            RadialGradient(colors: [accent.opacity(0.13), .clear], center: .center, startRadius: 20, endRadius: 360)
+            LinearGradient(colors: [Color(red: 0.025, green: 0.04, blue: 0.10), Color(red: 0.035, green: 0.06, blue: 0.16), Color(red: 0.025, green: 0.04, blue: 0.09)], startPoint: .top, endPoint: .bottom)
+            RadialGradient(colors: [accent.opacity(0.20), .clear], center: .init(x: 0.15, y: 0.55), startRadius: 0, endRadius: 280)
+            RadialGradient(colors: [Color.blue.opacity(0.15), .clear], center: .init(x: 0.95, y: 0.80), startRadius: 0, endRadius: 260)
             Canvas { context, size in
-                for index in 0..<24 {
-                    let x = CGFloat((index * 73 + 17) % 100) / 100 * size.width
-                    let y = CGFloat((index * 37 + 11) % 100) / 100 * size.height
-                    let symbol = index.isMultiple(of: 3) ? "✦" : (index.isMultiple(of: 2) ? "2" : "9")
-                    context.draw(Text(symbol).font(.system(size: index.isMultiple(of: 3) ? 14 : 24, weight: .black, design: .rounded)).foregroundStyle(accent.opacity(0.17)), at: CGPoint(x: x, y: y))
+                for index in 0..<30 {
+                    let left = index.isMultiple(of: 2)
+                    let x = (left ? CGFloat((index * 7) % 13) / 100 : 0.87 + CGFloat((index * 3) % 13) / 100) * size.width
+                    let y = (0.24 + CGFloat((index * 29) % 68) / 100) * size.height
+                    let symbol = index.isMultiple(of: 4) ? "✦" : (index.isMultiple(of: 3) ? "·" : "╱")
+                    let tint: Color = index.isMultiple(of: 4) ? .yellow : (left ? .purple : .cyan)
+                    context.draw(Text(symbol).font(.system(size: index.isMultiple(of: 4) ? 18 : 24, weight: .heavy)).foregroundStyle(tint.opacity(index.isMultiple(of: 4) ? 0.50 : 0.22)), at: CGPoint(x: x, y: y))
                 }
             }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+private struct StimulusHalo: View {
+    let accent: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Ellipse().fill(accent.opacity(0.10)).blur(radius: 24)
+                    .frame(width: 180, height: 120)
+                ForEach(0..<10, id: \.self) { index in
+                    Capsule().fill(index.isMultiple(of: 2) ? accent.opacity(0.75) : Color.yellow.opacity(0.8))
+                        .frame(width: 5, height: index.isMultiple(of: 2) ? 14 : 10)
+                        .offset(y: -90)
+                        .rotationEffect(.degrees(Double(index) * 36))
+                        .shadow(color: accent.opacity(0.5), radius: 6)
+                }
+            }
+            .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
