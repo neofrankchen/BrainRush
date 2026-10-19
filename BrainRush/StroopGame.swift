@@ -510,6 +510,9 @@ final class StroopSession {
     private(set) var questionLimit: TimeInterval = 10
     private(set) var lastAnswerWasCorrect: Bool?
     private(set) var lastMissWasTimeout = false
+    private(set) var isResolving = false
+    private(set) var selectedChoiceID: String?
+    private(set) var roundID = UUID()
     private(set) var testing = false
     private(set) var testUsesTimer = false
     private(set) var testTask: InterferenceTask = .colorWord
@@ -571,7 +574,9 @@ final class StroopSession {
     }
 
     private func choose(_ id: String, timeout: Bool) {
-        guard phase == .playing else { return }
+        guard phase == .playing, !isResolving else { return }
+        isResolving = true
+        selectedChoiceID = timeout ? nil : id
         questionEndsAt = nil
         answerCount += 1
         if !timeout && id == round.answerID {
@@ -600,13 +605,19 @@ final class StroopSession {
             lastMissWasTimeout = timeout
             audio.play(timeout ? .timeout : .wrong)
         }
-        if !testing, hearts <= 0 {
-            hearts = 0
-            ScoreBoard.submit(game: "stroop", score: score, rank: .high)
-            phase = .finished
-            return
+        let answeredRound = roundID
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(650))
+            guard phase == .playing, roundID == answeredRound else { return }
+            if !testing, hearts <= 0 {
+                hearts = 0
+                ScoreBoard.submit(game: "stroop", score: score, rank: .high)
+                phase = .finished
+                isResolving = false
+            } else {
+                deal()
+            }
         }
-        deal()
     }
 
     func returnToMenu() {
@@ -655,6 +666,11 @@ final class StroopSession {
     }
 
     private func deal() {
+        roundID = UUID()
+        isResolving = false
+        selectedChoiceID = nil
+        lastAnswerWasCorrect = nil
+        lastMissWasTimeout = false
         let trial = nextTrial()
         var next = StroopRound.make(trial.task, trap: trial.trap)
         var tries = 0
@@ -695,6 +711,8 @@ struct StroopGameView: View {
     @State private var showsGuide = false
     @State private var showsPractice = false
     @State private var showsRanking = false
+    @State private var stimulusAppeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Group {
@@ -977,6 +995,7 @@ struct StroopGameView: View {
     }
 
     private var playfield: some View {
+        ScrollView {
         VStack(spacing: 16) {
             statusBar
             if session.showsTimer {
@@ -985,23 +1004,28 @@ struct StroopGameView: View {
             if session.testing {
                 LanguagePicker(compact: true)
             }
-            testControls(showNote: false)
+            if session.testing { testControls(showNote: false) }
             Text(session.round.task.title)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color(red: 0.98, green: 0.74, blue: 0.32))
-            if session.lastAnswerWasCorrect == false {
-                Text(session.lastMissWasTimeout
-                    ? tr(ja: "時間切れ", zh: "超时", en: "Time's up", my: "အချိန်ကုန်ပြီ")
-                    : tr(ja: "不正解", zh: "点错了", en: "Wrong", my: "မှားသည်"))
-                    .font(.headline)
-                    .foregroundStyle(Color(red: 0.95, green: 0.28, blue: 0.32))
-            }
             Text(session.round.rule)
-                .font(.system(size: 34, weight: .bold))
+                .font(.system(size: 28, weight: .heavy, design: .rounded))
+                .shadow(color: .cyan.opacity(0.25), radius: 12)
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             stimulus(session.round)
+                .shadow(color: taskAccent.opacity(0.6), radius: 18)
+                .scaleEffect(stimulusAppeared || reduceMotion ? 1 : 0.82)
+                .opacity(stimulusAppeared ? 1 : 0)
+                .task(id: session.roundID) {
+                    stimulusAppeared = false
+                    await Task.yield()
+                    guard !Task.isCancelled else { return }
+                    withAnimation(reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.65)) {
+                        stimulusAppeared = true
+                    }
+                }
                 .accessibilityElement(children: .ignore)
                 .accessibilityIdentifier("stroop-answer-\(session.round.answerID)")
                 .accessibilityLabel(session.round.rule)
@@ -1009,9 +1033,16 @@ struct StroopGameView: View {
             answers
             Button(tr(ja: "終了", zh: "结束", en: "End", my: "ထွက်ရန်")) { session.returnToMenu() }
                 .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
                 .tint(.white)
+                .padding(.top, 6)
         }
         .padding(20)
+        .frame(maxWidth: 560)
+        .frame(maxWidth: .infinity)
+        }
+        .background { GameAtmosphere(accent: taskAccent).ignoresSafeArea() }
+        .overlay { feedbackOverlay.allowsHitTesting(false) }
         .overlay {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .stroke(urgencyColor.opacity(session.questionRemaining <= urgentRemaining ? 0.95 : 0), lineWidth: 4)
@@ -1027,11 +1058,49 @@ struct StroopGameView: View {
         }
     }
 
+    private var taskAccent: Color {
+        switch session.round.task {
+        case .wordPlace, .arrowPlace: .purple
+        case .numberCount: .cyan
+        case .valueSize: .yellow
+        case .colorWord: .blue
+        }
+    }
+
+    @ViewBuilder
+    private var feedbackOverlay: some View {
+        if session.isResolving {
+            let correct = session.lastAnswerWasCorrect == true
+            let color: Color = correct ? .green : .red
+            ZStack {
+                if correct && !reduceMotion {
+                    GameConfetti().transition(.opacity)
+                }
+                VStack(spacing: 8) {
+                    Image(systemName: correct ? "checkmark.circle.fill" : (session.lastMissWasTimeout ? "timer" : "xmark.circle.fill"))
+                        .font(.system(size: 64, weight: .bold))
+                    Text(correct
+                        ? tr(ja: "正解！", zh: "正确！", en: "Correct!", my: "မှန်သည်")
+                        : (session.lastMissWasTimeout
+                            ? tr(ja: "時間切れ", zh: "超时", en: "Time’s up", my: "အချိန်ကုန်ပြီ")
+                            : tr(ja: "不正解", zh: "错误", en: "Try again", my: "မှားသည်")))
+                        .font(.system(.title2, design: .rounded, weight: .heavy))
+                }
+                .foregroundStyle(color)
+                .padding(24)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 28))
+                .shadow(color: color.opacity(0.7), radius: 24)
+                .accessibilityElement(children: .combine)
+            }
+            .accessibilityIdentifier("stroop-feedback")
+        }
+    }
+
     private var countdown: some View {
         VStack(spacing: 6) {
             HStack {
                 Text("\(secondsLeft)")
-                    .font(.system(size: session.questionRemaining <= urgentRemaining ? 34 : 20, weight: .black, design: .rounded))
+                    .font(.system(size: 22, weight: .black, design: .rounded))
                     .foregroundStyle(urgencyColor)
                     .scaleEffect(pulse)
                     .contentTransition(.numericText())
@@ -1046,7 +1115,7 @@ struct StroopGameView: View {
                         .frame(width: max(8, geo.size.width * progress))
                 }
             }
-            .frame(height: session.questionRemaining <= urgentRemaining ? 16 : 8)
+            .frame(height: 8)
             .animation(.linear(duration: 0.05), value: session.questionRemaining)
         }
         .accessibilityElement(children: .ignore)
@@ -1128,7 +1197,8 @@ struct StroopGameView: View {
         case .placedArrow(let direction, let place):
             ZStack {
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.purple.opacity(0.10))
+                    .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(Color.purple.opacity(0.55), lineWidth: 2) }
                 Image(systemName: direction.symbol)
                     .font(.system(size: 52, weight: .bold))
                     .foregroundStyle(.white)
@@ -1139,7 +1209,8 @@ struct StroopGameView: View {
         case .placedWord(let word, let place):
             ZStack {
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(Color.purple.opacity(0.10))
+                    .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(Color.purple.opacity(0.55), lineWidth: 2) }
                 Text(word.name)
                     .font(.system(size: 64, weight: .black))
                     .foregroundStyle(.white)
@@ -1149,7 +1220,7 @@ struct StroopGameView: View {
             .frame(height: 230)
         case .digits(let value, let count):
             Text(String(repeating: "\(value)", count: count))
-                .font(.system(size: 64, weight: .black, design: .rounded))
+                .font(.system(size: 96, weight: .black, design: .rounded))
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
                 .foregroundStyle(.white)
@@ -1196,7 +1267,9 @@ struct StroopGameView: View {
     }
 
     private func choiceButton(_ choice: AnswerChoice) -> some View {
-        Button {
+        let selected = session.isResolving && session.selectedChoiceID == choice.id
+        let glow = session.lastAnswerWasCorrect == true ? Color.green : Color.red
+        return Button {
             session.choose(choice.id)
         } label: {
             HStack(spacing: 8) {
@@ -1213,7 +1286,16 @@ struct StroopGameView: View {
             .foregroundStyle(foreground(choice.style))
             .frame(maxWidth: .infinity)
             .frame(height: 64)
-            .background(fill(choice.style), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(LinearGradient(colors: selected
+                        ? [glow.opacity(0.85), glow.opacity(0.35)]
+                        : [fill(choice.style), fill(choice.style).opacity(0.7)], startPoint: .top, endPoint: .bottom))
+            }
+            .overlay { RoundedRectangle(cornerRadius: 18).strokeBorder(selected ? glow : .white.opacity(0.08), lineWidth: selected ? 3 : 1) }
+            .shadow(color: selected ? glow.opacity(0.8) : .clear, radius: 16)
+            .scaleEffect(selected && !reduceMotion ? 1.03 : 1)
+            .animation(reduceMotion ? nil : .spring(response: 0.2), value: selected)
             .overlay {
                 if case .ink(let color) = choice.style {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -1221,14 +1303,15 @@ struct StroopGameView: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ArcadePressStyle())
+        .disabled(session.isResolving)
         .accessibilityIdentifier("stroop-choice-\(choice.id)")
         .accessibilityLabel(choice.title)
     }
 
     private func fill(_ style: ChoiceStyle) -> Color {
         switch style {
-        case .neutral: Color.white.opacity(0.08)
+        case .neutral: Color(red: 0.14, green: 0.18, blue: 0.28)
         case .ink(let color): color.color.opacity(0.22)
         }
     }
@@ -1261,6 +1344,53 @@ struct StroopGameView: View {
                 .tint(.white)
         }
         .padding(24)
+    }
+}
+
+private struct GameAtmosphere: View {
+    let accent: Color
+
+    var body: some View {
+        ZStack {
+            Color(red: 0.025, green: 0.045, blue: 0.10)
+            RadialGradient(colors: [accent.opacity(0.13), .clear], center: .center, startRadius: 20, endRadius: 360)
+            Canvas { context, size in
+                for index in 0..<24 {
+                    let x = CGFloat((index * 73 + 17) % 100) / 100 * size.width
+                    let y = CGFloat((index * 37 + 11) % 100) / 100 * size.height
+                    let symbol = index.isMultiple(of: 3) ? "✦" : (index.isMultiple(of: 2) ? "2" : "9")
+                    context.draw(Text(symbol).font(.system(size: index.isMultiple(of: 3) ? 14 : 24, weight: .black, design: .rounded)).foregroundStyle(accent.opacity(0.17)), at: CGPoint(x: x, y: y))
+                }
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+private struct GameConfetti: View {
+    @State private var dispersed = false
+    private let colors: [Color] = [.cyan, .yellow, .pink, .green, .purple]
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                ForEach(0..<24, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(colors[index % colors.count])
+                        .frame(width: 7, height: 11)
+                        .rotationEffect(.degrees(Double(index * 47)))
+                        .offset(
+                            x: dispersed ? CGFloat(cos(Double(index) * .pi / 12)) * 150 : 0,
+                            y: dispersed ? CGFloat(sin(Double(index) * .pi / 12)) * 220 : 0
+                        )
+                        .opacity(dispersed ? 0 : 1)
+                }
+            }
+            .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+        }
+        .onAppear { withAnimation(.easeOut(duration: 0.65)) { dispersed = true } }
+        .accessibilityHidden(true)
     }
 }
 
