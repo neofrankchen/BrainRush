@@ -1395,7 +1395,6 @@ struct StroopGameView: View {
                 .background(.white.opacity(0.94), in: RoundedRectangle(cornerRadius: 28))
 
                 resultScoreCard
-                resultRanking
 
                 VStack(spacing: 12) {
                     Button { session.start() } label: {
@@ -1419,6 +1418,8 @@ struct StroopGameView: View {
                     .buttonStyle(ArcadePressStyle())
                     .accessibilityIdentifier("stroop-result-back")
                 }
+
+                resultRanking
             }
             .padding(20)
             .frame(maxWidth: 520)
