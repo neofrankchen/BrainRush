@@ -1052,18 +1052,18 @@ struct StroopGameView: View {
     private var menu: some View {
         GeometryReader { geometry in
             ScrollView {
-                VStack(spacing: 14) {
+                VStack(spacing: 10) {
                     Spacer(minLength: 0)
-                    WoodlandTitle(height: min(340, geometry.size.height * 0.46))
+                    WoodlandTitle(height: min(370, max(250, geometry.size.height * 0.49)))
                     HStack(spacing: 0) {
-                        menuMetric("trophy.fill", tr(ja: "ベストスコア", zh: "最高分", en: "Best score", my: "အကောင်းဆုံး"), "\(ScoreBoard.records(for: "stroop").map(\.score).max() ?? 0)", .orange)
+                        menuMetric("trophy.fill", tr(ja: "ベストスコア", zh: "最高分", en: "Best score", my: "အကောင်းဆုံး"), "\(ScoreBoard.records(for: "stroop").map(\.score).max() ?? 0)", CatQuizPalette.wood)
                         Divider().frame(height: 42).overlay(CatQuizPalette.wood.opacity(0.2))
                         menuMetric("heart.fill", tr(ja: "ライフ", zh: "爱心", en: "Lives", my: "နှလုံး"), "♥ ♥ ♥", .pink)
                         Divider().frame(height: 42).overlay(CatQuizPalette.wood.opacity(0.2))
                         menuMetric("square.grid.2x2.fill", tr(ja: "2択クイズ", zh: "二选一", en: "Two choices", my: "ရွေးစရာ ၂ ခု"), "A / B", CatQuizPalette.wood)
                     }
-                    .padding(.vertical, 14)
-                    .modifier(WoodlandPanel())
+                    .padding(.vertical, 10)
+                    .modifier(WoodlandPanel(cornerRadius: 18))
 
                     Button { session.start() } label: {
                         WoodlandAction(title: tr(ja: "ゲームを始める", zh: "开始游戏", en: "Let’s play", my: "ကစားမည်"), symbol: "play.fill")
@@ -1072,15 +1072,16 @@ struct StroopGameView: View {
                     .accessibilityIdentifier("stroop-start")
                     .accessibilityLabel(tr(ja: "開始", zh: "开始", en: "Start", my: "စတင်မည်"))
 
-                    HStack(spacing: 10) {
+                    HStack(spacing: 9) {
                         arcadeShortcut("crown.fill", tr(ja: "ランキング", zh: "排行榜", en: "Ranking", my: "အဆင့်"), .orange) { showsRanking = true }
                         arcadeShortcut("book.fill", tr(ja: "遊び方", zh: "怎么玩", en: "How to play", my: "ကစားနည်း"), .blue) { showsGuide = true }
                         arcadeShortcut("gearshape.fill", tr(ja: "設定", zh: "设置", en: "Settings", my: "ဆက်တင်"), CatQuizPalette.ink) { showsPractice = true }
                     }
                     Spacer(minLength: 0)
                 }
-                .padding(20)
-                .frame(maxWidth: 520)
+                .padding(.horizontal, max(22, geometry.size.width * 0.065))
+                .padding(.vertical, 16)
+                .frame(maxWidth: 450)
                 .frame(minHeight: geometry.size.height)
                 .frame(maxWidth: .infinity)
             }
@@ -1156,9 +1157,9 @@ struct StroopGameView: View {
 
     private func menuMetric(_ symbol: String, _ title: String, _ value: String, _ color: Color) -> some View {
         VStack(spacing: 5) {
-            Label(title, systemImage: symbol).font(.system(size: 10, weight: .bold, design: .rounded))
+            Label(title, systemImage: symbol).font(.system(size: 9, weight: .bold, design: .rounded))
                 .foregroundStyle(CatQuizPalette.wood)
-            Text(value).font(.system(size: 20, weight: .heavy, design: .rounded))
+            Text(value).font(.system(size: 21, weight: .heavy, design: .rounded))
                 .foregroundStyle(color).minimumScaleFactor(0.5).lineLimit(1)
         }
         .frame(maxWidth: .infinity)
@@ -1168,15 +1169,23 @@ struct StroopGameView: View {
     private func arcadeShortcut(_ symbol: String, _ title: String, _ color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 10) {
-                Image(systemName: symbol).font(.system(size: 30, weight: .bold)).foregroundStyle(color)
-                    .shadow(color: color.opacity(0.1), radius: 3)
+                Image(systemName: symbol).symbolRenderingMode(.palette).font(.system(size: 31, weight: .bold)).foregroundStyle(color)
+                    .shadow(color: CatQuizPalette.wood.opacity(0.4), radius: 0, y: 1)
+                    .shadow(color: Color(red: 1, green: 0.92, blue: 0.65), radius: 1)
                 Text(title).font(.system(.caption, design: .rounded, weight: .heavy))
                     .foregroundStyle(CatQuizPalette.ink)
                     .lineLimit(1).minimumScaleFactor(0.6)
             }
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 92)
-            .modifier(WoodlandPanel())
+            .frame(minHeight: 80)
+            .modifier(WoodlandPanel(cornerRadius: 20))
+            .overlay(alignment: .bottomTrailing) {
+                Image(systemName: "pawprint.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(CatQuizPalette.wood.opacity(0.14))
+                    .padding(9)
+                    .accessibilityHidden(true)
+            }
         }
         .buttonStyle(ArcadePressStyle())
     }
@@ -1752,14 +1761,16 @@ private struct WoodlandTitle: View {
 }
 
 private struct WoodlandPanel: ViewModifier {
+    var cornerRadius: CGFloat = 24
+
     func body(content: Content) -> some View {
         content
             .background {
-                RoundedRectangle(cornerRadius: 24)
+                RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(LinearGradient(colors: [Color(red: 1, green: 0.96, blue: 0.84), Color(red: 0.98, green: 0.87, blue: 0.69)], startPoint: .top, endPoint: .bottom))
             }
-            .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(Color(red: 0.67, green: 0.40, blue: 0.20), lineWidth: 2) }
-            .overlay { RoundedRectangle(cornerRadius: 21).strokeBorder(Color(red: 1, green: 0.98, blue: 0.87), lineWidth: 1.5).padding(4) }
+            .overlay { RoundedRectangle(cornerRadius: cornerRadius).strokeBorder(Color(red: 0.67, green: 0.40, blue: 0.20), lineWidth: 1.5) }
+            .overlay { RoundedRectangle(cornerRadius: max(4, cornerRadius - 3)).strokeBorder(Color(red: 1, green: 0.98, blue: 0.87), lineWidth: 1.5).padding(4) }
             .shadow(color: CatQuizPalette.wood.opacity(0.28), radius: 0, y: 4)
     }
 }
@@ -1772,15 +1783,21 @@ private struct WoodlandAction: View {
             Image(systemName: "pawprint.fill").font(.caption).opacity(0.45)
             Spacer(minLength: 0)
             Label(title, systemImage: symbol)
-                .font(.system(size: 20, weight: .heavy, design: .rounded))
+                .font(.system(size: 22, weight: .heavy, design: .rounded))
                 .minimumScaleFactor(0.65).lineLimit(1)
+                .shadow(color: Color(red: 1, green: 0.97, blue: 0.75), radius: 0, x: 1, y: 1)
             Spacer(minLength: 0)
             Image(systemName: "pawprint.fill").font(.caption).opacity(0.45)
         }
         .foregroundStyle(CatQuizPalette.wood)
-        .padding(.horizontal, 18).padding(.vertical, 18)
+        .padding(.horizontal, 18).padding(.vertical, 15)
         .background(LinearGradient(colors: [Color(red: 1, green: 0.92, blue: 0.39), Color(red: 1, green: 0.70, blue: 0.22)], startPoint: .top, endPoint: .bottom), in: Capsule())
         .overlay { Capsule().strokeBorder(CatQuizPalette.wood.opacity(0.8), lineWidth: 2) }
+        .overlay(alignment: .topLeading) {
+            Capsule().fill(Color(red: 1, green: 0.98, blue: 0.75).opacity(0.75))
+                .frame(width: 24, height: 5).rotationEffect(.degrees(-25))
+                .padding(.leading, 19).padding(.top, 12)
+        }
         .overlay { Capsule().strokeBorder(Color(red: 1, green: 0.98, blue: 0.76), lineWidth: 2).padding(4) }
         .shadow(color: CatQuizPalette.wood.opacity(0.35), radius: 0, y: 4)
     }
