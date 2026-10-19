@@ -11,6 +11,10 @@ final class BrainRushUITests: XCTestCase {
             NSPredicate(format: "identifier BEGINSWITH 'stroop-answer-'")
         ).firstMatch
         XCTAssertTrue(prompt.waitForExistence(timeout: 5))
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Cat quiz — iPhone layout"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
         let answer = prompt.identifier.replacingOccurrences(of: "stroop-answer-", with: "")
         XCTAssertTrue(app.staticTexts["得点 0"].exists)
 
