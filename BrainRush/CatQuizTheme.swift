@@ -17,7 +17,7 @@ struct CatQuizHost: View {
                 .frame(width: 146, height: 106, alignment: .bottom)
                 .accessibilityHidden(true)
             Text(isMistake
-                 ? tr(ja: "もう一度、\nよ〜く見てね！", zh: "再来一次，\n仔细看哦！", en: "Look closely,\ntry again!", my: "သေချာကြည့်ပြီး\nထပ်ကြိုးစားပါ။")
+                 ? tr(ja: "答えの理由を\n一緒に見よう！", zh: "一起看看，\n为什么选它！", en: "Let's see\nwhy this fits!", my: "အဖြေမှန်ရဲ့\nအကြောင်းရင်းကြည့်မယ်")
                  : tr(ja: "よ〜く見て\n選んでね！", zh: "仔细看看，\n再选答案！", en: "Look closely\nand choose!", my: "သေချာကြည့်ပြီး\nရွေးပါ။"))
                 .font(.system(size: 18, weight: .heavy, design: .rounded))
                 .multilineTextAlignment(.center)

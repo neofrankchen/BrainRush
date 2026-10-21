@@ -58,6 +58,7 @@ struct LanguagePicker: View {
                 .foregroundStyle(CatQuizPalette.wood)
                 .padding(.horizontal, compact ? 8 : 12)
                 .padding(.vertical, compact ? 4 : 6)
+                .frame(minHeight: compact ? 32 : 44)
                 .background {
                     Capsule().fill(
                         selected == language
@@ -66,6 +67,7 @@ struct LanguagePicker: View {
                     )
                 }
                 .accessibilityAddTraits(selected == language ? .isSelected : [])
+                .accessibilityIdentifier("language-\(language.rawValue)")
             }
         }
     }
@@ -251,7 +253,7 @@ enum Stimulus: Equatable {
     case placedWord(word: Compass, place: Compass)
     case digits(value: Int, count: Int)
     case pair(left: Int, right: Int, leftUsesLargerFont: Bool)
-    case emblem(id: String, symbol: String)
+    case emblem(id: String)
 }
 
 struct StroopRound: Equatable {
@@ -279,8 +281,68 @@ struct StroopRound: Equatable {
     static var brainTeaserCount: Int { teaserPool().count }
 
     static func teaserID(from stimulus: Stimulus) -> String? {
-        if case .emblem(let id, _) = stimulus { return id }
+        if case .emblem(let id) = stimulus { return id }
         return nil
+    }
+
+    private static func interferenceRule(_ task: InterferenceTask, trap: Bool) -> String {
+        switch task {
+        case .colorWord:
+            return trap
+                ? tr(ja: "見えている文字を選べ", zh: "选择你看到的文字", en: "Choose the text you see", my: "မြင်ရသော စာသားကို ရွေးပါ")
+                : tr(ja: "見えている色を選べ", zh: "选择你看到的颜色", en: "Choose the color you see", my: "မြင်ရသော အရောင်ကို ရွေးပါ")
+        case .arrowPlace:
+            return trap
+                ? tr(ja: "矢印がある場所を選べ", zh: "选出箭头在哪一边", en: "Pick the side where the arrow sits", my: "မြားရှိသောဘက်ကို ရွေးပါ")
+                : tr(ja: "矢印が指している方を選べ", zh: "选出箭头指向哪一边", en: "Pick the side the arrow points to", my: "မြားညွှန်သောဘက်ကို ရွေးပါ")
+        case .wordPlace:
+            return trap
+                ? tr(ja: "字がある場所を選べ", zh: "选出字在哪一边", en: "Pick the side where the word sits", my: "စာလုံးရှိသောဘက်ကို ရွေးပါ")
+                : tr(ja: "書いてある字を選べ", zh: "选出字写的是什么", en: "Pick what the word says", my: "ရေးထားသော စာလုံးကို ရွေးပါ")
+        case .numberCount:
+            return trap
+                ? tr(ja: "数字は何個ある？", zh: "有几个数字？", en: "How many digits are there?", my: "ဂဏန်း ဘယ်နှစ်လုံး ရှိသလဲ။")
+                : tr(ja: "数字は？", zh: "数字是几？", en: "What is the number?", my: "ဂဏန်းက ဘယ်လဲ။")
+        case .valueSize:
+            return trap
+                ? tr(ja: "字が大きい方の数字を選べ", zh: "选择字体更大的数字", en: "Choose the number in bigger text", my: "စာလုံးပိုကြီးသော ဂဏန်းကို ရွေးပါ")
+                : tr(ja: "数の大きい方の数字を選べ", zh: "选择数值更大的数字", en: "Choose the larger number", my: "ပိုကြီးသော ကိန်းကို ရွေးပါ")
+        case .brainTeaser:
+            return task.title
+        }
+    }
+
+    /// Rebuild translated text from the same cues and keep option IDs and order intact.
+    func localized() -> StroopRound {
+        var translated = self
+        let trap: Bool
+        switch stimulus {
+        case .word(let word, _): trap = answerID == word.rawValue
+        case .placedArrow(_, let place): trap = answerID == place.rawValue
+        case .placedWord(_, let place): trap = answerID == place.rawValue
+        case .digits(_, let count): trap = answerID == "\(count)"
+        case .pair(let left, let right, let leftUsesLargerFont):
+            trap = answerID == "\(leftUsesLargerFont ? left : right)"
+        case .emblem(let id):
+            guard let matching = Self.teaserPool().first(where: { Self.teaserID(from: $0.stimulus) == id }) else { return self }
+            translated.rule = matching.rule
+            translated.choices = choices.map { choice in
+                let title = matching.choices.first(where: { $0.id == choice.id })?.title ?? choice.title
+                return AnswerChoice(id: choice.id, title: title, symbol: choice.symbol, style: choice.style, slot: choice.slot, badge: choice.badge)
+            }
+            return translated
+        }
+        translated.rule = Self.interferenceRule(task, trap: trap)
+        translated.choices = choices.map { choice in
+            let title: String
+            switch task {
+            case .colorWord: title = StroopColor(rawValue: choice.id)?.name ?? choice.title
+            case .arrowPlace, .wordPlace: title = Compass(rawValue: choice.id)?.name ?? choice.title
+            default: title = choice.title
+            }
+            return AnswerChoice(id: choice.id, title: title, symbol: choice.symbol, style: choice.style, slot: choice.slot, badge: choice.badge)
+        }
+        return translated
     }
 
     private static func colorWord(trap: Bool) -> StroopRound {
@@ -289,9 +351,7 @@ struct StroopRound: Equatable {
         let answer = trap ? word : ink
         return StroopRound(
             task: .colorWord,
-            rule: trap
-                ? tr(ja: "見えている文字を選べ", zh: "选择你看到的文字", en: "Choose the text you see", my: "မြင်ရသော စာသားကို ရွေးပါ")
-                : tr(ja: "見えている色を選べ", zh: "选择你看到的颜色", en: "Choose the color you see", my: "မြင်ရသော အရောင်ကို ရွေးပါ"),
+            rule: interferenceRule(.colorWord, trap: trap),
             answerID: answer.rawValue,
             choices: colorChoices(ink: ink, word: word),
             stimulus: .word(word, ink: ink)
@@ -303,9 +363,7 @@ struct StroopRound: Equatable {
         let place = other(direction, in: Compass.allCases)
         return StroopRound(
             task: .arrowPlace,
-            rule: trap
-                ? tr(ja: "矢印がある場所を選べ", zh: "选出箭头在哪一边", en: "Pick the side where the arrow sits", my: "မြားရှိသောဘက်ကို ရွေးပါ")
-                : tr(ja: "矢印が指している方を選べ", zh: "选出箭头指向哪一边", en: "Pick the side the arrow points to", my: "မြားညွှန်သောဘက်ကို ရွေးပါ"),
+            rule: interferenceRule(.arrowPlace, trap: trap),
             answerID: (trap ? place : direction).rawValue,
             choices: compassChoices(direction, place, showArrow: true),
             stimulus: .placedArrow(direction: direction, place: place)
@@ -317,9 +375,7 @@ struct StroopRound: Equatable {
         let place = other(word, in: Compass.allCases)
         return StroopRound(
             task: .wordPlace,
-            rule: trap
-                ? tr(ja: "字がある場所を選べ", zh: "选出字在哪一边", en: "Pick the side where the word sits", my: "စာလုံးရှိသောဘက်ကို ရွေးပါ")
-                : tr(ja: "書いてある字を選べ", zh: "选出字写的是什么", en: "Pick what the word says", my: "ရေးထားသော စာလုံးကို ရွေးပါ"),
+            rule: interferenceRule(.wordPlace, trap: trap),
             answerID: (trap ? place : word).rawValue,
             choices: compassChoices(word, place, showArrow: false),
             stimulus: .placedWord(word: word, place: place)
@@ -333,9 +389,7 @@ struct StroopRound: Equatable {
         let shown = String(repeating: "\(value)", count: count)
         return StroopRound(
             task: .numberCount,
-            rule: trap
-                ? tr(ja: "数字は何個ある？", zh: "有几个数字？", en: "How many digits are there?", my: "ဂဏန်း ဘယ်နှစ်လုံး ရှိသလဲ။")
-                : tr(ja: "数字は？", zh: "数字是几？", en: "What is the number?", my: "ဂဏန်းက ဘယ်လဲ။"),
+            rule: interferenceRule(.numberCount, trap: trap),
             answerID: trap ? "\(count)" : shown,
             choices: numberChoices(shown: shown, count: count),
             stimulus: .digits(value: value, count: count)
@@ -362,9 +416,7 @@ struct StroopRound: Equatable {
         let answer = trap ? smaller : larger
         return StroopRound(
             task: .valueSize,
-            rule: trap
-                ? tr(ja: "字が大きい方の数字を選べ", zh: "选择字体更大的数字", en: "Choose the number in bigger text", my: "စာလုံးပိုကြီးသော ဂဏန်းကို ရွေးပါ")
-                : tr(ja: "数の大きい方の数字を選べ", zh: "选择数值更大的数字", en: "Choose the larger number", my: "ပိုကြီးသော ကိန်းကို ရွေးပါ"),
+            rule: interferenceRule(.valueSize, trap: trap),
             answerID: "\(answer)",
             choices: numericChoices(including: ["\(left)", "\(right)"]),
             stimulus: .pair(left: left, right: right, leftUsesLargerFont: leftUsesLargerFont)
@@ -384,7 +436,6 @@ struct StroopRound: Equatable {
         [
             teaser(
                 id: "race",
-                emblem: "🏃‍♂️",
                 rule: tr(
                     ja: "徒競走に出て、2位の人を抜いた。今は何位？",
                     zh: "你参加赛跑，超过第二名，现在第几名？",
@@ -399,7 +450,6 @@ struct StroopRound: Equatable {
             ),
             teaser(
                 id: "iron-cotton",
-                emblem: "⚖️",
                 rule: tr(
                     ja: "鉄1キロと綿1キロ、どちらが重い？",
                     zh: "一公斤铁和一公斤棉花哪个重？",
@@ -414,7 +464,6 @@ struct StroopRound: Equatable {
             ),
             teaser(
                 id: "apples",
-                emblem: "🍎",
                 rule: tr(
                     ja: "テーブルにリンゴが3個ある。2個持っていったら、自分は何個持っている？",
                     zh: "桌上有3个苹果，你拿走2个，你有几个？",
@@ -428,23 +477,7 @@ struct StroopRound: Equatable {
                 ]
             ),
             teaser(
-                id: "pills",
-                emblem: "💊",
-                rule: tr(
-                    ja: "医者に薬を3錠もらった。30分ごとに1錠飲むと、全部飲み終わるまで何分？",
-                    zh: "一个医生给你3颗药，每隔30分钟吃一颗，多久吃完？",
-                    en: "A doctor gives you 3 pills. You take one every 30 minutes. How long until they are all gone?",
-                    my: "ဆရာဝန်က ဆေးလုံး ၃ လုံး ပေးသည်။ ၃၀ မိနစ်ခြား တစ်လုံးစားရင် အားလုံးကုန်ဖို့ ဘယ်လောက်ကြာလဲ။"
-                ),
-                answerID: "sixty",
-                choices: [
-                    ("ninety", tr(ja: "90分", zh: "90分钟", en: "90 minutes", my: "၉၀ မိနစ်")),
-                    ("sixty", tr(ja: "60分", zh: "60分钟", en: "60 minutes", my: "၆၀ မိနစ်")),
-                ]
-            ),
-            teaser(
                 id: "machines",
-                emblem: "🏭",
                 rule: tr(
                     ja: "機械5台が5分で製品5個作る。機械100台で製品100個作るには何分？",
                     zh: "5台机器5分钟生产5个产品，100台机器生产100个需要多久？",
@@ -458,23 +491,7 @@ struct StroopRound: Equatable {
                 ]
             ),
             teaser(
-                id: "months-28",
-                emblem: "📅",
-                rule: tr(
-                    ja: "1年のうち、28日を含む月は何個ある？",
-                    zh: "一年中有几个月包含28天？",
-                    en: "How many months in a year have 28 days?",
-                    my: "တစ်နှစ်တွင် ၂၈ ရက်ပါသော လ ဘယ်နှစ်လ ရှိသလဲ။"
-                ),
-                answerID: "twelve",
-                choices: [
-                    ("one", tr(ja: "1か月", zh: "1个月", en: "1 month", my: "၁ လ")),
-                    ("twelve", tr(ja: "12か月", zh: "12个月", en: "12 months", my: "၁၂ လ")),
-                ]
-            ),
-            teaser(
                 id: "snail-teeth",
-                emblem: "🐌",
                 rule: tr(
                     ja: "カタツムリの歯はだいたい何本？",
                     zh: "蜗牛大约有多少颗牙齿？",
@@ -489,7 +506,6 @@ struct StroopRound: Equatable {
             ),
             teaser(
                 id: "ostrich-eye",
-                emblem: "🐦",
                 rule: tr(
                     ja: "ダチョウの眼球と脳、小さいのはどっち？",
                     zh: "鸵鸟的眼球和大脑，哪个更小？",
@@ -504,7 +520,6 @@ struct StroopRound: Equatable {
             ),
             teaser(
                 id: "firework-whistle",
-                emblem: "🎆",
                 rule: tr(
                     ja: "花火が上がるときの「シュー」音はどこから？",
                     zh: "烟花升空时的「咻——」声从哪里来？",
@@ -519,7 +534,6 @@ struct StroopRound: Equatable {
             ),
             teaser(
                 id: "bus-bunk",
-                emblem: "🚌",
                 rule: tr(
                     ja: "日本の一部の長距離バスに隠れているものは？",
                     zh: "日本某些长途巴士里面隐藏着什么？",
@@ -534,7 +548,6 @@ struct StroopRound: Equatable {
             ),
             teaser(
                 id: "lion-room",
-                emblem: "🦁",
                 rule: tr(
                     ja: "ライオンがいる部屋。もう3年何も食べていない。入っても安全？",
                     zh: "一个房间里有狮子，已经3年没吃东西。进去安全吗？",
@@ -549,7 +562,6 @@ struct StroopRound: Equatable {
             ),
             teaser(
                 id: "prison-visitor",
-                emblem: "🏛️",
                 rule: tr(
                     ja: "刑務所で弁護士と話していたのに、保釈は却下された。なのに彼は普通に出ていった。なぜ？",
                     zh: "一个人在监狱里和律师谈话，法官拒绝保释，他却顺利离开监狱。为什么？",
@@ -564,7 +576,6 @@ struct StroopRound: Equatable {
             ),
             teaser(
                 id: "newborn",
-                emblem: "👶",
                 rule: tr(
                     ja: "男が帰宅すると妻のそばに別の人がいるのに、とても喜んだ。なぜ？",
                     zh: "男人下班回家，看到妻子身边有另一个人，却非常开心。为什么？",
@@ -578,23 +589,7 @@ struct StroopRound: Equatable {
                 ]
             ),
             teaser(
-                id: "pink-house",
-                emblem: "🏠",
-                rule: tr(
-                    ja: "平屋の家が全部ピンク色。階段は何色？",
-                    zh: "一栋单层房屋全是粉红色，楼梯是什么颜色？",
-                    en: "A one-story house is all pink. What color are the stairs?",
-                    my: "တစ်ထပ်အိမ် အားလုံး ပန်းရောင်။ လှေကား ဘာအရောင်လဲ။"
-                ),
-                answerID: "none",
-                choices: [
-                    ("pink", tr(ja: "ピンク", zh: "粉红色", en: "Pink", my: "ပန်းရောင်")),
-                    ("none", tr(ja: "階段はない", zh: "没有楼梯", en: "There are no stairs", my: "လှေကား မရှိ")),
-                ]
-            ),
-            teaser(
                 id: "open-eyes",
-                emblem: "😴",
                 rule: tr(
                     ja: "寝ているところに親が朝食を持ってノックした。まず開けるべきなのは？",
                     zh: "你正在睡觉，父母来敲门送早餐。应该先打开什么？",
@@ -612,7 +607,6 @@ struct StroopRound: Equatable {
 
     private static func teaser(
         id: String,
-        emblem: String,
         rule: String,
         answerID: String,
         choices: [(id: String, title: String)]
@@ -624,7 +618,7 @@ struct StroopRound: Equatable {
             choices: choices.shuffled().map {
                 AnswerChoice(id: $0.id, title: $0.title, symbol: nil, style: .neutral)
             },
-            stimulus: .emblem(id: id, symbol: emblem)
+            stimulus: .emblem(id: id)
         )
     }
 
@@ -783,8 +777,8 @@ final class StroopSession {
     private(set) var heartGain = 0
     private(set) var correctCount = 0
     private(set) var answerCount = 0
-    private(set) var questionRemaining: TimeInterval = 10
-    private(set) var questionLimit: TimeInterval = 10
+    private(set) var questionRemaining: TimeInterval = 30
+    private(set) var questionLimit: TimeInterval = 30
     private(set) var lastAnswerWasCorrect: Bool?
     private(set) var lastMissWasTimeout = false
     private(set) var isResolving = false
@@ -808,6 +802,10 @@ final class StroopSession {
         !testing || testUsesTimer
     }
 
+    var isReviewingMistake: Bool {
+        isResolving && lastAnswerWasCorrect == false
+    }
+
     var accuracyText: String {
         guard answerCount > 0 else { return tr(ja: "まだ回答がない", zh: "还没有作答", en: "No answers yet", my: "အဖြေမရှိသေးပါ") }
         let percent = Int((Double(correctCount) / Double(answerCount) * 100).rounded())
@@ -829,8 +827,8 @@ final class StroopSession {
         heartGain = 0
         correctCount = 0
         answerCount = 0
-        questionLimit = 10
-        questionRemaining = 10
+        questionLimit = 30
+        questionRemaining = 30
         lastAnswerWasCorrect = nil
         lastMissWasTimeout = false
         audio.prepare()
@@ -856,6 +854,7 @@ final class StroopSession {
 
     private func choose(_ id: String, timeout: Bool) {
         guard phase == .playing, !isResolving else { return }
+        guard timeout || round.choices.contains(where: { $0.id == id }) else { return }
         isResolving = true
         selectedChoiceID = timeout ? nil : id
         questionEndsAt = nil
@@ -871,33 +870,36 @@ final class StroopSession {
             } else {
                 audio.play(.correct)
             }
-            if !testing {
-                questionLimit = max(5, questionLimit - 1)
-            }
             lastAnswerWasCorrect = true
             lastMissWasTimeout = false
         } else {
             streak = 0
             if !testing {
                 hearts -= 1
-                questionLimit = 10
             }
             lastAnswerWasCorrect = false
             lastMissWasTimeout = timeout
             audio.play(timeout ? .timeout : .wrong)
         }
+        // A missed question stays visible until the player has read its explanation.
+        guard lastAnswerWasCorrect == true else { return }
         let answeredRound = roundID
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(650))
             guard phase == .playing, roundID == answeredRound else { return }
-            if !testing, hearts <= 0 {
-                hearts = 0
-                ScoreBoard.submit(game: "stroop", score: score, rank: .high)
-                phase = .finished
-                isResolving = false
-            } else {
-                deal()
-            }
+            deal()
+        }
+    }
+
+    func continueAfterMistake() {
+        guard phase == .playing, isReviewingMistake else { return }
+        if !testing, hearts <= 0 {
+            hearts = 0
+            ScoreBoard.submit(game: "stroop", score: score, rank: .high)
+            phase = .finished
+            isResolving = false
+        } else {
+            deal()
         }
     }
 
@@ -916,7 +918,7 @@ final class StroopSession {
         testing = on
         if on {
             testUsesTimer = false
-            questionLimit = 10
+            questionLimit = 30
         }
         guard phase == .playing else { return }
         deal()
@@ -925,8 +927,9 @@ final class StroopSession {
     func setTestTimer(_ on: Bool) {
         testUsesTimer = on
         guard phase == .playing, testing else { return }
+        guard !isResolving else { return }
         if on {
-            questionLimit = 10
+            questionLimit = 30
             questionEndsAt = Date().addingTimeInterval(questionLimit)
             questionRemaining = questionLimit
         } else {
@@ -947,9 +950,9 @@ final class StroopSession {
         deal()
     }
 
-    func applyTestLanguage() {
-        guard phase == .playing, testing else { return }
-        deal()
+    func applyLanguage() {
+        guard phase == .playing else { return }
+        round = round.localized()
     }
 
     private func deal() {
@@ -1042,7 +1045,7 @@ struct StroopGameView: View {
             }
         }
         .onChange(of: LanguageStore.shared.language) { _, _ in
-            session.applyTestLanguage()
+            session.applyLanguage()
         }
         .sensoryFeedback(.success, trigger: session.correctCount)
         .sensoryFeedback(.increase, trigger: session.heartGain)
@@ -1054,6 +1057,7 @@ struct StroopGameView: View {
             ScrollView {
                 VStack(spacing: 10) {
                     Spacer(minLength: 0)
+                    languageBar
                     WoodlandTitle(height: min(370, max(250, geometry.size.height * 0.49)))
                     HStack(spacing: 0) {
                         menuMetric("trophy.fill", tr(ja: "ベストスコア", zh: "最高分", en: "Best score", my: "အကောင်းဆုံး"), "\(ScoreBoard.records(for: "stroop").map(\.score).max() ?? 0)", CatQuizPalette.wood)
@@ -1104,10 +1108,10 @@ struct StroopGameView: View {
                     guide(
                         tr(ja: "6種類の問題", zh: "六种题目", en: "Six kinds of questions", my: "မေးခွန်း ၆ မျိုး"),
                         tr(
-                            ja: "どの問題も2つの選択肢から答えます。\n色：見えている色か、見えている文字か。文字の意味とインクの色は違います。\n矢印：指している方か、矢印がある場所か。向きと場所は違います。\n文字の位置：書いてある字か、字がある場所か。意味と場所は違います。\n数字と個数：例えば画面が111なら、選択肢には111と3が含まれます。「数字は？」なら111、「数字は何個ある？」なら3。並びと個数は違います。\n大きさ：数の大きい方の数字か、字の大きい方の数字を選びます。差は1か2で、字が大きいのは数の小さい方です。\nひっかけ：正解ともっとも間違えやすい答えの二択。例）2位を抜く→2位。鉄と綿1kg→同じ。リンゴ2個持っていく→2個。薬3錠を30分ごと→60分。機械→5分。28日を含む月→12か月。",
+                            ja: "どの問題も2つの選択肢から答えます。\n色：見えている色か、見えている文字か。文字の意味とインクの色は違います。\n矢印：指している方か、矢印がある場所か。向きと場所は違います。\n文字の位置：書いてある字か、字がある場所か。意味と場所は違います。\n数字と個数：例えば画面が111なら、選択肢には111と3が含まれます。「数字は？」なら111、「数字は何個ある？」なら3。並びと個数は違います。\n大きさ：数の大きい方の数字か、字の大きい方の数字を選びます。差は1か2で、字が大きいのは数の小さい方です。\nひっかけ：正解ともっとも間違えやすい答えの二択。例）2位を抜く→2位。鉄と綿1kg→同じ。リンゴ2個持っていく→2個。機械→5分。",
                             zh: "每道题都有两个选项。\n颜色：看到的颜色，还是看到的文字。字义和墨水颜色不会相同。\n箭头：箭头指向哪一边，还是箭头在哪一边。指向和位置不会相同。\n方位字：字写的是什么，还是字在哪一边。字义和位置不会相同。\n数字和数量：例如画面是 111，选项包含 111 和 3。问「数字是几？」选 111，问「有几个数字？」选 3。数字串和数量不会相同。\n大小：选择数值更大的数字，或字体更大的数字。两数只差 1 或 2，字更大的是数值更小的那个。\n脑筋急转弯：两个选项里，一个是正确答案，另一个是最容易想错的答案。同一局里出过的急转弯题不会再出，抽完一轮后才会重新洗入。",
-                            en: "Every question has two choices.\nColor: the color you see, or the text you see. The word and the ink never match.\nArrow: the side it points to, or the side where it sits. Direction and place never match.\nPlace word: what the word says, or the side where it sits. Meaning and place never match.\nNumber and count: if the screen shows 111, the choices include 111 and 3. \"What is the number?\" means 111. \"How many digits are there?\" means 3. The written number and the count never match.\nSize: choose the larger number, or the number displayed in bigger text. The numbers differ by 1 or 2, and the bigger text is the smaller number.\nBrain teasers: one correct answer and the most tempting wrong answer. Overtake 2nd → 2nd. 1 kg iron vs cotton → same. Take 2 apples → 2. 3 pills every 30 minutes → 60 minutes. 100 machines → 5 minutes. Months with 28 days → 12.",
-                            my: "မေးခွန်းတိုင်းကို ရွေးစရာ ၂ ခု ပေးသည်။\nအရောင်။ မြင်ရသော အရောင်၊ သို့မဟုတ် မြင်ရသော စာသား။ စာသားအဓိပ္ပာယ်နှင့် မင်အရောင် မတူပါ။\nမြား။ ညွှန်သောဘက်၊ သို့မဟုတ် မြားရှိသောဘက်။ ဦးတည်ချက်နှင့် နေရာ မတူပါ။\nနေရာစာလုံး။ ရေးထားသောစာလုံး၊ သို့မဟုတ် စာလုံးရှိသောဘက်။ အဓိပ္ပာယ်နှင့် နေရာ မတူပါ။\nဂဏန်းနှင့် အရေအတွက်။ ဥပမာ မျက်နှာပြင်မှာ ၁၁၁ ဖြစ်လျှင် ရွေးစရာက ၁၁၁ နှင့် ၃။ \"ဂဏန်းက ဘယ်လဲ\" ဆိုရင် ၁၁၁၊ \"ဂဏန်း ဘယ်နှစ်လုံး ရှိသလဲ\" ဆိုရင် ၃။ ရေးထားသောကိန်းနှင့် အရေအတွက် မတူပါ။\nအရွယ်။ ကိန်းပိုကြီးသောဘက်၊ သို့မဟုတ် စာလုံးပိုကြီးသောဘက်။ ကိန်းနှစ်ခုက ၁ သို့မဟုတ် ၂ ပဲ ကွာပြီး စာလုံးပိုကြီးတာက ကိန်းပိုငယ်သောဘက် ဖြစ်သည်။\nပဟေဠိ။ ဒုတိယကျော် → ဒုတိယ။ သံ/ချည် တစ်ကီလို → အလေးချိန်တူ။ ပန်းသီး ၂ လုံးယူ → ၂ လုံး။ ဆေး ၃၀ မိနစ်ခြား → ၆၀ မိနစ်။ စက် ၁၀၀ → ၅ မိနစ်။"
+                            en: "Every question has two choices.\nColor: the color you see, or the text you see. The word and the ink never match.\nArrow: the side it points to, or the side where it sits. Direction and place never match.\nPlace word: what the word says, or the side where it sits. Meaning and place never match.\nNumber and count: if the screen shows 111, the choices include 111 and 3. \"What is the number?\" means 111. \"How many digits are there?\" means 3. The written number and the count never match.\nSize: choose the larger number, or the number displayed in bigger text. The numbers differ by 1 or 2, and the bigger text is the smaller number.\nBrain teasers: one correct answer and the most tempting wrong answer. Overtake 2nd → 2nd. 1 kg iron vs cotton → same. Take 2 apples → 2. 100 machines → 5 minutes.",
+                            my: "မေးခွန်းတိုင်းကို ရွေးစရာ ၂ ခု ပေးသည်။\nအရောင်။ မြင်ရသော အရောင်၊ သို့မဟုတ် မြင်ရသော စာသား။ စာသားအဓိပ္ပာယ်နှင့် မင်အရောင် မတူပါ။\nမြား။ ညွှန်သောဘက်၊ သို့မဟုတ် မြားရှိသောဘက်။ ဦးတည်ချက်နှင့် နေရာ မတူပါ။\nနေရာစာလုံး။ ရေးထားသောစာလုံး၊ သို့မဟုတ် စာလုံးရှိသောဘက်။ အဓိပ္ပာယ်နှင့် နေရာ မတူပါ။\nဂဏန်းနှင့် အရေအတွက်။ ဥပမာ မျက်နှာပြင်မှာ ၁၁၁ ဖြစ်လျှင် ရွေးစရာက ၁၁၁ နှင့် ၃။ \"ဂဏန်းက ဘယ်လဲ\" ဆိုရင် ၁၁၁၊ \"ဂဏန်း ဘယ်နှစ်လုံး ရှိသလဲ\" ဆိုရင် ၃။ ရေးထားသောကိန်းနှင့် အရေအတွက် မတူပါ။\nအရွယ်။ ကိန်းပိုကြီးသောဘက်၊ သို့မဟုတ် စာလုံးပိုကြီးသောဘက်။ ကိန်းနှစ်ခုက ၁ သို့မဟုတ် ၂ ပဲ ကွာပြီး စာလုံးပိုကြီးတာက ကိန်းပိုငယ်သောဘက် ဖြစ်သည်။\nပဟေဠိ။ ဒုတိယကျော် → ဒုတိယ။ သံ/ချည် တစ်ကီလို → အလေးချိန်တူ။ ပန်းသီး ၂ လုံးယူ → ၂ လုံး။ စက် ၁၀၀ → ၅ မိနစ်။"
                         )
                     )
                     guide(
@@ -1122,10 +1126,10 @@ struct StroopGameView: View {
                     guide(
                         tr(ja: "ハートと時間", zh: "爱心和时间", en: "Hearts and time", my: "နှလုံးနှင့် အချိန်"),
                         tr(
-                            ja: "ハートは3つから始まります。不正解か時間切れで1つ減り、0になると終了です。3問連続で正解すると1つ増えます。\n最初の制限時間は10秒です。連続で正解するたびに、次の問題が1秒短くなり、最短は5秒です。不正解か時間切れのあと、次の問題は10秒に戻ります。残りわずかになると、バーが赤くなって点滅します。正解は高い音、不正解は低い音、時間切れは下がる音です。ハートが増えるときは明るい音が鳴ります。",
-                            zh: "开局有 3 颗爱心。答错或超时扣 1 颗，减到 0 就结束。连续答对 3 题加 1 颗。\n第一题 10 秒。每连续答对一题，下一题少 1 秒，最短 5 秒。答错或超时之后，下一题回到 10 秒。时间所剩不多时，进度条会变红并闪动。答对是高音，答错是低音，超时是向下的音。加上爱心时会响一声更亮的音。",
-                            en: "You start with 3 hearts. A miss or a timeout removes 1, and the game ends at 0. Three correct answers in a row add 1.\nThe first question lasts 10 seconds. Each correct answer in a row makes the next question 1 second shorter, down to 5. After a miss or a timeout, the next question returns to 10 seconds. When little time is left, the bar turns red and pulses. A correct answer plays a high note, a miss plays a low note, and a timeout plays a falling note. Gaining a heart plays a brighter chime.",
-                            my: "နှလုံး ၃ ခုဖြင့် စသည်။ မှားလျှင် သို့မဟုတ် အချိန်ကုန်လျှင် ၁ ခုလျော့ပြီး ၀ ဖြစ်လျှင် ပြီးသည်။ ဆက်တိုက် ၃ ခုမှန်လျှင် ၁ ခုတိုးသည်။\nပထမမေးခွန်းက ၁၀ စက္ကန့်။ ဆက်တိုက်မှန်တိုင်း နောက်တစ်ခုက ၁ စက္ကန့်လျော့ပြီး အနည်းဆုံး ၅ စက္ကန့်။ မှားလျှင် သို့မဟုတ် အချိန်ကုန်လျှင် နောက်တစ်ခုက ၁၀ စက္ကန့် ပြန်ဖြစ်သည်။ အချိန်နည်းလာလျှင် ဘားတန်း နီလာပြီး တဖျတ်ဖျတ်ဖြစ်သည်။ မှန်လျှင် အသံမြင့်၊ မှားလျှင် အသံနိမ့်၊ အချိန်ကုန်လျှင် အသံကျသည်။ နှလုံးတိုးလျှင် ပိုလင်းသော အသံ ထွက်သည်။"
+                            ja: "ハートは3つから始まります。不正解か時間切れで1つ減り、0になると終了です。3問連続で正解すると1つ増えます。\n制限時間は毎回30秒です。残りわずかになると、バーが赤くなって点滅します。正解は高い音、不正解は低い音、時間切れは下がる音です。ハートが増えるときは明るい音が鳴ります。",
+                            zh: "开局有 3 颗爱心。答错或超时扣 1 颗，减到 0 就结束。连续答对 3 题加 1 颗。\n每题固定 30 秒。时间所剩不多时，进度条会变红并闪动。答对是高音，答错是低音，超时是向下的音。加上爱心时会响一声更亮的音。",
+                            en: "You start with 3 hearts. A miss or a timeout removes 1, and the game ends at 0. Three correct answers in a row add 1.\nEvery question lasts 30 seconds. When little time is left, the bar turns red and pulses. A correct answer plays a high note, a miss plays a low note, and a timeout plays a falling note. Gaining a heart plays a brighter chime.",
+                            my: "နှလုံး ၃ ခုဖြင့် စသည်။ မှားလျှင် သို့မဟုတ် အချိန်ကုန်လျှင် ၁ ခုလျော့ပြီး ၀ ဖြစ်လျှင် ပြီးသည်။ ဆက်တိုက် ၃ ခုမှန်လျှင် ၁ ခုတိုးသည်။\nမေးခွန်းတိုင်းက ၃၀ စက္ကန့်ပဲ။ အချိန်နည်းလာလျှင် ဘားတန်း နီလာပြီး တဖျတ်ဖျတ်ဖြစ်သည်။ မှန်လျှင် အသံမြင့်၊ မှားလျှင် အသံနိမ့်၊ အချိန်ကုန်လျှင် အသံကျသည်။ နှလုံးတိုးလျှင် ပိုလင်းသော အသံ ထွက်သည်။"
                         )
                     )
                     guide(
@@ -1308,33 +1312,48 @@ struct StroopGameView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    private var languageBar: some View {
+        LanguagePicker(compact: true)
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+            .background(CatQuizPalette.cream.opacity(0.95), in: Capsule())
+    }
+
     private var playfield: some View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 12) {
                     quizHeader
+                    languageBar
                     if session.testing {
                         VStack(alignment: .leading, spacing: 8) {
-                            LanguagePicker(compact: true)
                             testControls(showNote: false)
                         }
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .modifier(WoodlandPanel())
                     }
-                    CatQuizHost(isMistake: session.lastAnswerWasCorrect == false)
-                        .padding(.bottom, -18)
-                        .zIndex(1)
+                    if session.isReviewingMistake {
+                        mistakeExplanation
+                    } else {
+                        CatQuizHost(isMistake: false)
+                            .padding(.bottom, -18)
+                            .zIndex(1)
+                    }
                     VStack(spacing: 4) {
                         questionBanner
-                        stimulusPanel
+                        if session.round.task != .brainTeaser {
+                            stimulusPanel
+                        }
                     }
                     .padding(12)
                     .modifier(WoodlandPanel())
                     answers
-                        .frame(minHeight: max(220, min(320, geometry.size.height * 0.32)))
-                    Spacer(minLength: 0)
-                    quizFooter
+                        .frame(minHeight: session.isReviewingMistake ? 150 : max(220, min(320, geometry.size.height * 0.32)))
+                    if !session.isReviewingMistake {
+                        Spacer(minLength: 0)
+                        quizFooter
+                    }
                 }
                 .frame(maxWidth: 560)
                 .padding(.horizontal, 18)
@@ -1345,9 +1364,31 @@ struct StroopGameView: View {
             }
             .scrollIndicators(.hidden)
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if session.isReviewingMistake {
+                Button { session.continueAfterMistake() } label: {
+                    Label(
+                        session.hearts <= 0 && !session.testing
+                            ? tr(ja: "わかった・結果を見る", zh: "知道了，查看结果", en: "Got it — see results", my: "နားလည်ပြီ၊ ရလဒ်ကြည့်မည်")
+                            : tr(ja: "わかった・次の問題へ", zh: "知道了，下一题", en: "Got it — next question", my: "နားလည်ပြီ၊ နောက်မေးခွန်း"),
+                        systemImage: "arrow.right.circle.fill"
+                    )
+                    .font(.headline)
+                    .foregroundStyle(CatQuizPalette.ink)
+                    .frame(maxWidth: .infinity)
+                    .padding(16)
+                    .background(Color(red: 1, green: 0.85, blue: 0.35), in: RoundedRectangle(cornerRadius: 18))
+                }
+                .buttonStyle(ArcadePressStyle())
+                .accessibilityIdentifier("stroop-review-next")
+                .padding(.horizontal, 18)
+                .padding(.vertical, 8)
+                .background(CatQuizPalette.cream.opacity(0.98))
+            }
+        }
         .overlay {
             RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .stroke(urgencyColor.opacity(session.questionRemaining <= urgentRemaining && session.showsTimer ? 0.9 : 0), lineWidth: 5)
+                .stroke(urgencyColor.opacity(!session.isResolving && session.questionRemaining <= urgentRemaining && session.showsTimer ? 0.9 : 0), lineWidth: 5)
                 .padding(4)
                 .allowsHitTesting(false)
         }
@@ -1355,7 +1396,7 @@ struct StroopGameView: View {
 
     private var quizHeader: some View {
         HStack(alignment: .center, spacing: 12) {
-            Text("Q\(session.answerCount + 1)")
+            Text("Q\(session.answerCount + (session.isResolving ? 0 : 1))")
                 .font(.system(size: 22, weight: .black, design: .rounded))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 18)
@@ -1400,6 +1441,7 @@ struct StroopGameView: View {
         }
         .frame(width: 68, height: 68)
         .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier("stroop-timer")
         .accessibilityLabel(tr(ja: "残り \(secondsLeft) 秒", zh: "还剩 \(secondsLeft) 秒", en: "\(secondsLeft) seconds left", my: "\(secondsLeft) စက္ကန့်ကျန်သည်"))
     }
 
@@ -1420,6 +1462,37 @@ struct StroopGameView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 4)
+        .accessibilityIdentifier("stroop-answer-\(session.round.answerID)")
+        .accessibilityLabel(session.round.rule)
+    }
+
+    private var mistakeExplanation: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                Image("QuizCatThinking")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 64, height: 52)
+                    .accessibilityHidden(true)
+                Label(
+                    session.lastMissWasTimeout
+                        ? tr(ja: "時間切れ・この問題を見てみよう", zh: "时间到了，看看这一题", en: "Time's up — let's review", my: "အချိန်ကုန်ပြီ၊ အတူကြည့်ရအောင်")
+                        : tr(ja: "どこで迷ったか見てみよう", zh: "看看刚才哪里弄混了", en: "Let's see what got mixed up", my: "ဘာရောထွေးသွားလဲ ကြည့်ရအောင်"),
+                    systemImage: "lightbulb.fill"
+                )
+                .font(.headline)
+            }
+            Text(session.round.answerExplanation)
+                .font(.body)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("stroop-explanation")
+            Label(tr(ja: "読んでいる間は時間が止まります", zh: "讲解期间暂停计时", en: "The timer is paused while you read", my: "ဖတ်နေစဉ် အချိန်ရပ်ထားသည်"), systemImage: "pause.circle")
+                .font(.caption)
+        }
+        .foregroundStyle(CatQuizPalette.ink)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .modifier(WoodlandPanel())
     }
 
     private var stimulusPanel: some View {
@@ -1561,11 +1634,8 @@ struct StroopGameView: View {
             .foregroundStyle(Color(red: 0.16, green: 0.16, blue: 0.18))
             .frame(maxWidth: .infinity)
             .frame(height: 120)
-        case .emblem(_, let symbol):
-            Text(symbol)
-                .font(.system(size: 72))
-                .frame(maxWidth: .infinity)
-                .frame(height: 120)
+        case .emblem:
+            EmptyView()
         }
     }
 
@@ -1590,24 +1660,41 @@ struct StroopGameView: View {
                         .background(accent, in: Circle())
                         .overlay { Circle().strokeBorder(CatQuizPalette.cream, lineWidth: 2) }
                     Spacer()
-                    Image(systemName: "pawprint.fill")
-                        .foregroundStyle(CatQuizPalette.wood.opacity(0.18))
+                    if session.isResolving && choice.id == session.round.answerID {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(Color(red: 0.1, green: 0.45, blue: 0.24))
+                    } else if session.isReviewingMistake && session.selectedChoiceID == choice.id {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(Color(red: 0.75, green: 0.15, blue: 0.2))
+                    } else {
+                        Image(systemName: "pawprint.fill")
+                            .foregroundStyle(CatQuizPalette.wood.opacity(0.18))
+                    }
                 }
                 choiceVisual(choice)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 110)
+                    .frame(height: session.isReviewingMistake ? 65 : 110)
+                if session.isResolving && choice.id == session.round.answerID {
+                    Text(tr(ja: "正解", zh: "正确答案", en: "Correct answer", my: "အဖြေမှန်"))
+                        .font(.caption.bold())
+                        .foregroundStyle(Color(red: 0.1, green: 0.45, blue: 0.24))
+                } else if session.isReviewingMistake && session.selectedChoiceID == choice.id {
+                    Text(tr(ja: "選んだ答え", zh: "你的选择", en: "Your choice", my: "သင်ရွေးသောအဖြေ"))
+                        .font(.caption.bold())
+                        .foregroundStyle(Color(red: 0.75, green: 0.15, blue: 0.2))
+                }
             }
             .padding(14)
             .frame(maxWidth: .infinity)
-            .frame(height: 200)
+            .frame(height: session.isReviewingMistake ? 170 : 200)
             .modifier(WoodlandPanel())
         }
         .buttonStyle(ArcadePressStyle())
         .disabled(session.isResolving)
         .overlay {
-            if session.selectedChoiceID == choice.id {
+            if session.isResolving && (session.selectedChoiceID == choice.id || choice.id == session.round.answerID) {
                 RoundedRectangle(cornerRadius: 24)
-                    .strokeBorder(session.lastAnswerWasCorrect == true ? Color.green : Color.red, lineWidth: 4)
+                    .strokeBorder(choice.id == session.round.answerID ? Color.green : Color.red, lineWidth: 4)
                     .allowsHitTesting(false)
             }
         }
