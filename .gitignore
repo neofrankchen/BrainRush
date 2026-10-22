@@ -68,3 +68,6 @@ DerivedData/
 # Personal Apple signing (Team ID / optional Bundle ID)
 Config/Local.xcconfig
 
+# Local prompt history — never commit or overwrite on pull
+.cursor/prompt-log.md
+

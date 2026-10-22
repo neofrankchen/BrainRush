@@ -9,6 +9,8 @@ alwaysApply: true
 
 仅当当前工作区根目录是 `/Users/cmstudent/jec_game/BrainRush` 时记录。这是脑乱挑战项目自己的记录。不要写入 `/Users/cmstudent/jec_game/.cursor/prompt-log.md`，也不要沿用那边的编号。
 
+不要把 `.cursor/prompt-log.md` 提交或推送到 GitHub。Pull、merge、restore 时不要改、覆盖或还原这份本地提示词历史。
+
 ## 编号
 
 - 从 `001` 起，三位数字，只增不改已有条目。
