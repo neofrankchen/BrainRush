@@ -78,10 +78,10 @@ enum BrainTeaserBank {
                 ("fire", "火事になる", "发生火灾", "It catches fire", "မီးလောင်သည်"),
                 ("airport", "飛行場になる", "变成机场", "It becomes an airport", "လေဆိပ် ဖြစ်သည်"),
             ],
-            explainJA: "正解は「火事になる」。頭に「ひ」を付けると「飛行場」にも読めるけど、火をつければ火事になる、というひっかけ。",
-            explainZH: "正确答案是「发生火灾」。加上「ひ」确实能读成「飞行场」，但字面意思是点火，所以会着火。",
-            explainEN: "The answer is “it catches fire.” Adding ひ can spell “airport,” but the trap is literal: putting fire on a factory starts a fire.",
-            explainMY: "အဖြေမှန်က “မီးလောင်သည်”။ 「ひ」 ထည့်ရင် လေဆိပ်လို့ ဖတ်နိုင်သော်လည်း မီးတင်လိုက်ရင် မီးလောင်တာကို ဆိုလိုသည်။"
+            explainJA: "正解は「火事になる」。ひらがなの「ひ」は「火」と同じ読み。工場に火をつければ火事。一方「ひ＋工場」を続けて読むと「飛行場（ひこうじょう）」にもなる、というのが日本語のひっかけ。",
+            explainZH: "正确答案是「发生火灾」。日语平假名「ひ」读 hi，和汉字「火」同音。给工厂点火就会着火。若把「ひ」接在「工場」前面连读，又变成「飛行場（ひこうじょう，机场）」，所以容易选错。",
+            explainEN: "The answer is that it catches fire. Hiragana ひ is the same sound as 火 (fire). Putting fire on a factory starts a fire. Read as one word, ひ＋工場 can also be 飛行場 (airport). That Japanese pun is the trap.",
+            explainMY: "အဖြေမှန်က မီးလောင်သည်။ ဟိရဂန 「ひ」 က 「火」 နှင့် အသံတူ။ စက်ရုံကို မီးတင်ရင် မီးလောင်သည်။ ဆက်ဖတ်ရင် 「飛行場」 (လေဆိပ်) လည်း ဖြစ်နိုင်သည်။ ဂျပန်စာလုံးဆော့ကစားခြင်းပါ။"
         ),
         Item(
             id: "road-u",
@@ -94,10 +94,10 @@ enum BrainTeaserBank {
                 ("crossing", "横断歩道", "人行横道", "A crosswalk", "လမ်းကူးမျဉ်း"),
                 ("u", "う", "う", "う", "う"),
             ],
-            explainJA: "正解は「う」。「道路」と書いたときの真ん中の文字が「う」。横断歩道の話ではない。",
-            explainZH: "正确答案是「う」。问的是「道路」这个词正中间的那个字，不是马路上的人行横道。",
-            explainEN: "The answer is the character う, the middle letter of 道路. It is not asking about a crosswalk.",
-            explainMY: "အဖြေမှန်က 「う」။ 「道路」 လို့ရေးသော စာလုံးအလယ်က စာလုံးကို မေးတာပါ။ လမ်းကူးမျဉ်း မဟုတ်ပါ။"
+            explainJA: "正解は「う」。「道路」の読みは「どうろ」。ひらがなにすると「ど・う・ろ」の3文字で、真ん中が「う」。漢字の意味（道の真ん中）ではなく、仮名の並びに注目するひっかけ。",
+            explainZH: "正确答案是「う」。日语「道路」读作「どうろ」，写成平假名是「ど・う・ろ」三个字，正中间是「う」。问的不是马路上有什么，而是假名怎么排。",
+            explainEN: "The answer is う. 道路 is read どうろ. In hiragana that is three characters, ど・う・ろ, so the middle one is う. It is not asking about a real road.",
+            explainMY: "အဖြေမှန်က 「う」။ 「道路」 ကို どうろ ဟုဖတ်သည်။ ဟိရဂန ど・う・ろ သုံးလုံး၏ အလယ်က う။ လမ်းပေါ်က အရာကို မမေးပါ။"
         ),
         Item(
             id: "frog-baby",
@@ -142,10 +142,10 @@ enum BrainTeaserBank {
                 ("five-hundred", "500円", "500日元", "500 yen", "၅၀၀ ယန်း"),
                 ("different", "ちがう", "不是", "No, that's something else", "မဟုတ်ပါ"),
             ],
-            explainJA: "正解は「ちがう」。聞いているのは値段ではなく、中トロが寿司ネタのイクラかどうか。イクラとは別物。",
-            explainZH: "正确答案是「不是」。「いくら」在这里不是问多少钱，而是寿司里的鲑鱼籽。中腹金枪鱼不是鲑鱼籽。",
-            explainEN: "The answer is “that's something else.” いくら can mean “how much,” but here it also means salmon roe. Chutoro is not ikura.",
-            explainMY: "အဖြေမှန်က “မဟုတ်ပါ”။ いくら က စျေးနှုန်းသာမက ဆော်လမွန်ဥကိုလည်း ဆိုသည်။ ချူတိုရိုက အဲဒါ မဟုတ်ပါ။"
+            explainJA: "正解は「ちがう」。日本語の「いくら」は同音異義語。値段を聞く「いくら」と、寿司ネタの「イクラ」（鮭の卵）がある。中トロはマグロで、イクラではない。",
+            explainZH: "正确答案是「不是」。日语「いくら」是同音词：一是问价钱「多少钱」，二是寿司里的鲑鱼籽「イクラ」。读音一样，意思不同。中腹是金枪鱼，不是鲑鱼籽。",
+            explainEN: "The answer is “that's something else.” In Japanese, いくら is a homophone: “how much?” and ikura (salmon roe on sushi). Chutoro is tuna, not ikura.",
+            explainMY: "အဖြေမှန်က မဟုတ်ပါ။ ဂျပန် 「いくら」 က အသံတူ နှစ်မျိုး။ စျေးမေးခြင်းနှင့် ဆူရှီ ဆော်လမွန်ဥ။ ချူတိုရိုက တူနာ၊ အဲဒါ မဟုတ်။"
         ),
         Item(
             id: "cat-kuwaete",
@@ -158,10 +158,10 @@ enum BrainTeaserBank {
                 ("six", "6匹", "6条", "6", "၆ ကောင်"),
                 ("four", "4匹", "4条", "4", "၄ ကောင်"),
             ],
-            explainJA: "正解は6匹。「くわえて」は咥えて持ち去ったのではなく、「加えて」1匹入れた、と読むひっかけ。",
-            explainZH: "正确答案是 6 条。日语「くわえて」可以理解成叼走，也可以理解成「加上」。这里按加上 1 条来算。",
-            explainEN: "The answer is 6. くわえて can mean “carried in its mouth,” but the trap reads it as “added” one fish.",
-            explainMY: "အဖြေမှန်က ၆ ကောင်။ くわえて ကို ခဲပြီးယူသွားသည်ဟု ထင်ရသော်လည်း “ပေါင်းထည့်သည်” ဟုဖတ်ရသည်။"
+            explainJA: "正解は6匹。日本語の「くわえて」は漢字で意味が分かれる。「咥えて」なら口にくわえて持ち去る（4匹）。「加えて」なら数を足す（6匹）。この問題は後者。",
+            explainZH: "正确答案是 6 条。日语「くわえて」同音能写成「咥えて」（叼走）或「加えて」（加上）。叼走剩 4 条，加上是 6 条。这题按「加上」来算。",
+            explainEN: "The answer is 6. Japanese くわえて is a homophone: 咥えて (carry in the mouth → 4 fish) or 加えて (add → 6). This riddle uses “add.”",
+            explainMY: "အဖြေမှန်က ၆ ကောင်။ ဂျပန် くわえて အသံတူ။ ခဲယူသွားရင် ၄၊ ပေါင်းထည့်ရင် ၆။ ဒီပဟေဠိက ပေါင်းထည့်ခြင်း။"
         ),
         Item(
             id: "train-seat",
@@ -190,10 +190,10 @@ enum BrainTeaserBank {
                 ("japan", "日本", "日本", "Japan", "ဂျပန်"),
                 ("america", "アメリカ", "美国", "America", "အမေရိကန်"),
             ],
-            explainJA: "正解は日本。英語はアメリカなどで使う言語だけど、「英語」という単語自体は日本語。",
-            explainZH: "正确答案是日本。英语是美国等地使用的语言，但「英語」这个写法本身是日语词。",
-            explainEN: "The answer is Japan. English is spoken in America, but the word 英語 itself is Japanese.",
-            explainMY: "အဖြေမှန်က ဂျပန်။ အင်္ဂလိပ်စကားကို အမေရိကန်မှာ သုံးသော်လည်း 「英語」 ဆိုသော စကားလုံးက ဂျပန်စာပါ။"
+            explainJA: "正解は日本。英語という言語は米英などで使う。でも「英語」は漢字二字の日本語（音読みで「えいご」）。単語そのものがどの国の言葉かを聞いている。",
+            explainZH: "正确答案是日本。英语这种语言用在英美等国。但「英語」是两个汉字组成的日语词，读作「えいご」。问的是这个词本身是日语，不是英语从哪来。",
+            explainEN: "The answer is Japan. English is spoken in the US and UK, but the two-kanji word 英語 (eigo) is Japanese. The riddle asks about the word, not the language.",
+            explainMY: "အဖြေမှန်က ဂျပန်။ အင်္ဂလိပ်ဘာသာကို အမေရိကန်/ယူကေမှာ သုံးသည်။ သို့သော် 「英語」 (えいご) က ဂျပန် ခန်ဂျိ စကားလုံး။ စကားလုံးကို မေးတာပါ။"
         ),
         Item(
             id: "taro-siblings",
@@ -206,10 +206,10 @@ enum BrainTeaserBank {
                 ("goro", "ゴロウさん", "五郎", "Goro", "ဂိုရိုး"),
                 ("taro", "タロウさん", "太郎", "Taro", "တရိုး"),
             ],
-            explainJA: "正解はタロウさん。4人の子にはタロウさん本人も入る。",
-            explainZH: "正确答案是太郎。父母的四个孩子里也包括他自己。",
-            explainEN: "The answer is Taro. He is one of the four children.",
-            explainMY: "အဖြေမှန်က တရိုး။ ကလေး ၄ ယောက်ထဲမှာ သူ့ကိုယ်သူလည်း ပါသည်။"
+            explainJA: "正解はタロウさん。昔の日本では長男を太郎、次男を次郎、三男を三郎、四男を四郎と付けることが多かった。タロウ本人が長男で、4人に含まれる。",
+            explainZH: "正确答案是太郎。日本旧时常用太郎、次郎、三郎、四郎按男孩出生顺序起名。题目里已经有太郎，他就是四个孩子里的老大。",
+            explainEN: "The answer is Taro. Traditional Japanese boy names often go Tarō, Jirō, Saburō, Shirō by birth order. Taro himself is the eldest of the four.",
+            explainMY: "အဖြေမှန်က တရိုး။ ဂျပန် အစဉ်အလာ အမည် တရိုး၊ ဂျိရိုး၊ ဆဘုရိုး၊ ရှိရိုး။ တရိုးကိုယ်တိုင် အကြီးဆုံး၊ ကလေး ၄ ယောက်ထဲ ပါသည်။"
         ),
         Item(
             id: "hut-entrance",
@@ -238,10 +238,10 @@ enum BrainTeaserBank {
                 ("six", "6", "6", "6", "၆"),
                 ("none", "そんな数字はない", "没有这种数字", "There is no such number", "အဲဒီဂဏန်း မရှိ"),
             ],
-            explainJA: "正解は6。「6以上」には6自身が含まれる。",
-            explainZH: "正确答案是 6。「6 以上」包含 6 本身。",
-            explainEN: "The answer is 6. “6 or more” includes 6 itself.",
-            explainMY: "အဖြေမှန်က ၆။ “၆ နှင့်အထက်” ဆိုတာ ၆ ကိုယ်တိုင်လည်း ပါသည်။"
+            explainJA: "正解は6。日本語の「以上」はその数字を含む。6以上は6・7・8…。「6より大きい」とは違う。",
+            explainZH: "正确答案是 6。日语「以上」包含这个数字本身，「6以上」就是 6 和比 6 大的。和「超过 6」不一样。",
+            explainEN: "The answer is 6. In Japanese, 以上 includes the number itself, so 6以上 means 6 or more, not “more than 6.”",
+            explainMY: "အဖြေမှန်က ၆။ ဂျပန် 「以上」 က ထိုဂဏန်းကိုယ်တိုင် ပါသည်။ ၆ နှင့်အထက် = ၆၊ ၇၊ ၈…။ ၆ ထက်ကြီးတာ မဟုတ်။"
         ),
         Item(
             id: "months-28",
@@ -270,10 +270,10 @@ enum BrainTeaserBank {
                 ("unheard", "聞こえていなかった", "没听见", "Nobody heard it", "မကြားလိုက်ကြ"),
                 ("daytime", "夜ではないから", "现在不是晚上", "It isn't night", "ညမဟုတ်လို့"),
             ],
-            explainJA: "正解は夜ではないから。「こんばんは」と返さなかっただけで、別のあいさつは返したかもしれない。",
-            explainZH: "正确答案是现在不是晚上。没人回「晚上好」，不代表没人打招呼，可能回的是白天的招呼。",
-            explainEN: "The answer is that it isn’t night. They didn’t return “good evening,” but they may have greeted another way.",
-            explainMY: "အဖြေမှန်က ညမဟုတ်လို့။ ညနေခင်းမင်္ဂလာပါဟု မပြန်ရုံသာ၊ တခြားနှုတ်ဆက်သံ ပြန်နိုင်သည်။"
+            explainJA: "正解は夜ではないから。日本語のあいさつは時間で変わる。朝はおはよう、昼はこんにちは、夜はこんばんは。こんばんはと返さないのは、今が夜ではないから。",
+            explainZH: "正确答案是现在不是晚上。日语打招呼按时间分：早上「おはよう」，白天「こんにちは」，晚上「こんばんは」。没人回「晚上好」，可能是白天，回了别的招呼。",
+            explainEN: "The answer is that it isn’t night. Japanese greetings change with the time: おはよう in the morning, こんにちは in the day, こんばんは at night.",
+            explainMY: "အဖြေမှန်က ညမဟုတ်လို့။ ဂျပန် နှုတ်ဆက်စကား အချိန်လိုက် ပြောင်းသည်။ မနက် おはよう၊ နေ့ こんにちは၊ ည こんばんは။"
         ),
         Item(
             id: "strap-hand",
@@ -286,10 +286,10 @@ enum BrainTeaserBank {
                 ("danger", "危ないから", "因为危险", "Because it's dangerous", "အန္တရာယ်ရှိလို့"),
                 ("hand", "手", "手", "Your hand", "လက်"),
             ],
-            explainJA: "正解は手。つり革をつかむのは手。「なぜつかまっているか」ではなく「何でつかまっているか」。",
-            explainZH: "正确答案是手。问的是用什么去抓，不是为什么要抓。",
-            explainEN: "The answer is your hand. It asks what you hold on with, not why you hold on.",
-            explainMY: "အဖြေမှန်က လက်။ ဘာကြောင့်ကိုင်သလဲ မမေးဘဲ ဘာနှင့်ကိုင်သလဲ မေးတာပါ။"
+            explainJA: "正解は手。日本語の「何で」は二通り。「なんで」＝なぜ、「なにで」＝何を使って。ここでは「なにでつかまっているか」なので手。",
+            explainZH: "正确答案是手。日语「何で」有两种读法：「なんで」是为什么，「なにで」是用什么。这题问用什么抓吊环，所以是手。",
+            explainEN: "The answer is your hand. Japanese 何で can be なんで (why) or なにで (with what). Here it means “with what,” so the hand.",
+            explainMY: "အဖြေမှန်က လက်။ ဂျပန် 「何で」 နှစ်မျိုး။ なんで = ဘာကြောင့်၊ なにで = ဘာနှင့်။ ဒီမှာ ဘာနှင့်ကိုင်သလဲ = လက်။"
         ),
         Item(
             id: "one-to-twenty",
@@ -302,10 +302,10 @@ enum BrainTeaserBank {
                 ("zero", "0個", "0个", "0", "၀ ခု"),
                 ("two", "2個", "2个", "2", "၂ ခု"),
             ],
-            explainJA: "正解は0個。1から20までの数ではなく、「1から20」という書き方の中に7は出てこない。",
-            explainZH: "正确答案是 0 个。问的不是 1 到 20 这些数字里有几个 7，而是这句话的写法里有没有 7。",
-            explainEN: "The answer is 0. It asks about the written phrase “1から20,” which contains no 7, not the numbers from 1 to 20.",
-            explainMY: "အဖြေမှန်က ၀ ခု။ ၁ မှ ၂၀ အထိ မဟုတ်ဘဲ 「1から20」 လို့ရေးထားသော စာထဲမှာ ၇ မပါပါ။"
+            explainJA: "正解は0個。かぎかっこ「1から20」は日本語の文。「から」は助詞で、書いてあるのは1・から・20。数字の7は出てこない。1〜20を数える問題ではない。",
+            explainZH: "正确答案是 0 个。日语「から」是助词，表示「从…到」。括号里写的是「1から20」这几个字，里面没有数字 7。不是让你数 1 到 20。",
+            explainEN: "The answer is 0. Japanese から is a particle meaning “from.” The quoted text “1から20” has no digit 7. It is not asking you to count from 1 to 20.",
+            explainMY: "အဖြေမှန်က ၀ ခု။ ဂျပန် 「から」 က ကြိယာဝိသေသန/ပစ္စည်း။ 「1から20」 စာထဲမှာ ဂဏန်း ၇ မပါ။ ၁ မှ ၂၀ ရေတွက်ခိုင်းတာ မဟုတ်။"
         ),
         Item(
             id: "ten-years-later",
@@ -334,10 +334,10 @@ enum BrainTeaserBank {
                 ("aomori", "青森県", "青森县", "Aomori", "အအိုမိုရိ"),
                 ("hokkaido", "北海道", "北海道", "Hokkaido", "ဟော့ကိုင်းဒိုး"),
             ],
-            explainJA: "正解は青森県。一番北の都道府県は北海道だが、問題は「県」に限っている。北海道は「道」。",
-            explainZH: "正确答案是青森县。最北的都道府县是北海道，但题目只问「县」。北海道是「道」不是县。",
-            explainEN: "The answer is Aomori. Hokkaido is farther north, but it is a 道, not a 県.",
-            explainMY: "အဖြေမှန်က အအိုမိုရိ။ ဟော့ကိုင်းဒိုးက ပိုမြောက်သော်လည်း 道 ဖြစ်ပြီး 県 မဟုတ်ပါ။"
+            explainJA: "正解は青森県。日本の地方は「都道府県」の4種。東京は都、北海道は道、大阪と京都は府、残りが県。一番北の県は青森。北海道はより北だが「道」。",
+            explainZH: "正确答案是青森县。日本行政区分成都、道、府、县：东京是「都」，北海道是「道」，大阪和京都是「府」，其余是「县」。最北的「县」是青森；北海道更北，但不是县。",
+            explainEN: "The answer is Aomori. Japan uses four labels: 都 (Tokyo), 道 (Hokkaido), 府 (Osaka, Kyoto), and 県 for the rest. The northernmost 県 is Aomori; Hokkaido is farther north but is a 道.",
+            explainMY: "အဖြေမှန်က အအိုမိုရိ။ ဂျပန်ကို 都၊ 道၊ 府၊ 県 ခွဲသည်။ အမြောက်ဆုံး 県 က အအိုမိုရိ။ ဟော့ကိုင်းဒိုး ပိုမြောက်သော်လည်း 道။"
         ),
         Item(
             id: "fire-elsewhere",
@@ -382,10 +382,10 @@ enum BrainTeaserBank {
                 ("backwards", "りおごきか", "变成倒着读的词", "The letters reverse", "စာလုံးပြောင်းပြန်"),
                 ("spill", "こぼれる", "会洒出来", "It spills", "ဖိတ်ကျသည်"),
             ],
-            explainJA: "正解はこぼれる。器を逆さにすれば中身がこぼれる。「反対から読め」とは言っていない。",
-            explainZH: "正确答案是会洒出来。把碗倒过来，刨冰会掉出来。题目不是让你倒着读这两个字。",
-            explainEN: "The answer is that it spills. Turning the bowl over dumps the ice. It never asked you to read the word backwards.",
-            explainMY: "အဖြေမှန်က ဖိတ်ကျသည်။ ပန်းကန်ပြောင်းပြန်လှန်ရင် ထဲကဟာ ဖိတ်သည်။ စာလုံးပြန်ဖတ်ခိုင်းတာ မဟုတ်ပါ။"
+            explainJA: "正解はこぼれる。「かき氷」を逆から読むと「こおりかき」になる言葉遊びもあるが、問題は器を逆さまにする話。中身がこぼれる。",
+            explainZH: "正确答案是会洒出来。日语有时会把词倒过来读着玩，「かき氷」倒读有点像「こおりかき」。但这题是把刨冰这盘东西翻过来，会洒出来。",
+            explainEN: "The answer is that it spills. Japanese wordplay might read かき氷 backwards as こおりかき, but here you turn the bowl over, so the ice falls out.",
+            explainMY: "အဖြေမှန်က ဖိတ်ကျသည်။ ဂျပန်စာလုံးပြန်ဖတ်ကစား 「かき氷」 → 「こおりかき」 လည်းရှိသည်။ သို့သော် ပန်းကန်လှန်တာမို့ ဖိတ်သည်။"
         ),
         Item(
             id: "bouquets",
@@ -478,10 +478,10 @@ enum BrainTeaserBank {
                 ("osaka-city", "大阪市", "大阪市", "Osaka City", "အိုဆာကာမြို့"),
                 ("none", "県庁所在地はない", "没有县厅所在地", "There isn't one", "県庁 မရှိ"),
             ],
-            explainJA: "正解は県庁所在地はない。大阪は「府」なので県庁はない。あるのは大阪府庁。",
-            explainZH: "正确答案是没有县厅所在地。大阪是「府」不是「县」，所以没有县厅，只有府厅。",
-            explainEN: "The answer is that there isn’t a 県庁. Osaka is a 府, so it has a fu office, not a ken office.",
-            explainMY: "အဖြေမှန်က 県庁 မရှိ။ အိုဆာကာက 府 မို့ 県 ရုံး မရှိ၊ 府 ရုံးသာ ရှိသည်။"
+            explainJA: "正解は県庁所在地はない。日本は都道府県。大阪と京都だけが「府」で、県庁ではなく府庁がある。大阪市は府庁所在地ではあるが、県庁所在地という言い方はしない。",
+            explainZH: "正确答案是没有县厅所在地。日本分成都、道、府、县，只有大阪和京都叫「府」，衙门叫府厅，不叫县厅。",
+            explainEN: "The answer is that there isn’t a 県庁. Only Osaka and Kyoto are 府, so they have a fu office, not a ken (prefecture) office.",
+            explainMY: "အဖြေမှန်က 県庁 မရှိ။ ဂျပန်တွင် အိုဆာကာနှင့် ကျိုတိုသာ 府။ 府 ရုံးရှိသည်၊ 県 ရုံး မခေါ်ပါ။"
         ),
         Item(
             id: "five-necks",
@@ -494,10 +494,10 @@ enum BrainTeaserBank {
                 ("one", "1つ", "1个", "1", "၁ ခု"),
                 ("five", "5つ", "5个", "5", "၅ ခု"),
             ],
-            explainJA: "正解は5つ。首、左右の手首、左右の足首を合わせて5つ。",
-            explainZH: "正确答案是 5 个。脖子、左右手腕、左右脚踝，日语里都带「首」。",
-            explainEN: "The answer is 5: the neck, two wrists (手首), and two ankles (足首).",
-            explainMY: "အဖြေမှန်က ၅ ခု။ လည်ပင်း၊ လက်ကောက်ဝတ် နှစ်ခု၊ ခြေချင်းဝတ် နှစ်ခု၊ ဂျပန်လို 首 ပါသည်။"
+            explainJA: "正解は5つ。日本語では首のほか、手のくびを「手首」、足のくびを「足首」とも書く。首1＋手首2＋足首2＝5。",
+            explainZH: "正确答案是 5 个。日语「首」不只是脖子：手腕叫「手首」，脚踝叫「足首」，都带这个字。脖子 1 + 手腕 2 + 脚踝 2 = 5。",
+            explainEN: "The answer is 5. In Japanese, 首 is the neck, but wrists are 手首 and ankles 足首 — all use 首. Neck 1 + wrists 2 + ankles 2.",
+            explainMY: "အဖြေမှန်က ၅ ခု။ ဂျပန် 首 သည် လည်ပင်းသာမက လက်ကောက်ဝတ် 手首၊ ခြေချင်းဝတ် 足首။ ၁+၂+၂=၅။"
         ),
         Item(
             id: "hide-seek",
@@ -526,10 +526,10 @@ enum BrainTeaserBank {
                 ("human", "人間", "人", "A human", "လူ"),
                 ("dog", "犬", "狗", "A dog", "ခွေး"),
             ],
-            explainJA: "正解は人間。最初のお供は犬でも、桃から生まれたときにおじいさん・おばあさんに会っている。",
-            explainZH: "正确答案是人。后来才遇到狗，但从桃子里出来时先见到了爷爷奶奶。",
-            explainEN: "The answer is a human. The dog is a later companion; he first meets the old couple after being born from the peach.",
-            explainMY: "အဖြေမှန်က လူ။ ခွေးက နောက်မှလိုက်ပါသူ။ မက်မွန်သီးထဲက ထွက်စဉ် အဘိုးအဘွားကို အရင်တွေ့သည်။"
+            explainJA: "正解は人間。日本の昔話『桃太郎』では、桃から生まれたあとおじいさん・おばあさんに会う。犬・猿・キジはあとからお供になる。ひっかけは「犬」を選ばせること。",
+            explainZH: "正确答案是人。这是日本民间故事《桃太郎》：从桃子里出来后先见到爷爷奶奶。狗、猴、野鸡是后来的随从。陷阱是让你选「狗」。",
+            explainEN: "A human. In the Japanese folk tale Momotaro, he first meets the old couple after being born from a peach. The dog, monkey, and pheasant join later. The trap is choosing the dog.",
+            explainMY: "အဖြေမှန်က လူ။ ဂျပန် ဒဏ္ဍာရီ 『မိုမိုတရိုး』။ မက်မွန်ထဲက ထွက်ပြီး အဘိုးအဘွားကို အရင်တွေ့သည်။"
         ),
         Item(
             id: "diamond-ace",

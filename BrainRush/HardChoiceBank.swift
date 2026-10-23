@@ -100,10 +100,10 @@ enum HardChoiceBank {
                 ("winter", "冬", "冬天", "Winter", "ဆောင်း"),
                 ("summer", "夏", "夏天", "Summer", "နွေ"),
             ],
-            explainJA: "正解は夏。漢字は冬でも、涼しい場所で冬まで保存できるからこの名がついた。旬は夏。",
-            explainZH: "正确答案是夏天。名字带「冬」，是因为放在阴凉处能存到冬天，真正当季是夏天。",
-            explainEN: "Summer. The “winter” in the name is because it keeps until winter in a cool place. Peak season is summer.",
-            explainMY: "အဖြေမှန်က နွေ။ ဆောင်းဟုခေါ်သော်လည်း အေးသောနေရာတွင် ဆောင်းအထိ သိမ်းနိုင်လို့။ ရာသီက နွေပါ။"
+            explainJA: "正解は夏。日本語の「冬瓜」は漢字どおり冬の瓜に見えるが、涼しい場所で冬まで保存できるからこの名。旬は夏。字面の季節にだまされない。",
+            explainZH: "正确答案是夏天。日语「冬瓜」两个汉字看起来像冬天的瓜，其实是因为阴凉处能存到冬天才叫这个名字。当季是夏天，别被字面骗了。",
+            explainEN: "Summer. The kanji 冬瓜 look like “winter melon,” but the name is because it keeps until winter. Peak season is summer.",
+            explainMY: "အဖြေမှန်က နွေ။ ဂျပန် 「冬瓜」 ခန်ဂျိက ဆောင်းဖရုံလို မြင်ရသည်။ ဆောင်းအထိ သိမ်းနိုင်လို့ နာမည်ပေးသည်။ ရာသီက နွေ။"
         ),
         Item(
             id: "hard-signal-right",
@@ -404,10 +404,10 @@ enum HardChoiceBank {
                 ("genpaku", "杉田玄白", "杉田玄白", "Sugita Genpaku", "ဆုဂိတ ဂန်းပါကု"),
                 ("soseki", "夏目漱石", "夏目漱石", "Natsume Sōseki", "နာဆုမဲ ဆိုဆဲကိ"),
             ],
-            explainJA: "正解は夏目漱石。小説『門』で使われ、それ以前は「肩が張る」などと言っていた。",
-            explainZH: "正确答案是夏目漱石。他在小说《门》里用了这句，之前多说「肩が張る」。",
-            explainEN: "Natsume Sōseki, in the novel The Gate. Before that people said things like “kata ga haru.”",
-            explainMY: "အဖြေမှန်က နာဆုမဲ ဆိုဆဲကိ။ ဝတ္ထု 「門」 တွင် သုံးသည်။ အရင်က 「肩が張る」 စသည်။"
+            explainJA: "正解は夏目漱石。日本語で肩がだるく痛いことを「肩がこる」と言う。小説『門』で使われ、それ以前は「肩が張る」などが多かった。",
+            explainZH: "正确答案是夏目漱石。日语里肩膀发僵发酸叫「肩がこる」，现在很常用。他在小说《门》里这样写，之前多说「肩が張る」。",
+            explainEN: "Natsume Sōseki. Japanese 肩がこる means stiff, aching shoulders. He used it in The Gate; before that people often said 肩が張る.",
+            explainMY: "အဖြေမှန်က နာဆုမဲ ဆိုဆဲကိ။ ဂျပန် 「肩がこる」 က ပခုံးတောင့်ခြင်း။ ဝတ္ထု 「門」 တွင် သုံးသည်။ အရင်က 「肩が張る」。"
         ),
         Item(
             id: "hard-otter-stone",

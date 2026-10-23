@@ -19,6 +19,24 @@ extension StroopRound {
             if FoodChoiceBank.template(id: id) != nil {
                 return FoodChoiceBank.explanation(id: id)
             }
+            if KidChoiceBank.template(id: id) != nil {
+                return KidChoiceBank.explanation(id: id)
+            }
+            if JapanChoiceBank.template(id: id) != nil {
+                return JapanChoiceBank.explanation(id: id)
+            }
+            if AnimeChoiceBank.template(id: id) != nil {
+                return AnimeChoiceBank.explanation(id: id)
+            }
+            if NatureChoiceBank.template(id: id) != nil {
+                return NatureChoiceBank.explanation(id: id)
+            }
+            if GourmetChoiceBank.template(id: id) != nil {
+                return GourmetChoiceBank.explanation(id: id)
+            }
+            if OtherChoiceBank.template(id: id) != nil {
+                return OtherChoiceBank.explanation(id: id)
+            }
             return KidChoiceBank.explanation(id: id)
         case .flag(let id, _):
             return FlagBank.explanation(id: id)

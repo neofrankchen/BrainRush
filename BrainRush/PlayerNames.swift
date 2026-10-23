@@ -55,7 +55,7 @@ enum PlayerNames {
             case .smileys: "😀"
             case .nature: "🐻"
             case .food: "🍔"
-            case .activity: "⚽"
+            case .activity: "⚽️"
             case .travel: "🚗"
             case .objects: "💡"
             case .symbols: "🔣"
@@ -93,8 +93,25 @@ enum PlayerNames {
     static let avatars: [String] = makeCatalog()
 
     private static let groupedAvatars: [AvatarGroup: [String]] = {
-        Dictionary(uniqueKeysWithValues: appleGroups.map { ($0.0, $0.1.map(String.init)) })
+        Dictionary(uniqueKeysWithValues: appleGroups.map { ($0.0, glyphs(in: $0.1)) })
     }()
+
+    /// 按显示用的一颗 emoji 切开。单独的变体选择符、ZWJ 不当头像，免得 ForEach 的 id 撞车后整栏空白。
+    private static func glyphs(in blob: String) -> [String] {
+        blob.compactMap { ch in
+            let glyph = String(ch)
+            let scalars = glyph.unicodeScalars
+            guard !scalars.isEmpty else { return nil }
+            if scalars.allSatisfy({
+                $0.value == 0x200D
+                    || (0xFE00...0xFE0F).contains($0.value)
+                    || $0.value == 0x20E3
+            }) {
+                return nil
+            }
+            return glyph
+        }
+    }
 
     static func avatars(in group: AvatarGroup) -> [String] {
         if group == .frequent { return frequentAvatars }
@@ -129,9 +146,7 @@ enum PlayerNames {
         }
         add(fallbackAvatar)
         for (_, blob) in appleGroups {
-            for ch in blob {
-                add(String(ch))
-            }
+            glyphs(in: blob).forEach(add)
         }
         animals.map(\.emoji).forEach(add)
         return list

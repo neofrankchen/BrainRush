@@ -116,10 +116,10 @@ enum FunChoiceBank {
                 ("japanese", "日本語", "日语", "Japanese", "ဂျပန်စကား"),
                 ("foreign", "外国語", "外来语", "A foreign word", "နိုင်ငံခြားစကား"),
             ],
-            explainJA: "金平糖はポルトガル語の「confeito（コンフェイト）」から付けられた外国語です。戦国時代に伝わったと言われている昔懐かしい素朴なお菓子です。",
-            explainZH: "金平糖来自葡萄牙语 confeito，是外来语。据说战国时代传入，是一种怀旧的朴素点心。",
-            explainEN: "Konpeito comes from Portuguese confeito, so it is a foreign word. It is said to have arrived in the Sengoku period.",
-            explainMY: "ကွန်ပေးတိုးသည် ပေါ်တူဂီ confeito မှ ဆင်းသက်သော နိုင်ငံခြားစကား။ စင်ဂိုကုခေတ် ရောက်လာသည်ဟု ဆိုသည်။"
+            explainJA: "正解は外国語。日本語では外国から来た語を「外来語」と呼び、カタカナで書くことが多い。金平糖はポルトガル語 confeito が変化した語。漢字の「金平糖」は当て字。戦国時代に伝わったと言われる。",
+            explainZH: "正确答案是外来语。日语把从外国来的词叫「外来語」，多用片假名写。金平糖来自葡萄牙语 confeito，汉字「金平糖」只是记音。据说战国时代传入。",
+            explainEN: "It is a loanword. Japanese calls these 外来語 and often writes them in katakana. Konpeito comes from Portuguese confeito; the kanji 金平糖 are just sound-spellings.",
+            explainMY: "အဖြေမှန်က နိုင်ငံခြားစကား။ ဂျပန်တွင် နိုင်ငံခြားမှ စကားကို 外来語 ဟုခေါ်ပြီး ကာတာကနာနှင့် ရေးတတ်သည်။ ပေါ်တူဂီ confeito မှ။"
         ),
         Item(
             id: "fun-pupa",
@@ -532,10 +532,10 @@ enum FunChoiceBank {
                 ("english", "英語", "英语", "English", "အင်္ဂလိပ်"),
                 ("german", "ドイツ語", "德语", "German", "ဂျာမန်"),
             ],
-            explainJA: "アルバイトの語源は、ドイツ語の「Arbeit」です。日本語に訳すと「労働」という意味です。",
-            explainZH: "「アルバイト」的词源是德语 Arbeit，日语意思是「劳动」。",
-            explainEN: "Arubaito comes from German Arbeit, which means labor or work.",
-            explainMY: "အာရုဘိုင်တို၏ အရင်းသည် ဂျာမန် Arbeit။ အဓိပ္ပာယ်မှာ အလုပ်/အလုပ်သမား။"
+            explainJA: "正解はドイツ語。カタカナの外来語で、ドイツ語 Arbeit（労働）から。英語の part-time ではなく、日本語では学生のバイトを「アルバイト」、略して「バイト」と言う。",
+            explainZH: "正确答案是德语。这是片假名外来语，来自德语 Arbeit（劳动）。日语里学生打工不说英语 part-time，而说「アルバイト」，简称「バイト」。",
+            explainEN: "German. It is a katakana loanword from Arbeit (work). Japanese uses アルバイト (often shortened to バイト) for student jobs, not English “part-time.”",
+            explainMY: "အဖြေမှန်က ဂျာမန်။ ကာတာကနာ 外来語၊ Arbeit (အလုပ်) မှ။ ဂျပန်တွင် ကျောင်းသားအလုပ်ကို アルバイト / バイト ဟုခေါ်သည်။"
         ),
     ]
 }

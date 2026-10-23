@@ -15,14 +15,16 @@ struct ScoreRecord: Codable, Identifiable, Equatable {
     var created: Date
     var name: String
     var avatar: String
+    var language: String
 
-    init(id: UUID, score: Int, detail: Int, created: Date, name: String, avatar: String = "") {
+    init(id: UUID, score: Int, detail: Int, created: Date, name: String, avatar: String = "", language: String = "") {
         self.id = id
         self.score = score
         self.detail = detail
         self.created = created
         self.name = name
         self.avatar = avatar
+        self.language = language
     }
 
     init(from decoder: Decoder) throws {
@@ -33,31 +35,49 @@ struct ScoreRecord: Codable, Identifiable, Equatable {
         created = try container.decode(Date.self, forKey: .created)
         name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
         avatar = try container.decodeIfPresent(String.self, forKey: .avatar) ?? ""
+        language = try container.decodeIfPresent(String.self, forKey: .language) ?? ""
     }
+}
+
+enum ScoreBoardFilter: Hashable {
+    case all
+    case language(AppLanguage)
 }
 
 enum ScoreBoard {
     static let limit = 8
 
-    static func records(for game: String) -> [ScoreRecord] {
-        guard let data = UserDefaults.standard.data(forKey: key(game)),
-              let rows = try? JSONDecoder().decode([ScoreRecord].self, from: data) else {
-            return []
+    static func records(for game: String, filter: ScoreBoardFilter = .all) -> [ScoreRecord] {
+        switch filter {
+        case .all:
+            return stored(for: game)
+        case .language(let language):
+            return stored(for: "\(game).\(language.rawValue)")
         }
-        return rows
     }
 
     @discardableResult
-    static func submit(game: String, score: Int, detail: Int = 0, name: String = "", avatar: String = "", rank: ScoreRank) -> UUID? {
-        var rows = records(for: game)
-        let entry = ScoreRecord(id: UUID(), score: score, detail: detail, created: Date(), name: name, avatar: avatar)
-        rows.append(entry)
-        rows.sort { better($0, than: $1, rank: rank) }
-        let kept = Array(rows.prefix(limit))
-        if let data = try? JSONEncoder().encode(kept) {
-            UserDefaults.standard.set(data, forKey: key(game))
-        }
-        return kept.contains(where: { $0.id == entry.id }) ? entry.id : nil
+    static func submit(
+        game: String,
+        score: Int,
+        detail: Int = 0,
+        name: String = "",
+        avatar: String = "",
+        language: AppLanguage,
+        rank: ScoreRank
+    ) -> UUID? {
+        let entry = ScoreRecord(
+            id: UUID(),
+            score: score,
+            detail: detail,
+            created: Date(),
+            name: name,
+            avatar: avatar,
+            language: language.rawValue
+        )
+        let onTotal = insert(entry, game: game, rank: rank)
+        _ = insert(entry, game: "\(game).\(language.rawValue)", rank: rank)
+        return onTotal ? entry.id : nil
     }
 
     static func label(_ row: ScoreRecord, rank: ScoreRank) -> String {
@@ -99,6 +119,25 @@ enum ScoreBoard {
         )
     }
 
+    private static func stored(for game: String) -> [ScoreRecord] {
+        guard let data = UserDefaults.standard.data(forKey: key(game)),
+              let rows = try? JSONDecoder().decode([ScoreRecord].self, from: data) else {
+            return []
+        }
+        return rows
+    }
+
+    private static func insert(_ entry: ScoreRecord, game: String, rank: ScoreRank) -> Bool {
+        var rows = stored(for: game)
+        rows.append(entry)
+        rows.sort { better($0, than: $1, rank: rank) }
+        let kept = Array(rows.prefix(limit))
+        if let data = try? JSONEncoder().encode(kept) {
+            UserDefaults.standard.set(data, forKey: key(game))
+        }
+        return kept.contains(where: { $0.id == entry.id })
+    }
+
     private static func better(_ first: ScoreRecord, than second: ScoreRecord, rank: ScoreRank) -> Bool {
         switch rank {
         case .high:
@@ -117,15 +156,57 @@ enum ScoreBoard {
     }
 }
 
+struct ScoreBoardFilterBar: View {
+    @Binding var filter: ScoreBoardFilter
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                chip(.all, tr(ja: "総合", zh: "总榜", en: "All", my: "အားလုံး"))
+                ForEach(AppLanguage.allCases) { language in
+                    chip(.language(language), language.label)
+                }
+            }
+        }
+        .accessibilityIdentifier("stroop-rank-filter")
+    }
+
+    private func chip(_ value: ScoreBoardFilter, _ title: String) -> some View {
+        let selected = filter == value
+        return Button {
+            filter = value
+        } label: {
+            Text(title)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(selected ? CatQuizPalette.ink : CatQuizPalette.wood)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background {
+                    Capsule().fill(
+                        selected
+                            ? Color(red: 0.98, green: 0.74, blue: 0.32)
+                            : CatQuizPalette.cream
+                    )
+                }
+                .overlay {
+                    Capsule().strokeBorder(CatQuizPalette.wood.opacity(selected ? 0.45 : 0.16), lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
 struct ScoreBoardList: View {
     let game: String
     var rank: ScoreRank = .high
+    var filter: ScoreBoardFilter = .all
     var title: String?
     var textColor: Color = .white
 
     var body: some View {
         let _ = LanguageStore.shared.language
-        let rows = ScoreBoard.records(for: game)
+        let rows = ScoreBoard.records(for: game, filter: filter)
         VStack(alignment: .leading, spacing: 6) {
             Text(title ?? tr(ja: "ランキング", zh: "排行榜", en: "Leaderboard", my: "အဆင့်စာရင်း"))
                 .font(.headline)

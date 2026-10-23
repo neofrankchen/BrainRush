@@ -1,6 +1,8 @@
 import Foundation
 
-/// 国旗を見て、どの国かを選ぶ。解説は JASSO 2024年5月1日（かっこ内は前年）。
+/// 国旗を見て、どの国または地域かを選ぶ。
+/// 在日留学生の多い国（JASSO 2025年5月1日 上位10）と、よく知られる旗・間違えやすい旗。
+/// 選択肢は色や形が似ている相手。解説は旗の意味。
 enum FlagBank {
     static var count: Int { items.count }
 
@@ -57,28 +59,28 @@ enum FlagBank {
         }
     }
 
-    private static let promptJA = "この旗はどの国？"
-    private static let promptZH = "这面国旗是哪个国家？"
-    private static let promptEN = "Which country is this flag?"
-    private static let promptMY = "ဒီအလံက ဘယ်နိုင်ငံလဲ။"
+    private static let promptJA = "この旗は、どの国または地域？"
+    private static let promptZH = "这是哪个国家或地区的旗帜？"
+    private static let promptEN = "Which country or region is this flag?"
+    private static let promptMY = "ဒီအလံက ဘယ်နိုင်ငံ သို့မဟုတ် ဒေသလဲ။"
 
     private static let items: [Item] = [
         Item(
-            id: "stu-china",
+            id: "flag-china",
             flag: "🇨🇳",
             ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
             answerID: "china",
             choices: [
                 ("china", "中国", "中国", "China", "တရုတ်"),
-                ("taiwan", "台湾", "台湾", "Taiwan", "ထိုင်ဝမ်"),
+                ("vietnam", "ベトナム", "越南", "Vietnam", "ဗီယက်နမ်"),
             ],
-            explainJA: "中国。JASSO（2024年5月1日）では在日留学生12万3485人で1位。前の年（2023年5月1日）は11万5493人で、1年で7992人増えた。万里の長城、パンダ、春節が有名。",
-            explainZH: "中国。JASSO（2024年5月1日）在日留学生 123,485 人，第 1 名。前一年（2023年5月1日）有 115,493 人，一年增加 7,992 人。出名的有长城、熊猫、春节。",
-            explainEN: "China. JASSO (1 May 2024): 123,485 students in Japan, 1st. A year earlier (1 May 2023): 115,493, up 7,992. Famous: the Great Wall, pandas, Spring Festival.",
-            explainMY: "တရုတ်။ JASSO (2024 မေ 1) ဂျပန်၌ 123,485၊ အဆင့် 1။ အရင်နှစ် (2023 မေ 1) 115,493၊ တစ်နှစ်တွင် 7,992 တိုး။ မဟာတံတိုင်း၊ ပန်ဒါ၊ နွေဦးပွဲ ကျော်ကြားသည်။"
+            explainJA: "中国。赤い旗に大きい黄色い星が1つ、小さい星が4つ。大きい星は国をまとめる力、4つの星は人々。ベトナムも赤地に黄色い星だが、星は1つだけ。",
+            explainZH: "中国。红旗上有 1 颗大黄星和 4 颗小黄星。大星代表领导，小星代表人。越南也是红底黄星，但只有 1 颗。",
+            explainEN: "China. A red field with one large yellow star and four small ones — the large star for leadership, the small ones for the people. Vietnam is also red with a yellow star, but only one.",
+            explainMY: "တရုတ်။ အနီပေါ် ကြယ်ဝါ အကြီး ၁၊ အသေး ၄။ ဗီယက်နမ်က ကြယ် ၁ ခုသာ။"
         ),
         Item(
-            id: "stu-nepal",
+            id: "flag-nepal",
             flag: "🇳🇵",
             ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
             answerID: "nepal",
@@ -86,13 +88,13 @@ enum FlagBank {
                 ("india", "インド", "印度", "India", "အိန္ဒိယ"),
                 ("nepal", "ネパール", "尼泊尔", "Nepal", "နီပေါ"),
             ],
-            explainJA: "ネパール。JASSO（2024年5月1日）では在日留学生6万4816人で2位。前の年（2023年5月1日）は3万7878人で、1年で2万6938人増えた。エベレスト、カトマンズ、ダールバートが有名。",
-            explainZH: "尼泊尔。JASSO（2024年5月1日）在日留学生 64,816 人，第 2 名。前一年（2023年5月1日）有 37,878 人，一年增加 26,938 人。出名的有珠穆朗玛峰、加德满都、达尔巴特。",
-            explainEN: "Nepal. JASSO (1 May 2024): 64,816 students in Japan, 2nd. A year earlier (1 May 2023): 37,878, up 26,938. Famous: Everest, Kathmandu, dal bhat.",
-            explainMY: "နီပေါ။ JASSO (2024 မေ 1) ဂျပန်၌ 64,816၊ အဆင့် 2။ အရင်နှစ် (2023 မေ 1) 37,878၊ တစ်နှစ်တွင် 26,938 တိုး။ ဧဝရတ်တောင်၊ ကတ်မန္ဒူ၊ dal bhat ကျော်ကြားသည်။"
+            explainJA: "ネパール。世界でほぼ唯一の、三角形が2つ重なった旗。深紅は勇気、青い縁は平和、太陽と月は国がいつまでも続く願い。インドの旗は長方形の横三色。",
+            explainZH: "尼泊尔。世界上几乎唯一由两个三角形叠成的国旗。深红代表勇气，蓝边代表和平，太阳和月亮表示国家长久。印度旗是长方形的横三色。",
+            explainEN: "Nepal. Almost the only non-rectangular national flag: two pennants. Crimson for courage, a blue border for peace, sun and moon for lasting as long as they do. India’s flag is a rectangular tricolor.",
+            explainMY: "နီပေါ။ တြိဂံနှစ်ခု စပ်သော ကမ္ဘာ့နီးပါး တစ်ခုတည်းသော အလံ။ အိန္ဒိယက စတုဂံ သုံးရောင်။"
         ),
         Item(
-            id: "stu-vietnam",
+            id: "flag-vietnam",
             flag: "🇻🇳",
             ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
             answerID: "vietnam",
@@ -100,41 +102,27 @@ enum FlagBank {
                 ("vietnam", "ベトナム", "越南", "Vietnam", "ဗီယက်နမ်"),
                 ("china", "中国", "中国", "China", "တရုတ်"),
             ],
-            explainJA: "ベトナム。JASSO（2024年5月1日）では在日留学生4万323人で3位。前の年（2023年5月1日）は3万6339人で、1年で3984人増えた。フォー、ハロン湾、アオザイが有名。",
-            explainZH: "越南。JASSO（2024年5月1日）在日留学生 40,323 人，第 3 名。前一年（2023年5月1日）有 36,339 人，一年增加 3,984 人。出名的有河粉、下龙湾、奥黛。",
-            explainEN: "Vietnam. JASSO (1 May 2024): 40,323 students in Japan, 3rd. A year earlier (1 May 2023): 36,339, up 3,984. Famous: pho, Ha Long Bay, the ao dai.",
-            explainMY: "ဗီယက်နမ်။ JASSO (2024 မေ 1) ဂျပန်၌ 40,323၊ အဆင့် 3။ အရင်နှစ် (2023 မေ 1) 36,339၊ တစ်နှစ်တွင် 3,984 တိုး။ ဖိုခေါက်ဆွဲ၊ ဟာလောင်ပင်လယ်အော်၊ အောဇိုင်း ကျော်ကြားသည်။"
+            explainJA: "ベトナム。赤い旗の真ん中に黄色い星が1つ。赤は独立、星は人々がまとまる印。中国も赤地に黄色い星だが、星は5つ。",
+            explainZH: "越南。红旗正中一颗黄星。红代表独立，星代表人民团结。中国也是红底黄星，但是 5 颗。",
+            explainEN: "Vietnam. One yellow star on red: independence, and people standing together. China is also red with yellow stars, but five of them.",
+            explainMY: "ဗီယက်နမ်။ အနီပေါ် ကြယ်ဝါ ၁ ခု။ တရုတ်က ကြယ် ၅ ခု။"
         ),
         Item(
-            id: "stu-myanmar",
+            id: "flag-myanmar",
             flag: "🇲🇲",
             ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
             answerID: "myanmar",
             choices: [
-                ("thailand", "タイ", "泰国", "Thailand", "ထိုင်း"),
+                ("lithuania", "リトアニア", "立陶宛", "Lithuania", "လစ်သူယေးနီးယား"),
                 ("myanmar", "ミャンマー", "缅甸", "Myanmar", "မြန်မာ"),
             ],
-            explainJA: "ミャンマー。JASSO（2024年5月1日）では在日留学生1万6596人で4位。前の年（2023年5月1日）は7773人で、1年で8823人増えた（約2倍）。シュエダゴン・パゴダ、インレー湖が有名。",
-            explainZH: "缅甸。JASSO（2024年5月1日）在日留学生 16,596 人，第 4 名。前一年（2023年5月1日）有 7,773 人，一年增加 8,823 人（约两倍）。出名的有大金塔、茵莱湖。",
-            explainEN: "Myanmar. JASSO (1 May 2024): 16,596 students in Japan, 4th. A year earlier (1 May 2023): 7,773, up 8,823 (about double). Famous: Shwedagon Pagoda, Inle Lake.",
-            explainMY: "မြန်မာ။ JASSO (2024 မေ 1) ဂျပန်၌ 16,596၊ အဆင့် 4။ အရင်နှစ် (2023 မေ 1) 7,773၊ တစ်နှစ်တွင် 8,823 တိုး (နှစ်ဆခန့်)။ ရွှေတိဂုံစေတီ၊ အင်းလေးကန် ကျော်ကြားသည်။"
+            explainJA: "ミャンマー。黄・緑・赤の横三色の上に白い星。黄は団結、緑は平和、赤は勇気、星は国が一つであること。リトアニアも黄緑赤だが、星がない。",
+            explainZH: "缅甸。黄、绿、红横条上有一颗白星。黄是团结，绿是和平，红是勇气，星表示国家统一。立陶宛也是黄绿红，但没有星。",
+            explainEN: "Myanmar. Yellow, green, and red stripes with a white star: solidarity, peace, courage, and union. Lithuania uses the same colors, but has no star.",
+            explainMY: "မြန်မာ။ အဝါ–အစိမ်း–အနီ ပေါ် ကြယ်ဖြူ။ လစ်သူယေးနီးယားတွင် ကြယ် မရှိ။"
         ),
         Item(
-            id: "stu-korea",
-            flag: "🇰🇷",
-            ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
-            answerID: "korea",
-            choices: [
-                ("korea", "韓国", "韩国", "South Korea", "တောင်ကိုရီးယား"),
-                ("japan", "日本", "日本", "Japan", "ဂျပန်"),
-            ],
-            explainJA: "韓国。JASSO（2024年5月1日）では在日留学生1万4579人で5位。前の年（2023年5月1日）は1万4946人で、1年で367人減った。K-POP、サムスン、キムチが有名。",
-            explainZH: "韩国。JASSO（2024年5月1日）在日留学生 14,579 人，第 5 名。前一年（2023年5月1日）有 14,946 人，一年减少 367 人。出名的有 K-POP、三星、泡菜。",
-            explainEN: "South Korea. JASSO (1 May 2024): 14,579 students in Japan, 5th. A year earlier (1 May 2023): 14,946, down 367. Famous: K-pop, Samsung, kimchi.",
-            explainMY: "တောင်ကိုရီးယား။ JASSO (2024 မေ 1) ဂျပန်၌ 14,579၊ အဆင့် 5။ အရင်နှစ် (2023 မေ 1) 14,946၊ တစ်နှစ်တွင် 367 လျော့။ K-POP၊ Samsung၊ ကင်မ်ချီ ကျော်ကြားသည်။"
-        ),
-        Item(
-            id: "stu-srilanka",
+            id: "flag-srilanka",
             flag: "🇱🇰",
             ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
             answerID: "srilanka",
@@ -142,13 +130,41 @@ enum FlagBank {
                 ("india", "インド", "印度", "India", "အိန္ဒိယ"),
                 ("srilanka", "スリランカ", "斯里兰卡", "Sri Lanka", "သီရိလင်္ကာ"),
             ],
-            explainJA: "スリランカ。JASSO（2024年5月1日）では在日留学生1万2269人で6位。前の年（2023年5月1日）は6819人で、1年で5450人増えた。セイロンティー、コロンボ、シーギリヤロックが有名。",
-            explainZH: "斯里兰卡。JASSO（2024年5月1日）在日留学生 12,269 人，第 6 名。前一年（2023年5月1日）有 6,819 人，一年增加 5,450 人。出名的有锡兰红茶、科伦坡、狮子岩。",
-            explainEN: "Sri Lanka. JASSO (1 May 2024): 12,269 students in Japan, 6th. A year earlier (1 May 2023): 6,819, up 5,450. Famous: Ceylon tea, Colombo, Sigiriya.",
-            explainMY: "သီရိလင်္ကာ။ JASSO (2024 မေ 1) ဂျပန်၌ 12,269၊ အဆင့် 6။ အရင်နှစ် (2023 မေ 1) 6,819၊ တစ်နှစ်တွင် 5,450 တိုး။ စီလုံလက်ဖက်၊ ကိုလံဘို၊ Sigiriya ကျော်ကြားသည်။"
+            explainJA: "スリランカ。黄色い獅子と剣は勇気。緑とオレンジの帯は国内のさまざまな人々。ボの葉は仏教。インドの旗は横三色で、中央に輪がある。",
+            explainZH: "斯里兰卡。黄狮和剑代表勇气。绿、橙条代表国内不同族群。菩提叶代表佛教。印度旗是横三色，中间有轮。",
+            explainEN: "Sri Lanka. A gold lion and sword for courage; green and orange for communities; bo leaves for Buddhism. India is a tricolor with a wheel in the center.",
+            explainMY: "သီရိလင်္ကာ။ ခြင်္သေ့နှင့် ဓားက ရဲစွမ်း။ အိန္ဒိယက သုံးရောင်နှင့် စက်ဝိုင်း။"
         ),
         Item(
-            id: "stu-taiwan",
+            id: "flag-korea",
+            flag: "🇰🇷",
+            ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
+            answerID: "korea",
+            choices: [
+                ("korea", "韓国", "韩国", "South Korea", "တောင်ကိုရီးယား"),
+                ("japan", "日本", "日本", "Japan", "ဂျပန်"),
+            ],
+            explainJA: "韓国。白い旗に赤と青の太極、四すみに卦。白は平和、太極は調和。日本の旗は白い地に赤い丸だけで、模様が違う。",
+            explainZH: "韩国。白旗上有红蓝太极和四角的卦。白代表和平，太极代表和谐。日本旗只是白底红日，图案不同。",
+            explainEN: "South Korea. White for peace, a red-and-blue taegeuk for balance, and four trigrams. Japan’s flag is a red disc on white, with no taegeuk.",
+            explainMY: "တောင်ကိုရီးယား။ အဖြူပေါ် တိုင်ဂုတ်နှင့် ဂွာ။ ဂျပန်က အနီလုံးသာ။"
+        ),
+        Item(
+            id: "flag-bangladesh",
+            flag: "🇧🇩",
+            ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
+            answerID: "bangladesh",
+            choices: [
+                ("japan", "日本", "日本", "Japan", "ဂျပန်"),
+                ("bangladesh", "バングラデシュ", "孟加拉国", "Bangladesh", "ဘင်္ဂလားဒေ့ရှ်"),
+            ],
+            explainJA: "バングラデシュ。緑の地に赤い丸。緑は豊かな土地、赤は独立の朝日。日本も赤い丸だが、地の色は白。",
+            explainZH: "孟加拉国。绿底红圆。绿是富饶的土地，红是独立的朝阳。日本也有红圆，但底色是白的。",
+            explainEN: "Bangladesh. A red disc on green: fertile land and the sun of independence. Japan also has a red disc, but on white.",
+            explainMY: "ဘင်္ဂလားဒေ့ရှ်။ အစိမ်းပေါ် အနီလုံး။ ဂျပန်က အဖြူပေါ် အနီလုံး။"
+        ),
+        Item(
+            id: "flag-taiwan",
             flag: "🇹🇼",
             ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
             answerID: "taiwan",
@@ -156,27 +172,13 @@ enum FlagBank {
                 ("taiwan", "台湾", "台湾", "Taiwan", "ထိုင်ဝမ်"),
                 ("china", "中国", "中国", "China", "တရုတ်"),
             ],
-            explainJA: "台湾。JASSO（2024年5月1日）では在日留学生7655人で7位。前の年（2023年5月1日）は6998人で、1年で657人増えた。夜市、タピオカティー、台北101が有名。",
-            explainZH: "台湾。JASSO（2024年5月1日）在日留学生 7,655 人，第 7 名。前一年（2023年5月1日）有 6,998 人，一年增加 657 人。出名的有夜市、珍珠奶茶、台北101。",
-            explainEN: "Taiwan. JASSO (1 May 2024): 7,655 students in Japan, 7th. A year earlier (1 May 2023): 6,998, up 657. Famous: night markets, bubble tea, Taipei 101.",
-            explainMY: "ထိုင်ဝမ်။ JASSO (2024 မေ 1) ဂျပန်၌ 7,655၊ အဆင့် 7။ အရင်နှစ် (2023 မေ 1) 6,998၊ တစ်နှစ်တွင် 657 တိုး။ ညဈေး၊ ပုလဲနို့လက်ဖက်၊ ထိုင်ပေ 101 ကျော်ကြားသည်။"
+            explainJA: "台湾。赤い地の左上に青い四角、白い太陽。12本の光は1年の12か月。中国の旗は黄色い星で、太陽ではない。",
+            explainZH: "台湾。红底左上是蓝方块和白日。12 道光代表一年 12 个月。中国旗是黄星，不是太阳。",
+            explainEN: "Taiwan. Red field, blue canton, white sun with 12 rays for the 12 months. China’s flag uses yellow stars, not a sun.",
+            explainMY: "ထိုင်ဝမ်။ အနီပေါ် အပြာစတုရန်းနှင့် နေဖြူ။ တရုတ်က ကြယ်ဝါ။"
         ),
         Item(
-            id: "stu-bangladesh",
-            flag: "🇧🇩",
-            ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
-            answerID: "bangladesh",
-            choices: [
-                ("pakistan", "パキスタン", "巴基斯坦", "Pakistan", "ပါကစ္စတန်"),
-                ("bangladesh", "バングラデシュ", "孟加拉国", "Bangladesh", "ဘင်္ဂလားဒေ့ရှ်"),
-            ],
-            explainJA: "バングラデシュ。JASSO（2024年5月1日）では在日留学生7597人で8位。前の年（2023年5月1日）は5326人で、1年で2271人増えた。ダッカ、ジャムダニ織が有名。",
-            explainZH: "孟加拉国。JASSO（2024年5月1日）在日留学生 7,597 人，第 8 名。前一年（2023年5月1日）有 5,326 人，一年增加 2,271 人。出名的有达卡、贾姆达尼织品。",
-            explainEN: "Bangladesh. JASSO (1 May 2024): 7,597 students in Japan, 8th. A year earlier (1 May 2023): 5,326, up 2,271. Famous: Dhaka, jamdani weaving.",
-            explainMY: "ဘင်္ဂလားဒေ့ရှ်။ JASSO (2024 မေ 1) ဂျပန်၌ 7,597၊ အဆင့် 8။ အရင်နှစ် (2023 မေ 1) 5,326၊ တစ်နှစ်တွင် 2,271 တိုး။ ဒါကာ၊ jamdani ရက်ကန်း ကျော်ကြားသည်။"
-        ),
-        Item(
-            id: "stu-indonesia",
+            id: "flag-indonesia",
             flag: "🇮🇩",
             ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
             answerID: "indonesia",
@@ -184,27 +186,13 @@ enum FlagBank {
                 ("indonesia", "インドネシア", "印度尼西亚", "Indonesia", "အင်ဒိုနီးရှား"),
                 ("monaco", "モナコ", "摩纳哥", "Monaco", "မိုနာကို"),
             ],
-            explainJA: "インドネシア。JASSO（2024年5月1日）では在日留学生6778人で9位。前の年（2023年5月1日）は6552人で、1年で226人増えた。バリ島、ボロブドゥール、バティックが有名。",
-            explainZH: "印度尼西亚。JASSO（2024年5月1日）在日留学生 6,778 人，第 9 名。前一年（2023年5月1日）有 6,552 人，一年增加 226 人。出名的有巴厘岛、婆罗浮屠、蜡染。",
-            explainEN: "Indonesia. JASSO (1 May 2024): 6,778 students in Japan, 9th. A year earlier (1 May 2023): 6,552, up 226. Famous: Bali, Borobudur, batik.",
-            explainMY: "အင်ဒိုနီးရှား။ JASSO (2024 မေ 1) ဂျပန်၌ 6,778၊ အဆင့် 9။ အရင်နှစ် (2023 မေ 1) 6,552၊ တစ်နှစ်တွင် 226 တိုး။ ဘာလီ၊ ဗိုရိုဘူဒူ၊ ဘာတစ် ကျော်ကြားသည်။"
+            explainJA: "インドネシア。上赤・下白。赤は勇気、白は純潔。モナコも同じ赤白だが、縦に近く四角い。インドネシアの旗は横に長い。",
+            explainZH: "印度尼西亚。上红下白。红是勇气，白是纯洁。摩纳哥也是红白，但更接近正方形。印尼旗更扁更长。",
+            explainEN: "Indonesia. Red over white: courage and purity. Monaco uses the same colors, but is closer to square. Indonesia’s flag is much wider.",
+            explainMY: "အင်ဒိုနီးရှား။ အပေါ်အနီ အောက်အဖြူ။ မိုနာကိုက ပိုစတုရန်း။"
         ),
         Item(
-            id: "stu-mongolia",
-            flag: "🇲🇳",
-            ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
-            answerID: "mongolia",
-            choices: [
-                ("kazakhstan", "カザフスタン", "哈萨克斯坦", "Kazakhstan", "ကာဇက်စတန်"),
-                ("mongolia", "モンゴル", "蒙古", "Mongolia", "မွန်ဂိုလီးယား"),
-            ],
-            explainJA: "モンゴル。JASSO（2024年5月1日）では在日留学生4085人で10位。前の年（2023年5月1日）は3677人で、1年で408人増えた。チンギス・ハン、草原、ナーダムが有名。",
-            explainZH: "蒙古。JASSO（2024年5月1日）在日留学生 4,085 人，第 10 名。前一年（2023年5月1日）有 3,677 人，一年增加 408 人。出名的有成吉思汗、草原、那达慕。",
-            explainEN: "Mongolia. JASSO (1 May 2024): 4,085 students in Japan, 10th. A year earlier (1 May 2023): 3,677, up 408. Famous: Genghis Khan, the steppe, Naadam.",
-            explainMY: "မွန်ဂိုလီးယား။ JASSO (2024 မေ 1) ဂျပန်၌ 4,085၊ အဆင့် 10။ အရင်နှစ် (2023 မေ 1) 3,677၊ တစ်နှစ်တွင် 408 တိုး။ ချင်ဂစ္စခန်၊ လွင်ပြင်၊ နာဒမ်ပွဲ ကျော်ကြားသည်။"
-        ),
-        Item(
-            id: "gdp-usa",
+            id: "flag-usa",
             flag: "🇺🇸",
             ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
             answerID: "usa",
@@ -212,28 +200,13 @@ enum FlagBank {
                 ("usa", "アメリカ", "美国", "United States", "အမေရိကန်"),
                 ("liberia", "リベリア", "利比里亚", "Liberia", "လိုက်ဘေးရီးယား"),
             ],
-            explainJA: "アメリカ。JASSO（2024年5月1日）では在日留学生3918人で11位。前の年（2023年5月1日）は4076人で、1年で158人減った。自由の女神、ハリウッド、NBAが有名。",
-            explainZH: "美国。JASSO（2024年5月1日）在日留学生 3,918 人，第 11 名。前一年（2023年5月1日）有 4,076 人，一年减少 158 人。出名的有自由女神像、好莱坞、NBA。",
-            explainEN: "United States. JASSO (1 May 2024): 3,918 students in Japan, 11th. A year earlier (1 May 2023): 4,076, down 158. Famous: the Statue of Liberty, Hollywood, the NBA.",
-            explainMY: "အမေရိကန်။ JASSO (2024 မေ 1) ဂျပန်၌ 3,918၊ အဆင့် 11။ အရင်နှစ် (2023 မေ 1) 4,076၊ တစ်နှစ်တွင် 158 လျော့။ လွတ်လပ်မှုရုပ်တု၊ ဟောလီးဝုဒ်၊ NBA ကျော်ကြားသည်။"
-        ),
-
-        Item(
-            id: "gdp-germany",
-            flag: "🇩🇪",
-            ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
-            answerID: "germany",
-            choices: [
-                ("germany", "ドイツ", "德国", "Germany", "ဂျာမနီ"),
-                ("belgium", "ベルギー", "比利时", "Belgium", "ဘယ်လ်ဂျီယမ်"),
-            ],
-            explainJA: "ドイツ。JASSO（2024年5月1日）では在日留学生1215人で20位。前の年（2023年5月1日）は1282人で、1年で67人減った。メルセデス・ベンツ、ベートーヴェン、オクトーバーフェストが有名。",
-            explainZH: "德国。JASSO（2024年5月1日）在日留学生 1,215 人，第 20 名。前一年（2023年5月1日）有 1,282 人，一年减少 67 人。出名的有奔驰、贝多芬、啤酒节。",
-            explainEN: "Germany. JASSO (1 May 2024): 1,215 students in Japan, 20th. A year earlier (1 May 2023): 1,282, down 67. Famous: Mercedes-Benz, Beethoven, Oktoberfest.",
-            explainMY: "ဂျာမနီ။ JASSO (2024 မေ 1) ဂျပန်၌ 1,215၊ အဆင့် 20။ အရင်နှစ် (2023 မေ 1) 1,282၊ တစ်နှစ်တွင် 67 လျော့။ Mercedes-Benz၊ ဘီသိုဗင်၊ Oktoberfest ကျော်ကြားသည်။"
+            explainJA: "アメリカ。13本の縞は最初の州、青い四角の星は今の州の数。赤は勇気、白は純潔、青は正義。リベリアも似ているが、星は1つだけ。",
+            explainZH: "美国。13 道条纹是最初的州，蓝角上的星是现在的州。红是勇气，白是纯洁，蓝是正义。利比里亚很像，但只有 1 颗星。",
+            explainEN: "United States. 13 stripes for the first states, stars for today’s states. Red valor, white purity, blue justice. Liberia looks similar, but has only one star.",
+            explainMY: "အမေရိကန်။ ကြယ်များစွာ။ လိုက်ဘေးရီးယားက ကြယ် ၁ ခုသာ။"
         ),
         Item(
-            id: "gdp-japan",
+            id: "flag-japan",
             flag: "🇯🇵",
             ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
             answerID: "japan",
@@ -241,13 +214,13 @@ enum FlagBank {
                 ("bangladesh", "バングラデシュ", "孟加拉国", "Bangladesh", "ဘင်္ဂလားဒေ့ရှ်"),
                 ("japan", "日本", "日本", "Japan", "ဂျပန်"),
             ],
-            explainJA: "日本。JASSOは外国から来た留学生を数えるので、日本はランキングに入らない（受け入れる側）。2024年5月1日の外国人留学生は全体で33万6708人。前の年は27万9274人で、1年で5万7434人増えた。富士山、寿司、アニメが有名。",
-            explainZH: "日本。JASSO 统计的是从外国来的留学生，日本是接收方，不进这个排名。2024年5月1日在日外国留学生一共 336,708 人。前一年有 279,274 人，一年增加 57,434 人。出名的有富士山、寿司、动画。",
-            explainEN: "Japan. JASSO counts students from other countries, so Japan is the host, not on the origin ranking. Total international students on 1 May 2024: 336,708. A year earlier: 279,274, up 57,434. Famous: Mount Fuji, sushi, anime.",
-            explainMY: "ဂျပန်။ JASSO သည် နိုင်ငံခြားမှ ကျောင်းသားများကို ရေတွက်သည်။ ဂျပန်သည် လက်ခံသည့်နိုင်ငံဖြစ်၍ အဆင့်မပါ။ 2024 မေ 1 တွင် စုစုပေါင်း 336,708။ အရင်နှစ် 279,274၊ တစ်နှစ်တွင် 57,434 တိုး။ ဖူဂျီတောင်၊ ဆူရှီ၊ အန်နီမေ ကျော်ကြားသည်။"
+            explainJA: "日本。白い地に赤い日の丸。白は清らかさ、赤は太陽。バングラデシュも赤い丸だが、地は緑。",
+            explainZH: "日本。白底红日。白是纯洁，红是太阳。孟加拉国也有红圆，但底色是绿的。",
+            explainEN: "Japan. A red sun on white: purity and the sun. Bangladesh also has a red disc, but on green.",
+            explainMY: "ဂျပန်။ အဖြူပေါ် နေနီ။ ဘင်္ဂလားဒေ့ရှ်က အစိမ်းပေါ်။"
         ),
         Item(
-            id: "gdp-uk",
+            id: "flag-uk",
             flag: "🇬🇧",
             ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
             answerID: "uk",
@@ -255,27 +228,13 @@ enum FlagBank {
                 ("uk", "イギリス", "英国", "United Kingdom", "ယူကေ"),
                 ("australia", "オーストラリア", "澳大利亚", "Australia", "ဩစတြေးလျ"),
             ],
-            explainJA: "イギリス。JASSO（2024年5月1日）では在日留学生953人で21位。前の年（2023年5月1日）は1117人で、1年で164人減った。ビッグベン、ビートルズ、プレミアリーグが有名。",
-            explainZH: "英国。JASSO（2024年5月1日）在日留学生 953 人，第 21 名。前一年（2023年5月1日）有 1,117 人，一年减少 164 人。出名的有大本钟、披头士、英超。",
-            explainEN: "United Kingdom. JASSO (1 May 2024): 953 students in Japan, 21st. A year earlier (1 May 2023): 1,117, down 164. Famous: Big Ben, the Beatles, the Premier League.",
-            explainMY: "ယူကေ။ JASSO (2024 မေ 1) ဂျပန်၌ 953၊ အဆင့် 21။ အရင်နှစ် (2023 မေ 1) 1,117၊ တစ်နှစ်တွင် 164 လျော့။ Big Ben၊ Beatles၊ Premier League ကျော်ကြားသည်။"
+            explainJA: "イギリス。イングランド・スコットランド・アイルランドの十字を重ねたユニオンジャック。オーストラリアの旗は端にユニオンジャックがあり、ほかに南十字星がある。",
+            explainZH: "英国。英格兰、苏格兰、爱尔兰的十字叠在一起，叫联合杰克。澳大利亚旗角上有联合杰克，另外还有南十字星。",
+            explainEN: "United Kingdom. The Union Jack layers three crosses. Australia puts a Union Jack in the corner and adds the Southern Cross.",
+            explainMY: "ယူကေ။ ယူနီယံဂျက်။ ဩစတြေးလျတွင် ထောင့်၌ ရှိပြီး ကြယ်များ ထပ်ပါသည်။"
         ),
         Item(
-            id: "gdp-india",
-            flag: "🇮🇳",
-            ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
-            answerID: "india",
-            choices: [
-                ("ireland", "アイルランド", "爱尔兰", "Ireland", "အိုင်ယာလန်"),
-                ("india", "インド", "印度", "India", "အိန္ဒိယ"),
-            ],
-            explainJA: "インド。JASSO（2024年5月1日）では在日留学生1685人で17位。前の年（2023年5月1日）は1612人で、1年で73人増えた。タージマハル、ボリウッド、クリケットが有名。",
-            explainZH: "印度。JASSO（2024年5月1日）在日留学生 1,685 人，第 17 名。前一年（2023年5月1日）有 1,612 人，一年增加 73 人。出名的有泰姬陵、宝莱坞、板球。",
-            explainEN: "India. JASSO (1 May 2024): 1,685 students in Japan, 17th. A year earlier (1 May 2023): 1,612, up 73. Famous: the Taj Mahal, Bollywood, cricket.",
-            explainMY: "အိန္ဒိယ။ JASSO (2024 မေ 1) ဂျပန်၌ 1,685၊ အဆင့် 17။ အရင်နှစ် (2023 မေ 1) 1,612၊ တစ်နှစ်တွင် 73 တိုး။ တာ့ဂျ်မဟာလ်၊ ဘောလီးဝုဒ်၊ ခရစ်ကတ် ကျော်ကြားသည်။"
-        ),
-        Item(
-            id: "gdp-france",
+            id: "flag-france",
             flag: "🇫🇷",
             ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
             answerID: "france",
@@ -283,27 +242,27 @@ enum FlagBank {
                 ("france", "フランス", "法国", "France", "ပြင်သစ်"),
                 ("netherlands", "オランダ", "荷兰", "Netherlands", "နယ်သာလန်"),
             ],
-            explainJA: "フランス。JASSO（2024年5月1日）では在日留学生2012人で16位。前の年（2023年5月1日）は2113人で、1年で101人減った。エッフェル塔、ルーブル、ワインが有名。",
-            explainZH: "法国。JASSO（2024年5月1日）在日留学生 2,012 人，第 16 名。前一年（2023年5月1日）有 2,113 人，一年减少 101 人。出名的有埃菲尔铁塔、卢浮宫、葡萄酒。",
-            explainEN: "France. JASSO (1 May 2024): 2,012 students in Japan, 16th. A year earlier (1 May 2023): 2,113, down 101. Famous: the Eiffel Tower, the Louvre, wine.",
-            explainMY: "ပြင်သစ်။ JASSO (2024 မေ 1) ဂျပန်၌ 2,012၊ အဆင့် 16။ အရင်နှစ် (2023 မေ 1) 2,113၊ တစ်နှစ်တွင် 101 လျော့။ အိုင်ဖယ်တာဝါ၊ လူဗာ၊ စပျစ်ရည် ကျော်ကြားသည်။"
+            explainJA: "フランス。青・白・赤の縦三色。自由・平等・博愛を表すことが多い。オランダは赤・白・青の横三色で、向きが違う。",
+            explainZH: "法国。蓝白红竖三色，常表示自由、平等、博爱。荷兰是红白蓝横三色，排列方向不同。",
+            explainEN: "France. Vertical blue, white, red — often liberty, equality, fraternity. The Netherlands is horizontal red, white, blue.",
+            explainMY: "ပြင်သစ်။ ဒေါင်လိုက် အပြာ–အဖြူ–အနီ။ နယ်သာလန်က အလျားလိုက် အနီ–အဖြူ–အပြာ။"
         ),
         Item(
-            id: "gdp-russia",
-            flag: "🇷🇺",
+            id: "flag-germany",
+            flag: "🇩🇪",
             ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
-            answerID: "russia",
+            answerID: "germany",
             choices: [
-                ("slovakia", "スロバキア", "斯洛伐克", "Slovakia", "ဆလိုဗက်ကီးယား"),
-                ("russia", "ロシア", "俄罗斯", "Russia", "ရုရှား"),
+                ("germany", "ドイツ", "德国", "Germany", "ဂျာမနီ"),
+                ("belgium", "ベルギー", "比利时", "Belgium", "ဘယ်လ်ဂျီယမ်"),
             ],
-            explainJA: "ロシア。JASSO（2024年5月1日）では在日留学生1502人で18位。前の年（2023年5月1日）は1575人で、1年で73人減った。バレエ、マトリョーシカ、ガガーリンが有名。",
-            explainZH: "俄罗斯。JASSO（2024年5月1日）在日留学生 1,502 人，第 18 名。前一年（2023年5月1日）有 1,575 人，一年减少 73 人。出名的有芭蕾、套娃、加加林。",
-            explainEN: "Russia. JASSO (1 May 2024): 1,502 students in Japan, 18th. A year earlier (1 May 2023): 1,575, down 73. Famous: ballet, matryoshka dolls, Gagarin.",
-            explainMY: "ရုရှား။ JASSO (2024 မေ 1) ဂျပန်၌ 1,502၊ အဆင့် 18။ အရင်နှစ် (2023 မေ 1) 1,575၊ တစ်နှစ်တွင် 73 လျော့။ ဘဲလေး၊ matryoshka၊ Gagarin ကျော်ကြားသည်။"
+            explainJA: "ドイツ。黒・赤・金の横三色。ベルギーも似た色だが、黒・黄・赤の縦三色。横か縦かで見分ける。",
+            explainZH: "德国。黑、红、金横三色。比利时颜色接近，但是黑、黄、红竖三色。看是横条还是竖条。",
+            explainEN: "Germany. Horizontal black, red, gold. Belgium is similar in color, but vertical black, yellow, red.",
+            explainMY: "ဂျာမနီ။ အလျားလိုက် အနက်–အနီ–ရွှေ။ ဘယ်လ်ဂျီယမ်က ဒေါင်လိုက်။"
         ),
         Item(
-            id: "gdp-italy",
+            id: "flag-italy",
             flag: "🇮🇹",
             ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
             answerID: "italy",
@@ -311,13 +270,55 @@ enum FlagBank {
                 ("italy", "イタリア", "意大利", "Italy", "အီတလီ"),
                 ("mexico", "メキシコ", "墨西哥", "Mexico", "မက္ကဆီကို"),
             ],
-            explainJA: "イタリア。JASSO（2024年5月1日）では在日留学生820人で23位。前の年（2023年5月1日）は869人で、1年で49人減った。コロッセオ、ピザ、フェラーリが有名。",
-            explainZH: "意大利。JASSO（2024年5月1日）在日留学生 820 人，第 23 名。前一年（2023年5月1日）有 869 人，一年减少 49 人。出名的有斗兽场、披萨、法拉利。",
-            explainEN: "Italy. JASSO (1 May 2024): 820 students in Japan, 23rd. A year earlier (1 May 2023): 869, down 49. Famous: the Colosseum, pizza, Ferrari.",
-            explainMY: "အီတလီ။ JASSO (2024 မေ 1) ဂျပန်၌ 820၊ အဆင့် 23။ အရင်နှစ် (2023 မေ 1) 869၊ တစ်နှစ်တွင် 49 လျော့။ ကိုလိုဆီယမ်၊ ပီဇာ၊ Ferrari ကျော်ကြားသည်။"
+            explainJA: "イタリア。緑・白・赤の縦三色。緑は平野や希望、白は雪や信仰、赤は勇気とされることが多い。メキシコも緑白赤だが、中央に紋章がある。",
+            explainZH: "意大利。绿白红竖三色。绿常表示平原或希望，白表示雪或信仰，红表示勇气。墨西哥也是绿白红，但中间有国徽。",
+            explainEN: "Italy. Vertical green, white, red. Mexico uses the same stripes, but has a coat of arms in the center.",
+            explainMY: "အီတလီ။ ဒေါင်လိုက် အစိမ်း–အဖြူ–အနီ။ မက္ကဆီကိုတွင် အလယ် အမှတ်အသား ရှိသည်။"
         ),
         Item(
-            id: "gdp-canada",
+            id: "flag-ireland",
+            flag: "🇮🇪",
+            ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
+            answerID: "ireland",
+            choices: [
+                ("ivorycoast", "コートジボワール", "科特迪瓦", "Côte d’Ivoire", "ကို့တ်ဒီဗွာ"),
+                ("ireland", "アイルランド", "爱尔兰", "Ireland", "အိုင်ယာလန်"),
+            ],
+            explainJA: "アイルランド。緑・白・オレンジの縦三色。緑とオレンジは人々の調和、白は平和。コートジボワールは同じ色を逆に並べている。",
+            explainZH: "爱尔兰。绿、白、橙竖三色。绿和橙表示不同群体和谐，白是和平。科特迪瓦是同样的颜色反过来排。",
+            explainEN: "Ireland. Vertical green, white, orange. Côte d’Ivoire uses the same colors in reverse order.",
+            explainMY: "အိုင်ယာလန်။ ဒေါင်လိုက် အစိမ်း–အဖြူ–လိမ္မော်။ ကို့တ်ဒီဗွာက ပြောင်းပြန်။"
+        ),
+        Item(
+            id: "flag-australia",
+            flag: "🇦🇺",
+            ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
+            answerID: "australia",
+            choices: [
+                ("australia", "オーストラリア", "澳大利亚", "Australia", "ဩစတြေးလျ"),
+                ("newzealand", "ニュージーランド", "新西兰", "New Zealand", "နယူးဇီလန်"),
+            ],
+            explainJA: "オーストラリア。青い地にユニオンジャック、大きな七角の星、白い南十字星。ニュージーランドも似ているが、星は赤くて4つ。大きい白い星があるのがオーストラリア。",
+            explainZH: "澳大利亚。蓝底、联合杰克、一颗大七角星和白色南十字。新西兰很像，但星是红色的、只有 4 颗。有那颗大白星的是澳大利亚。",
+            explainEN: "Australia. Blue field, Union Jack, a large seven-pointed star, and a white Southern Cross. New Zealand is similar, but its stars are red and there are four.",
+            explainMY: "ဩစတြေးလျ။ ကြယ်ဖြူကြီးနှင့် တောင်ကြယ်။ နယူးဇီလန်က ကြယ်နီ ၄ ခု။"
+        ),
+        Item(
+            id: "flag-chad",
+            flag: "🇹🇩",
+            ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
+            answerID: "chad",
+            choices: [
+                ("romania", "ルーマニア", "罗马尼亚", "Romania", "ရိုမေးနီးယား"),
+                ("chad", "チャド", "乍得", "Chad", "ချဒ်"),
+            ],
+            explainJA: "チャド。青・黄・赤の縦三色。青は空や希望、黄は太陽、赤は勇気。ルーマニアもほとんど同じ配色で、ネットでよく比べられる。チャドの青は少し暗い。",
+            explainZH: "乍得。蓝、黄、红竖三色。蓝是天空或希望，黄是太阳，红是勇气。罗马尼亚配色几乎一样，网上常拿来比。乍得的蓝更深一点。",
+            explainEN: "Chad. Vertical blue, yellow, red. Romania is almost the same — a famous look-alike. Chad’s blue is a bit darker.",
+            explainMY: "ချဒ်။ ဒေါင်လိုက် အပြာ–အဝါ–အနီ။ ရိုမေးနီးယားနှင့် နီးပါးတူသည်။"
+        ),
+        Item(
+            id: "flag-canada",
             flag: "🇨🇦",
             ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
             answerID: "canada",
@@ -325,10 +326,52 @@ enum FlagBank {
                 ("peru", "ペルー", "秘鲁", "Peru", "ပီရူး"),
                 ("canada", "カナダ", "加拿大", "Canada", "ကနေဒါ"),
             ],
-            explainJA: "カナダ。JASSO（2024年5月1日）では在日留学生598人で25位。前の年（2023年5月1日）は591人で、1年で7人増えた。メイプルシロップ、ナイアガラの滝、アイスホッケーが有名。",
-            explainZH: "加拿大。JASSO（2024年5月1日）在日留学生 598 人，第 25 名。前一年（2023年5月1日）有 591 人，一年增加 7 人。出名的有枫糖浆、尼亚加拉瀑布、冰球。",
-            explainEN: "Canada. JASSO (1 May 2024): 598 students in Japan, 25th. A year earlier (1 May 2023): 591, up 7. Famous: maple syrup, Niagara Falls, ice hockey.",
-            explainMY: "ကနေဒါ။ JASSO (2024 မေ 1) ဂျပန်၌ 598၊ အဆင့် 25။ အရင်နှစ် (2023 မေ 1) 591၊ တစ်နှစ်တွင် 7 တိုး။ မေပယ်ရည်၊ နိုင်အာဂရာရေတံခွန်၊ ရေခဲဟော်ကီ ကျော်ကြားသည်။"
+            explainJA: "カナダ。赤・白・赤に赤いカエデの葉。カエデはカナダの印。ペルーも赤白赤だが、中央は紋章で、葉ではない。",
+            explainZH: "加拿大。红白红，中间是红枫叶。枫叶代表加拿大。秘鲁也是红白红，但中间是国徽，不是叶子。",
+            explainEN: "Canada. Red-white-red with a maple leaf, the country’s emblem. Peru is also red-white-red, but the center is a coat of arms, not a leaf.",
+            explainMY: "ကနေဒါ။ မေပယ်ရွက်။ ပီရူးက အလယ် အမှတ်အသား။"
+        ),
+        Item(
+            id: "flag-india",
+            flag: "🇮🇳",
+            ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
+            answerID: "india",
+            choices: [
+                ("india", "インド", "印度", "India", "အိန္ဒိယ"),
+                ("niger", "ニジェール", "尼日尔", "Niger", "နိုင်ဂျာ"),
+            ],
+            explainJA: "インド。橙・白・緑の横三色。中央の24本の輪はアショーカ・チャクラ。橙は勇気、白は平和、緑は豊かさ。ニジェールも橙白緑だが、中央はオレンジの丸。",
+            explainZH: "印度。橙、白、绿横三色。中间 24 辐的轮是阿育王轮。橙是勇气，白是和平，绿是富饶。尼日尔也是橙白绿，但中间是橙圆。",
+            explainEN: "India. Saffron, white, green, with the 24-spoke Ashoka Chakra. Niger is a similar tricolor, but has an orange disc instead of a wheel.",
+            explainMY: "အိန္ဒိယ။ လိမ္မော်–အဖြူ–အစိမ်းနှင့် စက်ဝိုင်း။ နိုင်ဂျာက အလယ် လုံး။"
+        ),
+        Item(
+            id: "flag-russia",
+            flag: "🇷🇺",
+            ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
+            answerID: "russia",
+            choices: [
+                ("slovakia", "スロバキア", "斯洛伐克", "Slovakia", "ဆလိုဗက်ကီးယား"),
+                ("russia", "ロシア", "俄罗斯", "Russia", "ရုရှား"),
+            ],
+            explainJA: "ロシア。白・青・赤の横三色。白は率直、青は誠実、赤は勇気とされることが多い。スロバキアも白青赤だが、紋章が付いている。",
+            explainZH: "俄罗斯。白、蓝、红横三色。白常表示率直，蓝表示诚实，红表示勇气。斯洛伐克也是白蓝红，但带有国徽。",
+            explainEN: "Russia. Horizontal white, blue, red. Slovakia uses the same stripes plus a coat of arms.",
+            explainMY: "ရုရှား။ အလျားလိုက် အဖြူ–အပြာ–အနီ။ ဆလိုဗက်ကီးယားတွင် အမှတ်အသား ပါသည်။"
+        ),
+        Item(
+            id: "flag-mongolia",
+            flag: "🇲🇳",
+            ja: promptJA, zh: promptZH, en: promptEN, my: promptMY,
+            answerID: "mongolia",
+            choices: [
+                ("kazakhstan", "カザフスタン", "哈萨克斯坦", "Kazakhstan", "ကာဇက်စတန်"),
+                ("mongolia", "モンゴル", "蒙古", "Mongolia", "မွန်ဂိုလီးယား"),
+            ],
+            explainJA: "モンゴル。赤・青・赤。青い帯は永遠の空。赤い帯のソヨンボは火・太陽・月などの印。カザフスタンは空色に金色の模様で、配色が違う。",
+            explainZH: "蒙古。红、蓝、红。蓝带是长生天。红带上的索永布是火、太阳、月亮等符号。哈萨克斯坦是天蓝底金色图案，配色不同。",
+            explainEN: "Mongolia. Red-blue-red. Blue is the eternal sky; the soyombo on red stands for fire, sun, and moon. Kazakhstan is sky-blue with gold, a different palette.",
+            explainMY: "မွန်ဂိုလီးယား။ အနီ–အပြာ–အနီနှင့် ဆိုယွန်ဘို။ ကာဇက်စတန်က မိုးပြာနှင့် ရွှေ။"
         ),
     ]
 }

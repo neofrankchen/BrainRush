@@ -380,7 +380,7 @@ enum KidChoiceBank {
         Item(
             id: "kid-saru-kani",
             ja: "昔話のさるかに合戦に出てくる虫はなんでしょうか？",
-            zh: "童话「猴子和螃蟹打仗」里出现的虫子是什么？",
+            zh: "日本民间故事「猴子和螃蟹打仗」里出现的虫子是什么？",
             en: "In the folk tale The Crab and the Monkey, which insect appears?",
             my: "မျောက်-ကဏန်း ပုံပြင်တွင် ပေါ်သော ပိုးက ဘာလဲ။",
             answerID: "bee",
@@ -388,10 +388,10 @@ enum KidChoiceBank {
                 ("bee", "ハチ", "蜜蜂", "Bee", "ပျား"),
                 ("centipede", "ムカデ", "蜈蚣", "Centipede", "ကျော့ကွေး"),
             ],
-            explainJA: "さるかに合戦では、サルに仕返しするためにカニの子どもたちに力を貸してくれる味方が登場しますね。お話に出てくる仲間は、ハチ・クリ・臼（うす）です。",
-            explainZH: "在「猴子和螃蟹打仗」里，帮小螃蟹向猴子报仇的伙伴是蜜蜂、栗子和石臼。",
-            explainEN: "Helpers of the baby crabs are a bee, a chestnut, and a mortar (usu).",
-            explainMY: "ကဏန်းကလေးများကို ကူသော မိတ်ဆွေမှာ ပျား၊ သစ်အယ်သီး၊ ကျည်ပွေ့ (ဥဆု)။"
+            explainJA: "正解はハチ。これは日本の昔話『さるかに合戦』。サルがカニの柿をだまして取り、親ガニを傷つける。子どもカニはハチ・クリ・臼（うす）と仕返しする。ムカデは出てこない。",
+            explainZH: "正确答案是蜜蜂。这是日本民间故事《猴子和螃蟹打仗》：猴子骗走螃蟹的柿子并伤害蟹妈妈，小螃蟹靠蜜蜂、栗子、石臼报仇。蜈蚣没有出场。",
+            explainEN: "A bee. This is the Japanese folk tale Saru Kani Gassen: a monkey cheats a crab out of a persimmon. The children are helped by a bee, a chestnut, and a mortar. No centipede.",
+            explainMY: "အဖြေမှန်က ပျား။ ဂျပန် ဒဏ္ဍာရီ 『ဆရု ကနိ ဂတ်ဆင်』။ ပျား၊ သစ်အယ်၊ ကျည်ပွေ့က ကူသည်။"
         ),
         Item(
             id: "kid-tuna",

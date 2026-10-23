@@ -29,6 +29,13 @@ enum ExtraLang {
         "おもしろ2択": .init(ko: "재미있는 양자택일", fr: "Quiz amusant", zhHant: "有趣二選一"),
         "食べ物2択": .init(ko: "음식 양자택일", fr: "Quiz nourriture", zhHant: "食物二選一"),
         "幼児2択": .init(ko: "유아 양자택일", fr: "Quiz enfants", zhHant: "幼兒二選一"),
+        "全部": .init(ko: "전부", fr: "Tout", zhHant: "全部"),
+        "日本の常識": .init(ko: "일본 상식", fr: "Culture japonaise", zhHant: "日本常識"),
+        "アニメ": .init(ko: "애니메", fr: "Anime", zhHant: "日本動漫"),
+        "自然": .init(ko: "자연", fr: "Nature", zhHant: "自然"),
+        "美食": .init(ko: "미식", fr: "Cuisine", zhHant: "美食"),
+        "その他": .init(ko: "기타", fr: "Autre", zhHant: "其他"),
+        "世界の常識": .init(ko: "세계 상식", fr: "Culture générale", zhHant: "世界常識"),
         "国旗": .init(ko: "국기", fr: "Drapeaux", zhHant: "國旗"),
         "ストループ効果": .init(ko: "스트룹 효과", fr: "Effet Stroop", zhHant: "斯特魯普效應"),
         "ひっかけ": .init(ko: "말장난", fr: "Piège", zhHant: "急轉彎"),
@@ -45,6 +52,7 @@ enum ExtraLang {
         "ゲームを始める": .init(ko: "게임 시작", fr: "Jouer", zhHant: "開始遊戲"),
         "開始": .init(ko: "시작", fr: "Démarrer", zhHant: "開始"),
         "ランキング": .init(ko: "순위", fr: "Classement", zhHant: "排行榜"),
+        "総合": .init(ko: "전체", fr: "Général", zhHant: "總榜"),
         "遊び方": .init(ko: "하는 법", fr: "Comment jouer", zhHant: "怎麼玩"),
         "練習": .init(ko: "연습", fr: "Entraînement", zhHant: "練習"),
         "練習を始める": .init(ko: "연습 시작", fr: "Commencer l’entraînement", zhHant: "開始練習"),
@@ -63,6 +71,9 @@ enum ExtraLang {
         "制限時間：オフ": .init(ko: "제한 시간: 꺼짐", fr: "Minuteur : off", zhHant: "倒計時：關"),
         "この名前で始める": .init(ko: "이 이름으로 시작", fr: "Commencer avec ce nom", zhHant: "用這個名字開始"),
         "スタート画面へ": .init(ko: "시작 화면으로", fr: "Retour à l’accueil", zhHant: "返回首頁"),
+        "ゲームをやめる？": .init(ko: "게임을 그만둘까요?", fr: "Quitter cette partie ?", zhHant: "要退出這局嗎？"),
+        "つづける": .init(ko: "계속하기", fr: "Continuer", zhHant: "繼續"),
+        "いまの得点は保存されないよ。": .init(ko: "지금 점수는 저장되지 않아요.", fr: "Ton score actuel ne sera pas enregistré.", zhHant: "目前得分不會保存。"),
         "この名前でランキングへ": .init(ko: "이 이름으로 순위에", fr: "Publier ce nom", zhHant: "用這個名字上榜"),
         "名前を変える": .init(ko: "이름 바꾸기", fr: "Changer le nom", zhHant: "改名"),
         "プレイヤー名": .init(ko: "플레이어 이름", fr: "Nom du joueur", zhHant: "玩家名字"),
@@ -106,6 +117,8 @@ enum ExtraLang {
         "記号": .init(ko: "기호", fr: "Symboles", zhHant: "符號"),
         "旗": .init(ko: "깃발", fr: "Drapeaux", zhHant: "旗幟"),
         "7種類の問題": .init(ko: "문제 7종류", fr: "Sept types", zhHant: "七種題目"),
+        "6種類の問題": .init(ko: "문제 6종류", fr: "Six types", zhHant: "六種題目"),
+        "8種類の問題": .init(ko: "문제 8종류", fr: "Huit types", zhHant: "八種題目"),
         "20問と時間": .init(ko: "20문제와 시간", fr: "20 questions et le temps", zhHant: "20 題和時間"),
         "得点とランキング": .init(ko: "점수와 순위", fr: "Score et classement", zhHant: "得分和排行榜"),
         "好きな名前に変えてね。この名前がランキングに載るよ！": .init(
@@ -123,10 +136,25 @@ enum ExtraLang {
             fr: "Donne-toi un nom d’abord — tape-le ou appuie sur hasard. Deux choix à chaque fois. Lis la question, puis choisis. Ne te fie pas au premier coup d’œil.",
             zhHant: "開始前先起名字，可以自己填，也可以隨機生成。每次兩個選項。先讀題目再選，別憑第一眼。"
         ),
-        "ストループ効果：字の色と書かれた文字が食い違う。いつも字の色を選ぶ。書いてある文字は無視する。\nひっかけ：正解と、いちばん間違えやすい答えの二択。日本語のひっかけでは、ネコがヒントをくれる。\n難問2択：雑学の二択。\nおもしろ2択：小学生向けの雑学二択。\n食べ物2択：食べ物の雑学二択。\n幼児2択：保育園・幼稚園向けの簡単二択。ほかの2択とは別の種類。\n国旗：旗を見て、どの国か選ぶ。": .init(
-            ko: "스트룹 효과: 글자 색과 쓰인 글자가 달라요. 항상 색을 고르고 글자는 무시하세요.\n말장난: 정답과 가장 틀리기 쉬운 답 둘 중 하나. 일본어 말장난은 고양이가 힌트를 줘요.\n어려운 / 재미있는 / 음식 / 유아 양자택일: 종류마다 파일이 달라요.\n국기: 깃발을 보고 어느 나라인지 고르세요.",
-            fr: "Effet Stroop : choisis toujours la couleur, pas le mot.\nPièges : jeux de mots japonais ; le chat peut aider.\nQuiz difficile, amusant, nourriture et enfants : chaque série a son fichier.\nDrapeaux : regarde le drapeau et choisis le pays.",
-            zhHant: "斯特魯普效應：字的顏色和寫出的字不一致。每次都選顏色，不要選寫出的字。\n腦筋急轉彎：兩個選項裡，一個是正確答案，另一個最容易想錯。跟日語有關的題，貓咪會給提示。\n難問二選一：雜學二選一。\n有趣二選一：面向小學生的雜學二選一。\n食物二選一：食物雜學。\n幼兒二選一：幼兒園簡單二選一，和其他二選一分開。\n旗幟：看國旗，選出是哪個國家。"
+        "ストループ効果：字の色と書かれた文字が食い違う。いつも字の色を選ぶ。書いてある文字は無視する。\nひっかけ：正解と、いちばん間違えやすい答えの二択。日本語のひっかけでは、ネコがヒントをくれる。\n難問2択：雑学の二択。\nおもしろ2択：小学生向けの雑学二択。\n食べ物2択：食べ物の雑学二択。\n幼児2択：保育園・幼稚園向けの簡単二択。ほかの2択とは別の種類。\n国旗：旗を見て、どの国または地域か選ぶ。": .init(
+            ko: "스트룹 효과: 글자 색과 쓰인 글자가 달라요. 항상 색을 고르고 글자는 무시하세요.\n말장난: 정답과 가장 틀리기 쉬운 답 둘 중 하나. 일본어 말장난은 고양이가 힌트를 줘요.\n어려운 / 재미있는 / 음식 / 유아 양자택일: 종류마다 파일이 달라요.\n국기: 깃발을 보고 어느 나라 또는 지역인지 고르세요.",
+            fr: "Effet Stroop : choisis toujours la couleur, pas le mot.\nPièges : jeux de mots japonais ; le chat peut aider.\nQuiz difficile, amusant, nourriture et enfants : chaque série a son fichier.\nDrapeaux : regarde le drapeau et choisis le pays ou la région.",
+            zhHant: "斯特魯普效應：字的顏色和寫出的字不一致。每次都選顏色，不要選寫出的字。\n腦筋急轉彎：兩個選項裡，一個是正確答案，另一個最容易想錯。跟日語有關的題，貓咪會給提示。\n難問二選一：雜學二選一。\n有趣二選一：面向小學生的雜學二選一。\n食物二選一：食物雜學。\n幼兒二選一：幼兒園簡單二選一，和其他二選一分開。\n旗幟：看旗幟，選出是哪個國家或地區。"
+        ),
+        "ストループ効果：字の色と書かれた文字が食い違う。いつも字の色を選ぶ。書いてある文字は無視する。\nひっかけ：正解と、いちばん間違えやすい答えの二択。日本語のひっかけでは、ネコがヒントをくれる。\n日本：日本の地理・文化・行事・食べ物・昔話の二択。\n自然：生き物・天文・自然の二択。\nその他：世界の常識と、ほかに置きにくい二択。\n国旗：旗を見て、どの国または地域か選ぶ。": .init(
+            ko: "스트룹 효과: 글자 색과 쓰인 글자가 달라요. 항상 색을 고르고 글자는 무시하세요.\n말장난: 정답과 가장 틀리기 쉬운 답 둘 중 하나. 일본어 말장난은 고양이가 힌트를 줘요.\n일본: 지리, 문화, 명절, 음식, 옛이야기.\n자연: 동물, 식물, 천문, 자연 현상.\n기타: 세계 상식과 다른 곳에 넣기 어려운 문제.\n국기: 깃발을 보고 어느 나라 또는 지역인지 고르세요.",
+            fr: "Effet Stroop : choisis toujours la couleur, pas le mot.\nPièges : jeux de mots japonais ; le chat peut aider.\nJapon : géographie, culture, fêtes, nourriture, contes.\nNature : animaux, plantes, ciel, faits naturels.\nAutre : culture générale et ce qui ne rentre pas ailleurs.\nDrapeaux : regarde le drapeau et choisis le pays ou la région.",
+            zhHant: "斯特魯普效應：字的顏色和寫出的字不一致。每次都選顏色，不要選寫出的字。\n腦筋急轉彎：兩個選項裡，一個是正確答案，另一個最容易想錯。跟日語有關的題，貓咪會給提示。\n日本：日本地理、文化、節日、食物、傳說的二選一。\n自然：動植物、天文、自然現象的二選一。\n其他：世界常識，以及不好歸類的二選一。\n旗幟：看旗幟，選出是哪個國家或地區。"
+        ),
+        "ストループ効果：字の色と書かれた文字が食い違う。いつも字の色を選ぶ。書いてある文字は無視する。\nひっかけ：正解と、いちばん間違えやすい答えの二択。日本語のひっかけでは、ネコがヒントをくれる。\n日本：日本の地理・文化・行事・食べ物・昔話の二択。\nアニメ：日本の漫画・アニメの二択。\n自然：生き物・天文・自然の二択。\nその他：世界の常識と、ほかに置きにくい二択。\n国旗：旗を見て、どの国または地域か選ぶ。": .init(
+            ko: "스트룹 효과: 글자 색과 쓰인 글자가 달라요. 항상 색을 고르고 글자는 무시하세요.\n말장난: 정답과 가장 틀리기 쉬운 답 둘 중 하나. 일본어 말장난은 고양이가 힌트를 줘요.\n일본: 지리, 문화, 명절, 음식, 옛이야기.\n애니메: 만화와 애니메이션.\n자연: 동물, 식물, 천문, 자연 현상.\n기타: 세계 상식과 다른 곳에 넣기 어려운 문제.\n국기: 깃발을 보고 어느 나라 또는 지역인지 고르세요.",
+            fr: "Effet Stroop : choisis toujours la couleur, pas le mot.\nPièges : jeux de mots japonais ; le chat peut aider.\nJapon : géographie, culture, fêtes, nourriture, contes.\nAnime : manga et dessins animés.\nNature : animaux, plantes, ciel, faits naturels.\nAutre : culture générale et ce qui ne rentre pas ailleurs.\nDrapeaux : regarde le drapeau et choisis le pays ou la région.",
+            zhHant: "斯特魯普效應：字的顏色和寫出的字不一致。每次都選顏色，不要選寫出的字。\n腦筋急轉彎：兩個選項裡，一個是正確答案，另一個最容易想錯。跟日語有關的題，貓咪會給提示。\n日本：日本地理、文化、節日、食物、傳說的二選一。\n日本動漫：漫畫和動畫的二選一。\n自然：動植物、天文、自然現象的二選一。\n其他：世界常識，以及不好歸類的二選一。\n旗幟：看旗幟，選出是哪個國家或地區。"
+        ),
+        "ストループ効果：字の色と書かれた文字が食い違う。いつも字の色を選ぶ。書いてある文字は無視する。\nひっかけ：正解と、いちばん間違えやすい答えの二択。日本語のひっかけでは、ネコがヒントをくれる。\n日本の常識：日本の地理・文化・行事・食べ物・昔話の二択。\nアニメ：日本の漫画・アニメの二択。\n自然：生き物・天文・自然の二択。\n美食：世界の料理の二択。\n世界の常識：世界の地理・名所・科学などの二択。\n国旗：旗を見て、どの国または地域か選ぶ。": .init(
+            ko: "스트룹 효과: 글자 색과 쓰인 글자가 달라요. 항상 색을 고르고 글자는 무시하세요.\n말장난: 정답과 가장 틀리기 쉬운 답 둘 중 하나. 일본어 말장난은 고양이가 힌트를 줘요.\n일본 상식: 지리, 문화, 명절, 음식, 옛이야기.\n애니메: 만화와 애니메이션.\n자연: 동물, 식물, 천문, 자연 현상.\n미식: 세계 요리.\n세계 상식: 지리, 명소, 과학.\n국기: 깃발을 보고 어느 나라 또는 지역인지 고르세요.",
+            fr: "Effet Stroop : choisis toujours la couleur, pas le mot.\nPièges : jeux de mots japonais ; le chat peut aider.\nCulture japonaise : géographie, fêtes, nourriture, contes.\nAnime : manga et dessins animés.\nNature : animaux, plantes, ciel, faits naturels.\nCuisine : plats du monde.\nCulture générale : géographie, monuments, sciences.\nDrapeaux : regarde le drapeau et choisis le pays ou la région.",
+            zhHant: "斯特魯普效應：字的顏色和寫出的字不一致。每次都選顏色，不要選寫出的字。\n腦筋急轉彎：兩個選項裡，一個是正確答案，另一個最容易想錯。跟日語有關的題，貓咪會給提示。\n日本常識：日本地理、文化、節日、食物、傳說的二選一。\n日本動漫：漫畫和動畫的二選一。\n自然：動植物、天文、自然現象的二選一。\n美食：世界料理的二選一。\n世界常識：世界地理、名勝、科學等二選一。\n旗幟：看旗幟，選出是哪個國家或地區。"
         ),
         "毎回20問。そのうち色と字は1問だけ、残りの19問はひっかけ、各種2択、旗の問題から。制限時間は1問30秒。時間切れは不正解。": .init(
             ko: "매번 20문제. 그중 색과 글자는 1문제만, 나머지 19문제는 말장난, 양자택일, 국기 문제에서 나와요. 한 문제 30초, 시간이 끝나면 오답이에요.",
@@ -153,10 +181,10 @@ enum ExtraLang {
             fr: "Regarde encore le drapeau et compare-le à la réponse cochée.",
             zhHant: "再看一遍旗幟，對照帶勾的正確答案。"
         ),
-        "この旗はどの国？": .init(
-            ko: "이 국기는 어느 나라예요?",
-            fr: "De quel pays est ce drapeau ?",
-            zhHant: "這面國旗是哪個國家？"
+        "この旗は、どの国または地域？": .init(
+            ko: "이 깃발은 어느 나라 또는 지역이에요?",
+            fr: "De quel pays ou quelle région est ce drapeau ?",
+            zhHant: "這是哪個國家或地區的旗幟？"
         ),
         "中国": .init(ko: "중국", fr: "Chine", zhHant: "中國"),
         "台湾": .init(ko: "대만", fr: "Taïwan", zhHant: "臺灣"),
@@ -189,6 +217,12 @@ enum ExtraLang {
         "メキシコ": .init(ko: "멕시코", fr: "Mexique", zhHant: "墨西哥"),
         "ペルー": .init(ko: "페루", fr: "Pérou", zhHant: "秘魯"),
         "カナダ": .init(ko: "캐나다", fr: "Canada", zhHant: "加拿大"),
+        "リトアニア": .init(ko: "리투아니아", fr: "Lituanie", zhHant: "立陶宛"),
+        "コートジボワール": .init(ko: "코트디부아르", fr: "Côte d’Ivoire", zhHant: "科特迪瓦"),
+        "ニュージーランド": .init(ko: "뉴질랜드", fr: "Nouvelle-Zélande", zhHant: "紐西蘭"),
+        "ルーマニア": .init(ko: "루마니아", fr: "Roumanie", zhHant: "羅馬尼亞"),
+        "チャド": .init(ko: "차드", fr: "Tchad", zhHant: "查德"),
+        "ニジェール": .init(ko: "니제르", fr: "Niger", zhHant: "尼日爾"),
     ]
 
     static let names: [String: Triple] = [
