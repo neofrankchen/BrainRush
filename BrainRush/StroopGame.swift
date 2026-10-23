@@ -87,16 +87,20 @@ private struct LanguageWrap: Layout {
     var spacing: CGFloat = 8
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let maxWidth = proposal.width ?? .greatestFiniteMagnitude
+        let maxWidth: CGFloat = {
+            if let width = proposal.width, width.isFinite, width > 0 { return width }
+            return .greatestFiniteMagnitude
+        }()
         let rows = rows(maxWidth: maxWidth, subviews: subviews)
         let height = rows.reduce(CGFloat(0)) { $0 + $1.height } + spacing * CGFloat(max(rows.count - 1, 0))
-        let width = proposal.width ?? rows.map(\.width).max() ?? 0
+        let width = rows.map(\.width).max() ?? 0
         return CGSize(width: width, height: height)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         var y = bounds.minY
-        for row in rows(maxWidth: bounds.width, subviews: subviews) {
+        let maxWidth = bounds.width.isFinite && bounds.width > 0 ? bounds.width : .greatestFiniteMagnitude
+        for row in rows(maxWidth: maxWidth, subviews: subviews) {
             var x = bounds.minX
             for item in row.items {
                 item.view.place(
@@ -153,8 +157,7 @@ enum InterferenceTask: String, CaseIterable {
     case funChoice
     case foodChoice
     case kidChoice
-    case studentFlag
-    case gdpFlag
+    case flag
 
     var title: String {
         switch self {
@@ -164,8 +167,7 @@ enum InterferenceTask: String, CaseIterable {
         case .funChoice: tr(ja: "おもしろ2択", zh: "有趣二选一", en: "Fun two-choice", my: "ပျော်စရာ ၂ ခုရွေး")
         case .foodChoice: tr(ja: "食べ物2択", zh: "食物二选一", en: "Food two-choice", my: "အစားအစာ ၂ ခုရွေး")
         case .kidChoice: tr(ja: "幼児2択", zh: "幼儿二选一", en: "Kids two-choice", my: "ကလေး ၂ ခုရွေး")
-        case .studentFlag: tr(ja: "留学生の旗", zh: "留学生旗帜", en: "Student flags", my: "ကျောင်းသားအလံ")
-        case .gdpFlag: tr(ja: "GDPの旗", zh: "GDP旗帜", en: "GDP flags", my: "GDP အလံ")
+        case .flag: tr(ja: "国旗", zh: "旗帜", en: "Flags", my: "အလံ")
         }
     }
 
@@ -177,8 +179,7 @@ enum InterferenceTask: String, CaseIterable {
         case .funChoice: .funChoice
         case .foodChoice: .foodChoice
         case .kidChoice: .kidChoice
-        case .studentFlag: .studentFlag
-        case .gdpFlag: .gdpFlag
+        case .flag: .flag
         }
     }
 }
@@ -190,8 +191,7 @@ enum QuestionFamily: String, CaseIterable, Identifiable {
     case funChoice
     case foodChoice
     case kidChoice
-    case studentFlag
-    case gdpFlag
+    case flag
 
     var id: String { rawValue }
 
@@ -203,8 +203,7 @@ enum QuestionFamily: String, CaseIterable, Identifiable {
         case .funChoice: tr(ja: "おもしろ2択", zh: "有趣二选一", en: "Fun quiz", my: "ပျော်စရာမေး")
         case .foodChoice: tr(ja: "食べ物2択", zh: "食物二选一", en: "Food quiz", my: "အစားအစာမေး")
         case .kidChoice: tr(ja: "幼児2択", zh: "幼儿二选一", en: "Kids quiz", my: "ကလေးမေး")
-        case .studentFlag: tr(ja: "留学生の旗", zh: "留学生旗帜", en: "Student flags", my: "ကျောင်းသားအလံ")
-        case .gdpFlag: tr(ja: "GDPの旗", zh: "GDP旗帜", en: "GDP flags", my: "GDP အလံ")
+        case .flag: tr(ja: "国旗", zh: "旗帜", en: "Flags", my: "အလံ")
         }
     }
 }
@@ -268,8 +267,7 @@ struct StroopRound: Equatable {
         case .funChoice: FunChoiceBank.pick(excluding: excludingTeaserIDs)
         case .foodChoice: FoodChoiceBank.pick(excluding: excludingTeaserIDs)
         case .kidChoice: KidChoiceBank.pick(excluding: excludingTeaserIDs)
-        case .studentFlag: StudentFlagBank.pick(excluding: excludingTeaserIDs)
-        case .gdpFlag: GdpFlagBank.pick(excluding: excludingTeaserIDs)
+        case .flag: FlagBank.pick(excluding: excludingTeaserIDs)
         }
     }
 
@@ -303,10 +301,7 @@ struct StroopRound: Equatable {
             }
             return self
         case .flag(let id, _):
-            if let matching = StudentFlagBank.template(id: id) {
-                return localizedEmblem(from: matching.make(shuffle: false), rule: matching.rule)
-            }
-            if let matching = GdpFlagBank.template(id: id) {
+            if let matching = FlagBank.template(id: id) {
                 return localizedEmblem(from: matching.make(shuffle: false), rule: matching.rule)
             }
             return self
@@ -327,9 +322,13 @@ struct StroopRound: Equatable {
     static let quizGame = "quiz"
 
     static func randomQuiz(count: Int = quizLength) -> [StroopRound] {
-        var others = BrainTeaserBank.allRounds() + HardChoiceBank.allRounds() + FunChoiceBank.allRounds() + FoodChoiceBank.allRounds() + KidChoiceBank.allRounds() + StudentFlagBank.allRounds() + GdpFlagBank.allRounds()
+        var others = BrainTeaserBank.allRounds() + HardChoiceBank.allRounds() + FunChoiceBank.allRounds() + FoodChoiceBank.allRounds() + KidChoiceBank.allRounds()
         others.shuffle()
-        var quiz = Array(others.prefix(max(0, count - 1)))
+        var quiz: [StroopRound] = []
+        if let flag = FlagBank.allRounds().randomElement() {
+            quiz.append(flag)
+        }
+        quiz.append(contentsOf: others.prefix(max(0, count - 1 - quiz.count)))
         quiz.append(ColorWordBank.pick())
         quiz.shuffle()
         return quiz
@@ -594,6 +593,17 @@ final class StroopSession {
         phase = .ready
     }
 
+    func backToNaming() {
+        audio.stop()
+        questionEndsAt = nil
+        questionStartedAt = nil
+        isResolving = false
+        selectedChoiceID = nil
+        lastAnswerWasCorrect = nil
+        lastMissWasTimeout = false
+        phase = .naming
+    }
+
     func start(practice: Bool? = nil) {
         if let practice {
             showsPracticeTools = practice
@@ -792,6 +802,7 @@ final class StroopSession {
     func applyLanguage() {
         if let playerNameID {
             playerName = PlayerNames.display(id: playerNameID)
+            PlayerNames.saveLast(id: playerNameID, name: playerName, avatar: playerAvatar)
         }
         guard phase == .playing else { return }
         round = round.localized()
@@ -853,15 +864,9 @@ final class StroopSession {
                 usedTeaserIDs.subtract(used)
                 seenQuestionKeys.subtract(used.map { "teaser:\($0)" })
             }
-        } else if trial.task == .studentFlag {
-            let used = usedTeaserIDs.filter { StudentFlagBank.template(id: $0) != nil }
-            if used.count >= StudentFlagBank.count {
-                usedTeaserIDs.subtract(used)
-                seenQuestionKeys.subtract(used.map { "teaser:\($0)" })
-            }
-        } else if trial.task == .gdpFlag {
-            let used = usedTeaserIDs.filter { GdpFlagBank.template(id: $0) != nil }
-            if used.count >= GdpFlagBank.count {
+        } else if trial.task == .flag {
+            let used = usedTeaserIDs.filter { FlagBank.template(id: $0) != nil }
+            if used.count >= FlagBank.count {
                 usedTeaserIDs.subtract(used)
                 seenQuestionKeys.subtract(used.map { "teaser:\($0)" })
             }
@@ -903,8 +908,7 @@ final class StroopSession {
         case .funChoice: .funChoice
         case .foodChoice: .foodChoice
         case .kidChoice: .kidChoice
-        case .studentFlag: .studentFlag
-        case .gdpFlag: .gdpFlag
+        case .flag: .flag
         }
     }
 
@@ -940,6 +944,7 @@ struct StroopGameView: View {
     @FocusState private var nameFieldFocused: Bool
 
     var body: some View {
+        let language = LanguageStore.shared.language
         Group {
             switch session.phase {
             case .ready:
@@ -966,14 +971,89 @@ struct StroopGameView: View {
                     }
             }
         }
-        .onChange(of: LanguageStore.shared.language) { _, _ in
+        .onChange(of: language) { _, _ in
             session.applyLanguage()
-            if (session.phase == .naming || showsProfileEditor || (session.phase == .renaming && isEditingRename)), let cannedNameID {
+            if let cannedNameID {
                 nameDraft = PlayerNames.display(id: cannedNameID)
             }
         }
         .sensoryFeedback(.success, trigger: session.correctCount)
         .sensoryFeedback(.error, trigger: session.answerCount - session.correctCount)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            HStack {
+                if session.phase != .ready {
+                    backBarButton
+                }
+                Spacer(minLength: 0)
+                settingsBarButton
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 4)
+        }
+        .modifier(EdgeBackSwipe(enabled: session.phase != .ready, action: goBack))
+    }
+
+    private var backBarButton: some View {
+        Button(action: goBack) {
+            Label(
+                tr(ja: "戻る", zh: "返回", en: "Back", my: "ပြန်ရန်"),
+                systemImage: "chevron.left"
+            )
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(CatQuizPalette.wood)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(Capsule().fill(CatQuizPalette.cream.opacity(0.95)))
+        }
+        .accessibilityIdentifier("stroop-back")
+    }
+
+    private var settingsBarButton: some View {
+        let selected = LanguageStore.shared.language
+        return Menu {
+            ForEach(AppLanguage.allCases) { language in
+                Button {
+                    LanguageStore.shared.language = language
+                } label: {
+                    if language == selected {
+                        Label(language.label, systemImage: "checkmark")
+                    } else {
+                        Text(language.label)
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "gearshape.fill")
+                .font(.body.weight(.bold))
+                .foregroundStyle(CatQuizPalette.wood)
+                .padding(8)
+                .background(Circle().fill(CatQuizPalette.cream.opacity(0.95)))
+        }
+        .accessibilityLabel(tr(ja: "設定", zh: "设置", en: "Settings", my: "ဆက်တင်"))
+        .accessibilityIdentifier("stroop-settings")
+    }
+
+    private func goBack() {
+        switch session.phase {
+        case .ready:
+            break
+        case .naming:
+            session.cancelSetup()
+        case .playing:
+            if session.testing {
+                session.returnToMenu()
+            } else {
+                session.backToNaming()
+            }
+        case .renaming:
+            if isEditingRename {
+                isEditingRename = false
+            } else {
+                session.keepNameForBoard()
+            }
+        case .finished:
+            session.returnToMenu()
+        }
     }
 
     private var menu: some View {
@@ -981,17 +1061,7 @@ struct StroopGameView: View {
             ScrollView {
                 VStack(spacing: 10) {
                     Spacer(minLength: 0)
-                    languageBar
                     WoodlandTitle(height: min(370, max(250, geometry.size.height * 0.49)))
-                    HStack(spacing: 0) {
-                        menuMetric("trophy.fill", tr(ja: "ベストタイム", zh: "最快用时", en: "Best time", my: "အမြန်ဆုံး"), bestQuizTimeText, CatQuizPalette.wood)
-                        Divider().frame(height: 42).overlay(CatQuizPalette.wood.opacity(0.2))
-                        menuMetric("square.stack.3d.up.fill", tr(ja: "問題数", zh: "题数", en: "Questions", my: "မေးခွန်း"), "\(StroopRound.quizLength)", CatQuizPalette.wood)
-                        Divider().frame(height: 42).overlay(CatQuizPalette.wood.opacity(0.2))
-                        menuMetric("square.grid.2x2.fill", tr(ja: "2択クイズ", zh: "二选一", en: "Two choices", my: "ရွေးစရာ ၂ ခု"), "A / B", CatQuizPalette.wood)
-                    }
-                    .padding(.vertical, 10)
-                    .modifier(WoodlandPanel(cornerRadius: 18))
 
                     Button { session.beginSetup(practice: false) } label: {
                         WoodlandAction(title: tr(ja: "ゲームを始める", zh: "开始游戏", en: "Let’s play", my: "ကစားမည်"), symbol: "play.fill")
@@ -1030,12 +1100,12 @@ struct StroopGameView: View {
                         )
                     )
                     guide(
-                        tr(ja: "8種類の問題", zh: "八种题目", en: "Eight kinds", my: "မေးခွန်း ၈ မျိုး"),
+                        tr(ja: "7種類の問題", zh: "七种题目", en: "Seven kinds", my: "မေးခွန်း ၇ မျိုး"),
                         tr(
-                            ja: "ストループ効果：字の色と書かれた文字が食い違う。いつも字の色を選ぶ。書いてある文字は無視する。\nひっかけ：正解と、いちばん間違えやすい答えの二択。日本語のひっかけでは、ネコがヒントをくれる。\n難問2択：雑学の二択。\nおもしろ2択：小学生向けの雑学二択。\n食べ物2択：食べ物の雑学二択。\n幼児2択：保育園・幼稚園向けの簡単二択。ほかの2択とは別の種類。\n留学生の旗：日本の留学生が多い国・地域の旗。\nGDPの旗：世界のGDPが大きい国の旗。",
-                            zh: "斯特鲁普效应：字的颜色和写出的字不一致。每次都选颜色，不要选写出的字。\n脑筋急转弯：两个选项里，一个是正确答案，另一个最容易想错。跟日语有关的题，猫咪会给提示。\n难问二选一：杂学二选一。\n有趣二选一：面向小学生的杂学二选一。\n食物二选一：食物杂学。\n幼儿二选一：幼儿园简单二选一，和其他二选一分开。\n留学生旗帜：看旗选日本留学生人数靠前的国家或地区。\nGDP旗帜：看旗选世界 GDP 靠前的国家。",
-                            en: "Stroop Effect: always pick the ink color, not the word.\nBrain teasers: Japanese wordplay; the cat may hint.\nHard, fun, food, and kids two-choice: each trivia set lives in its own file.\nStudent flags: countries and regions that send many students to Japan.\nGDP flags: the world's largest economies.",
-                            my: "Stroop Effect။ မင်အရောင်ကို ရွေးပါ။\nပဟေဠိ။ ဂျပန်စာတွင် ကြောင်က အရိပ်အမြွက် ပေးသည်။\nခက်သော / ပျော်စရာ / အစားအစာ / ကလေး ၂ ခုရွေး။ ဖိုင်ခွဲထားသည်။\nကျောင်းသားအလံ။ GDP အလံ။"
+                            ja: "ストループ効果：字の色と書かれた文字が食い違う。いつも字の色を選ぶ。書いてある文字は無視する。\nひっかけ：正解と、いちばん間違えやすい答えの二択。日本語のひっかけでは、ネコがヒントをくれる。\n難問2択：雑学の二択。\nおもしろ2択：小学生向けの雑学二択。\n食べ物2択：食べ物の雑学二択。\n幼児2択：保育園・幼稚園向けの簡単二択。ほかの2択とは別の種類。\n国旗：旗を見て、どの国か選ぶ。",
+                            zh: "斯特鲁普效应：字的颜色和写出的字不一致。每次都选颜色，不要选写出的字。\n脑筋急转弯：两个选项里，一个是正确答案，另一个最容易想错。跟日语有关的题，猫咪会给提示。\n难问二选一：杂学二选一。\n有趣二选一：面向小学生的杂学二选一。\n食物二选一：食物杂学。\n幼儿二选一：幼儿园简单二选一，和其他二选一分开。\n旗帜：看国旗，选出是哪个国家。",
+                            en: "Stroop Effect: always pick the ink color, not the word.\nBrain teasers: Japanese wordplay; the cat may hint.\nHard, fun, food, and kids two-choice: each trivia set lives in its own file.\nFlags: look at the flag and pick the country.",
+                            my: "Stroop Effect။ မင်အရောင်ကို ရွေးပါ။\nပဟေဠိ။ ဂျပန်စာတွင် ကြောင်က အရိပ်အမြွက် ပေးသည်။\nခက်သော / ပျော်စရာ / အစားအစာ / ကလေး ၂ ခုရွေး။ ဖိုင်ခွဲထားသည်။\nအလံ။ နိုင်ငံအလံကြည့်ပြီး နိုင်ငံရွေးပါ။"
                         )
                     )
                     guide(
@@ -1071,17 +1141,6 @@ struct StroopGameView: View {
         }
     }
 
-    private func menuMetric(_ symbol: String, _ title: String, _ value: String, _ color: Color) -> some View {
-        VStack(spacing: 5) {
-            Label(title, systemImage: symbol).font(.system(size: 9, weight: .bold, design: .rounded))
-                .foregroundStyle(CatQuizPalette.wood)
-            Text(value).font(.system(size: 21, weight: .heavy, design: .rounded))
-                .foregroundStyle(color).minimumScaleFactor(0.5).lineLimit(1)
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
-    }
-
     private func arcadeShortcut(_ symbol: String, _ title: String, _ color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 10) {
@@ -1109,10 +1168,7 @@ struct StroopGameView: View {
     private var rankingSheet: some View {
         let _ = LanguageStore.shared.language
         return menuSheet(tr(ja: "ランキング", zh: "排行榜", en: "Leaderboard", my: "အဆင့်စာရင်း")) {
-            VStack(alignment: .leading, spacing: 16) {
-                languageBar
-                ScoreBoardList(game: StroopRound.quizGame, rank: .timed, textColor: CatQuizPalette.wood)
-            }
+            ScoreBoardList(game: StroopRound.quizGame, rank: .timed, textColor: CatQuizPalette.wood)
         }
     }
 
@@ -1133,8 +1189,8 @@ struct StroopGameView: View {
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(tr(ja: "閉じる", zh: "关闭", en: "Done", my: "ပိတ်ရန်")) {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(tr(ja: "戻る", zh: "返回", en: "Back", my: "ပြန်ရန်")) {
                         showsGuide = false
                         showsRanking = false
                         showsPractice = false
@@ -1143,6 +1199,11 @@ struct StroopGameView: View {
             }
         }
         .preferredColorScheme(.light)
+        .modifier(EdgeBackSwipe(enabled: true) {
+            showsGuide = false
+            showsRanking = false
+            showsPractice = false
+        })
     }
 
     private func testControls(showNote: Bool) -> some View {
@@ -1231,7 +1292,6 @@ struct StroopGameView: View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 16) {
-                    languageBar
                     CatQuizHost(
                         hint: tr(
                             ja: "名前をつけてね。自分で書くか、ランダムでもいいよ！",
@@ -1284,7 +1344,6 @@ struct StroopGameView: View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 16) {
-                    languageBar
                     CatQuizHost(
                         hint: isEditingRename
                             ? tr(
@@ -1327,6 +1386,7 @@ struct StroopGameView: View {
                                 .font(.title3.weight(.heavy))
                                 .foregroundStyle(CatQuizPalette.ink)
                                 .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
                                 .frame(maxWidth: .infinity)
                             Text(tr(
                                 ja: "この名前がランキングに載ります",
@@ -1398,6 +1458,11 @@ struct StroopGameView: View {
 
     private var nameFields: some View {
         VStack(alignment: .leading, spacing: 10) {
+            Text(tr(ja: "言語", zh: "语言", en: "Language", my: "ဘာသာစကား"))
+                .font(.caption.weight(.bold))
+                .foregroundStyle(CatQuizPalette.wood)
+            LanguagePicker(compact: true)
+                .frame(maxWidth: .infinity)
             Text(tr(ja: "プレイヤー名", zh: "玩家名字", en: "Player name", my: "ကစားသမားနာမည်"))
                 .font(.caption.weight(.bold))
                 .foregroundStyle(CatQuizPalette.wood)
@@ -1433,8 +1498,10 @@ struct StroopGameView: View {
                 .accessibilityIdentifier("stroop-name-avatar")
                 TextField(
                     tr(ja: "名前を入力", zh: "输入名字", en: "Type a name", my: "နာမည်ရိုက်ပါ"),
-                    text: $nameDraft
+                    text: $nameDraft,
+                    axis: .vertical
                 )
+                .lineLimit(1...5)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .submitLabel(.done)
@@ -1614,57 +1681,43 @@ struct StroopGameView: View {
         }
     }
 
-    private var languageBar: some View {
-        LanguagePicker(compact: true)
-            .padding(.vertical, 6)
-            .frame(maxWidth: .infinity)
-            .background(CatQuizPalette.cream.opacity(0.95), in: Capsule())
-    }
-
     private var playfield: some View {
         GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: 12) {
-                    quizHeader
-                    languageBar
-                    if session.showsPracticeTools {
-                        VStack(alignment: .leading, spacing: 8) {
-                            testControls(showNote: false)
-                        }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .modifier(WoodlandPanel())
-                    }
-                    if session.isReviewing {
-                        answerExplanation
-                    } else {
-                        CatQuizHost(hint: session.round.catHint)
-                            .padding(.bottom, -18)
-                            .zIndex(1)
-                    }
-                    VStack(spacing: 4) {
-                        questionBanner
-                        if session.round.task == .colorWord || session.round.task == .studentFlag || session.round.task == .gdpFlag {
-                            stimulusPanel
-                        }
+            VStack(spacing: 10) {
+                quizHeader
+                if session.showsPracticeTools {
+                    VStack(alignment: .leading, spacing: 8) {
+                        testControls(showNote: false)
                     }
                     .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .modifier(WoodlandPanel())
-                    answers
-                        .frame(minHeight: session.isReviewing ? 150 : max(220, min(320, geometry.size.height * 0.32)))
-                    if !session.isReviewing {
-                        Spacer(minLength: 0)
-                        quizFooter
+                }
+                if session.isReviewing {
+                    answerExplanation
+                } else {
+                    CatQuizHost(hint: session.round.catHint)
+                        .padding(.bottom, -18)
+                        .zIndex(1)
+                }
+                VStack(spacing: 8) {
+                    LanguagePicker(compact: true)
+                        .frame(maxWidth: .infinity)
+                    questionBanner
+                    if session.round.task == .colorWord || session.round.task == .flag {
+                        stimulusPanel
                     }
                 }
-                .frame(maxWidth: 560)
-                .padding(.horizontal, 18)
-                .padding(.top, 8)
-                .padding(.bottom, 16)
-                .frame(minHeight: geometry.size.height)
-                .frame(maxWidth: .infinity)
+                .padding(12)
+                .modifier(WoodlandPanel())
+                answers
+                    .frame(maxHeight: .infinity)
             }
-            .scrollIndicators(.hidden)
+            .padding(.horizontal, 18)
+            .padding(.top, 8)
+            .padding(.bottom, 16)
+            .frame(maxWidth: 560)
+            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if session.isReviewing {
@@ -1734,12 +1787,13 @@ struct StroopGameView: View {
         .ignoresSafeArea(.keyboard)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .modifier(EdgeBackSwipe(enabled: true) { showsProfileEditor = false })
     }
 
     private var quizHeader: some View {
-        HStack(alignment: .center, spacing: 8) {
+        HStack(alignment: .top, spacing: 8) {
             Button(action: openProfileEditor) {
-                HStack(spacing: 8) {
+                HStack(alignment: .top, spacing: 8) {
                     ZStack(alignment: .bottomTrailing) {
                         Text(session.playerAvatar)
                             .font(.system(size: 36))
@@ -1757,37 +1811,34 @@ struct StroopGameView: View {
                             .offset(x: 2, y: 2)
                     }
                     Text(session.playerName)
-                        .font(.subheadline.weight(.heavy))
+                        .font(.caption.weight(.heavy))
                         .foregroundStyle(CatQuizPalette.ink)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.65)
-                        .frame(maxWidth: 120, alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(4)
+                        .minimumScaleFactor(0.7)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityIdentifier("stroop-player-name")
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .buttonStyle(.plain)
             .accessibilityLabel(tr(ja: "名前とアイコンを変える", zh: "改名字和头像", en: "Change name and avatar", my: "နာမည်နှင့် ပုံ ပြောင်းရန်"))
             .accessibilityIdentifier("stroop-player")
-            Spacer(minLength: 4)
-            Text(session.testing
-                ? "Q\(session.answerCount + (session.isResolving ? 0 : 1))"
-                : "Q\(session.answerCount + (session.isResolving ? 0 : 1))/\(StroopRound.quizLength)")
-                .font(.system(size: 16, weight: .black, design: .rounded))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Capsule().fill(CatQuizPalette.wood))
-                .accessibilityIdentifier("stroop-score")
-                        .accessibilityLabel(tr(ja: "得点 \(session.score)", zh: "得分 \(session.score)", en: "Score \(session.score)", my: "ရမှတ် \(session.score)", ko: "점수 \(session.score)", fr: "Score \(session.score)", zhHant: "得分 \(session.score)"))
             Text(tr(ja: "得点 \(session.score)", zh: "得分 \(session.score)", en: "Score \(session.score)", my: "ရမှတ် \(session.score)", ko: "점수 \(session.score)", fr: "Score \(session.score)", zhHant: "得分 \(session.score)"))
                 .font(.caption.weight(.bold))
                 .foregroundStyle(CatQuizPalette.ink)
                 .lineLimit(1)
-            if session.showsTimer {
-                circularTimer
-            } else {
-                Color.clear.frame(width: 68, height: 68)
+                .layoutPriority(1)
+                .accessibilityIdentifier("stroop-score")
+            Group {
+                if session.showsTimer {
+                    circularTimer
+                } else {
+                    Color.clear.frame(width: 68, height: 68)
+                }
             }
+            .layoutPriority(1)
         }
     }
 
@@ -1815,9 +1866,14 @@ struct StroopGameView: View {
         .accessibilityLabel(tr(ja: "残り \(secondsLeft) 秒", zh: "还剩 \(secondsLeft) 秒", en: "\(secondsLeft) seconds left", my: "\(secondsLeft) စက္ကန့်ကျန်သည်", ko: "남은 시간 \(secondsLeft)초", fr: "\(secondsLeft) s restantes", zhHant: "還剩 \(secondsLeft) 秒"))
     }
 
+    private var questionIndexText: String {
+        let number = session.answerCount + (session.isResolving ? 0 : 1)
+        return session.testing ? "Q\(number)" : "Q\(number)/\(StroopRound.quizLength)"
+    }
+
     private var questionBanner: some View {
         VStack(spacing: 4) {
-            Text(session.round.rule)
+            Text("\(questionIndexText)  \(session.round.rule)")
                 .font(.system(size: 25, weight: .heavy, design: .rounded))
                 .foregroundStyle(CatQuizPalette.ink)
                 .multilineTextAlignment(.center)
@@ -1837,7 +1893,7 @@ struct StroopGameView: View {
         .frame(maxWidth: .infinity)
         .padding(.top, 4)
         .accessibilityIdentifier("stroop-answer-\(session.round.answerID)")
-        .accessibilityLabel(session.round.rule)
+        .accessibilityLabel("\(questionIndexText) \(session.round.rule)")
     }
 
     private var answerExplanation: some View {
@@ -1885,49 +1941,6 @@ struct StroopGameView: View {
             .accessibilityLabel(session.round.rule)
     }
 
-    private var quizFooter: some View {
-        VStack(spacing: 10) {
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(CatQuizPalette.wood)
-                    Capsule()
-                        .fill(LinearGradient(colors: [Color(red: 0.58, green: 0.95, blue: 0.2), Color(red: 0.25, green: 0.85, blue: 0.48)], startPoint: .leading, endPoint: .trailing))
-                        .frame(width: max(18, (geo.size.width - 8) * quizProgress))
-                        .overlay(Capsule().strokeBorder(.white, lineWidth: 2))
-                        .padding(4)
-                }
-            }
-            .frame(height: 25)
-            .overlay(Capsule().strokeBorder(.white.opacity(0.85), lineWidth: 1.5))
-            .accessibilityLabel(tr(
-                ja: "進捗 \(min(session.answerCount + (session.isResolving ? 0 : 1), StroopRound.quizLength)) / \(StroopRound.quizLength)",
-                zh: "进度 \(min(session.answerCount + (session.isResolving ? 0 : 1), StroopRound.quizLength)) / \(StroopRound.quizLength)",
-                en: "Progress \(min(session.answerCount + (session.isResolving ? 0 : 1), StroopRound.quizLength)) of \(StroopRound.quizLength)",
-                my: "တိုးတက်မှု \(min(session.answerCount + (session.isResolving ? 0 : 1), StroopRound.quizLength)) / \(StroopRound.quizLength)",
-                ko: "진행 \(min(session.answerCount + (session.isResolving ? 0 : 1), StroopRound.quizLength)) / \(StroopRound.quizLength)",
-                fr: "Progression \(min(session.answerCount + (session.isResolving ? 0 : 1), StroopRound.quizLength)) / \(StroopRound.quizLength)",
-                zhHant: "進度 \(min(session.answerCount + (session.isResolving ? 0 : 1), StroopRound.quizLength)) / \(StroopRound.quizLength)"
-            ))
-
-            HStack {
-                Text(tr(ja: "連続 \(session.streak)", zh: "连对 \(session.streak)", en: "Streak \(session.streak)", my: "ဆက်တိုက် \(session.streak)", ko: "연속 \(session.streak)", fr: "Série \(session.streak)", zhHant: "連對 \(session.streak)"))
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(CatQuizPalette.ink)
-                Spacer()
-                Button(tr(ja: "終了", zh: "结束", en: "End", my: "ထွက်ရန်")) { session.quitToBoard() }
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(CatQuizPalette.ink)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Capsule().fill(CatQuizPalette.cream))
-            }
-            .padding(.horizontal, 6)
-        }
-        .padding(10)
-        .modifier(WoodlandPanel())
-    }
-
     private var urgentRemaining: TimeInterval {
         min(3, session.questionLimit * 0.4)
     }
@@ -1938,11 +1951,6 @@ struct StroopGameView: View {
 
     private var progress: CGFloat {
         CGFloat(min(1, max(0, session.questionRemaining / session.questionLimit)))
-    }
-
-    private var quizProgress: CGFloat {
-        let current = session.answerCount + (session.isResolving ? 0 : 1)
-        return CGFloat(min(1, max(0, Double(current) / Double(StroopRound.quizLength))))
     }
 
     private var bestQuizTimeText: String {
@@ -2081,7 +2089,6 @@ struct StroopGameView: View {
     private var result: some View {
         ScrollView {
             VStack(spacing: 20) {
-                languageBar
                 WoodlandTitle(height: 140)
                 CatQuizHost(hint: session.resultCatSpeech, celebrating: true)
                     .accessibilityIdentifier("stroop-result-cat")
@@ -2170,7 +2177,7 @@ struct StroopGameView: View {
                         if !record.name.isEmpty {
                             Text(record.name)
                                 .font(.system(.subheadline, design: .rounded, weight: index == 0 ? .heavy : .semibold))
-                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                         Text(ScoreBoard.durationLabel(milliseconds: record.detail))
                             .font(.system(.body, design: .rounded, weight: index == 0 ? .heavy : .medium))
@@ -2200,14 +2207,6 @@ private struct WoodlandTitle: View {
             .resizable().scaledToFit()
             .frame(maxWidth: .infinity)
             .frame(height: height)
-            .overlay(alignment: .bottom) {
-                Text(tr(ja: "よく見て、どっちかを選ぼう！", zh: "仔细看，选择正确答案！", en: "Look closely. Choose A or B!", my: "သေချာကြည့်ပြီး A သို့မဟုတ် B ကို ရွေးပါ။"))
-                    .font(.system(size: max(9, height * 0.039), weight: .heavy, design: .rounded))
-                    .foregroundStyle(CatQuizPalette.wood)
-                    .lineLimit(1).minimumScaleFactor(0.6)
-                    .frame(width: height * 0.64)
-                    .padding(.bottom, height * 0.095)
-            }
             .shadow(color: CatQuizPalette.wood.opacity(0.25), radius: 8, y: 5)
             .accessibilityLabel("Brain Rush")
     }
@@ -2262,6 +2261,32 @@ private struct WoodlandAction: View {
         }
         .overlay { Capsule().strokeBorder(Color(red: 1, green: 0.98, blue: 0.76), lineWidth: 2).padding(4) }
         .shadow(color: CatQuizPalette.wood.opacity(0.35), radius: 0, y: 4)
+    }
+}
+
+private struct EdgeBackSwipe: ViewModifier {
+    var enabled: Bool
+    var action: () -> Void
+
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .leading) {
+            if enabled {
+                Color.clear
+                    .frame(width: 28)
+                    .frame(maxHeight: .infinity)
+                    .contentShape(Rectangle())
+                    .ignoresSafeArea()
+                    .highPriorityGesture(
+                        DragGesture(minimumDistance: 12)
+                            .onEnded { value in
+                                if value.translation.width > 70, abs(value.translation.height) < 120 {
+                                    action()
+                                }
+                            }
+                    )
+                    .accessibilityHidden(true)
+            }
+        }
     }
 }
 

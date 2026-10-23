@@ -21,10 +21,7 @@ extension StroopRound {
             }
             return KidChoiceBank.explanation(id: id)
         case .flag(let id, _):
-            if StudentFlagBank.template(id: id) != nil {
-                return StudentFlagBank.explanation(id: id)
-            }
-            return GdpFlagBank.explanation(id: id)
+            return FlagBank.explanation(id: id)
         }
     }
 }

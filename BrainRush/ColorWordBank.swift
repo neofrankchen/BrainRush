@@ -57,7 +57,7 @@ enum ColorWordBank {
             rule: rule,
             answerID: ink.rawValue,
             choices: [ink, word].shuffled().map { color in
-                AnswerChoice(id: color.rawValue, title: color.name, symbol: nil, style: .ink(color))
+                AnswerChoice(id: color.rawValue, title: color.name, symbol: nil, style: .neutral)
             },
             stimulus: .word(word, ink: ink)
         )

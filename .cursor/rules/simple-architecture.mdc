@@ -15,8 +15,7 @@ alwaysApply: true
   - `FunChoiceBank.swift`：おもしろ2択
   - `FoodChoiceBank.swift`：食べ物2択
   - `KidChoiceBank.swift`：幼児2択
-  - `StudentFlagBank.swift`：留学生の旗
-  - `GdpFlagBank.swift`：GDPの旗
+  - `FlagBank.swift`：国旗
   - `StroopGame.swift`：游戏流程和画面，不堆新题
 - 新题型先建新的 `*Bank.swift`，再接到游戏里。不要塞进已有题库，也不要为了「更专业」加协议、工厂、多层抽象。
 - 解析、提示跟题目放在同一类文件里。老师问「这题写在哪」时，答案应是一个文件名。

@@ -147,7 +147,7 @@ struct ScoreBoardList: View {
                                 VStack(alignment: .leading, spacing: 1) {
                                     if !row.name.isEmpty {
                                         Text(row.name)
-                                            .lineLimit(1)
+                                            .fixedSize(horizontal: false, vertical: true)
                                     }
                                     Text(ScoreBoard.label(row, rank: rank))
                                         .monospacedDigit()
@@ -164,7 +164,7 @@ struct ScoreBoardList: View {
                         }
                     }
                 }
-                .frame(maxHeight: min(220, 24 + CGFloat(rows.count) * 36))
+                .frame(maxHeight: min(360, 28 + CGFloat(rows.count) * 56))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
