@@ -140,12 +140,12 @@
 				};
 			};
 			buildConfigurationList = B2000000000000000000000B /* Build configuration list for PBXProject "BrainRush" */;
-			developmentRegion = "zh-Hans";
+			developmentRegion = ja;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				ja,
 				en,
 				Base,
-				ja,
 				"zh-Hans",
 			);
 			mainGroup = B20000000000000000000004;

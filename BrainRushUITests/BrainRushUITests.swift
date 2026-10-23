@@ -1,11 +1,18 @@
 import XCTest
 
 final class BrainRushUITests: XCTestCase {
+    private func startQuiz(_ app: XCUIApplication) {
+        app.buttons["stroop-start"].tap()
+        let go = app.buttons["stroop-name-go"]
+        XCTAssertTrue(go.waitForExistence(timeout: 5))
+        go.tap()
+    }
+
     func testLanguageSwitchPreservesQuestionAndMistakeReview() {
         let app = XCUIApplication()
         app.launchArguments = ["-appLanguage", "chinese"]
         app.launch()
-        app.buttons["stroop-start"].tap()
+        startQuiz(app)
         let prompt = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'stroop-answer-'" )).firstMatch
         XCTAssertTrue(prompt.waitForExistence(timeout: 5))
         let promptID = prompt.identifier
@@ -53,6 +60,8 @@ final class BrainRushUITests: XCTestCase {
 
         XCTAssertTrue(app.buttons["開始"].waitForExistence(timeout: 5))
         app.buttons["開始"].tap()
+        XCTAssertTrue(app.buttons["stroop-name-go"].waitForExistence(timeout: 5))
+        app.buttons["stroop-name-go"].tap()
         let prompt = app.descendants(matching: .any).matching(
             NSPredicate(format: "identifier BEGINSWITH 'stroop-answer-'")
         ).firstMatch
@@ -65,14 +74,14 @@ final class BrainRushUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["得点 0"].exists)
 
         app.buttons["stroop-choice-\(answer)"].tap()
-        XCTAssertTrue(app.staticTexts["得点 10"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["得点 5"].waitForExistence(timeout: 2))
     }
 
     func testWrongAnswerStaysUntilAcknowledgedAndFinalHeartStillExplains() {
         let app = XCUIApplication()
         app.launchArguments = ["-appLanguage", "chinese"]
         app.launch()
-        app.buttons["stroop-start"].tap()
+        startQuiz(app)
 
         for miss in 1...3 {
             let prompt = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'stroop-answer-'" )).firstMatch
@@ -104,14 +113,15 @@ final class BrainRushUITests: XCTestCase {
             if !next.isHittable { app.swipeUp() }
             next.tap()
         }
-        XCTAssertTrue(app.buttons["stroop-result-back"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["stroop-result-back"].exists)
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'stroop-choice-'")).element(boundBy: 0).isEnabled)
     }
 
     func testTimeoutExplainsWithoutInventingASelectedAnswer() {
         let app = XCUIApplication()
         app.launchArguments = ["-appLanguage", "chinese"]
         app.launch()
-        app.buttons["stroop-start"].tap()
+        startQuiz(app)
         XCTAssertTrue(app.buttons["stroop-review-next"].waitForExistence(timeout: 14))
         XCTAssertTrue(app.staticTexts["时间到了，看看这一题"].exists)
         XCTAssertTrue(app.staticTexts["正确答案"].exists)

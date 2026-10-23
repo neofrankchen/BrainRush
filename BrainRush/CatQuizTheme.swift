@@ -7,19 +7,22 @@ enum CatQuizPalette {
 }
 
 struct CatQuizHost: View {
-    let isMistake: Bool
+    var isMistake = false
+    var hint: String? = nil
+    var celebrating = false
 
     var body: some View {
+        let message = hint ?? (isMistake
+            ? tr(ja: "答えの理由を\n一緒に見よう！", zh: "一起看看，\n为什么选它！", en: "Let's see\nwhy this fits!", my: "အဖြေမှန်ရဲ့\nအကြောင်းရင်းကြည့်မယ်")
+            : tr(ja: "よ〜く見て\n選んでね！", zh: "仔细看看，\n再选答案！", en: "Look closely\nand choose!", my: "သေချာကြည့်ပြီး\nရွေးပါ။"))
         HStack(alignment: .center, spacing: 0) {
-            Image(isMistake ? "QuizCatThinking" : "QuizCat")
+            Image(celebrating || (hint == nil && !isMistake) ? "QuizCat" : "QuizCatThinking")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 146, height: 106, alignment: .bottom)
                 .accessibilityHidden(true)
-            Text(isMistake
-                 ? tr(ja: "答えの理由を\n一緒に見よう！", zh: "一起看看，\n为什么选它！", en: "Let's see\nwhy this fits!", my: "အဖြေမှန်ရဲ့\nအကြောင်းရင်းကြည့်မယ်")
-                 : tr(ja: "よ〜く見て\n選んでね！", zh: "仔细看看，\n再选答案！", en: "Look closely\nand choose!", my: "သေချာကြည့်ပြီး\nရွေးပါ။"))
-                .font(.system(size: 18, weight: .heavy, design: .rounded))
+            Text(message)
+                .font(.system(size: hint == nil ? 18 : 15, weight: .heavy, design: .rounded))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(CatQuizPalette.ink)
                 .fixedSize(horizontal: false, vertical: true)
@@ -32,6 +35,8 @@ struct CatQuizHost: View {
                 }
                 .overlay(CatSpeechBubble().stroke(CatQuizPalette.wood, lineWidth: 2))
                 .padding(.bottom, 20)
+                .accessibilityIdentifier("stroop-cat-hint")
+                .accessibilityLabel(message)
         }
         .frame(maxWidth: .infinity)
     }

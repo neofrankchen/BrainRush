@@ -1,0 +1,23 @@
+---
+description: 架构保持简单，方便向老师解释文件职责
+alwaysApply: true
+---
+
+# 简单架构
+
+这是学校课题。设计和改代码时，优先让老师能用几句话讲清「每个文件干什么」。
+
+- 一个文件一件事。题目按类别分文件，不要混在同一个题库里。
+- 现在的对应关系保持下去：
+  - `ColorWordBank.swift`：ストループ（色と字）
+  - `BrainTeaserBank.swift`：ひっかけ / 脑筋急转弯
+  - `HardChoiceBank.swift`：難問2択
+  - `FunChoiceBank.swift`：おもしろ2択
+  - `FoodChoiceBank.swift`：食べ物2択
+  - `KidChoiceBank.swift`：幼児2択
+  - `StudentFlagBank.swift`：留学生の旗
+  - `GdpFlagBank.swift`：GDPの旗
+  - `StroopGame.swift`：游戏流程和画面，不堆新题
+- 新题型先建新的 `*Bank.swift`，再接到游戏里。不要塞进已有题库，也不要为了「更专业」加协议、工厂、多层抽象。
+- 解析、提示跟题目放在同一类文件里。老师问「这题写在哪」时，答案应是一个文件名。
+- 能少一层就少一层。如果解释时要画架构图，说明已经太复杂了。

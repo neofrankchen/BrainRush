@@ -5,6 +5,7 @@ enum ScoreRank {
     case low
     case tenths
     case match
+    case timed
 }
 
 struct ScoreRecord: Codable, Identifiable, Equatable {
@@ -12,6 +13,27 @@ struct ScoreRecord: Codable, Identifiable, Equatable {
     var score: Int
     var detail: Int
     var created: Date
+    var name: String
+    var avatar: String
+
+    init(id: UUID, score: Int, detail: Int, created: Date, name: String, avatar: String = "") {
+        self.id = id
+        self.score = score
+        self.detail = detail
+        self.created = created
+        self.name = name
+        self.avatar = avatar
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        score = try container.decode(Int.self, forKey: .score)
+        detail = try container.decode(Int.self, forKey: .detail)
+        created = try container.decode(Date.self, forKey: .created)
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+        avatar = try container.decodeIfPresent(String.self, forKey: .avatar) ?? ""
+    }
 }
 
 enum ScoreBoard {
@@ -26,9 +48,9 @@ enum ScoreBoard {
     }
 
     @discardableResult
-    static func submit(game: String, score: Int, detail: Int = 0, rank: ScoreRank) -> UUID? {
+    static func submit(game: String, score: Int, detail: Int = 0, name: String = "", avatar: String = "", rank: ScoreRank) -> UUID? {
         var rows = records(for: game)
-        let entry = ScoreRecord(id: UUID(), score: score, detail: detail, created: Date())
+        let entry = ScoreRecord(id: UUID(), score: score, detail: detail, created: Date(), name: name, avatar: avatar)
         rows.append(entry)
         rows.sort { better($0, than: $1, rank: rank) }
         let kept = Array(rows.prefix(limit))
@@ -46,7 +68,35 @@ enum ScoreBoard {
             String(format: "%.1f", Double(row.score) / 10)
         case .match:
             "\(row.score) : \(row.detail)"
+        case .timed:
+            durationLabel(milliseconds: row.detail)
         }
+    }
+
+    static func durationLabel(milliseconds: Int) -> String {
+        let total = max(0, Double(milliseconds) / 1000)
+        let minutes = Int(total) / 60
+        let seconds = total - Double(minutes * 60)
+        if minutes > 0 {
+            return tr(
+                ja: String(format: "%d分%.1f秒", minutes, seconds),
+                zh: String(format: "%d分%.1f秒", minutes, seconds),
+                en: String(format: "%d:%04.1f", minutes, seconds),
+                my: String(format: "%d:%04.1f", minutes, seconds),
+                ko: String(format: "%d분 %.1f초", minutes, seconds),
+                fr: String(format: "%d min %.1f s", minutes, seconds),
+                zhHant: String(format: "%d分%.1f秒", minutes, seconds)
+            )
+        }
+        return tr(
+            ja: String(format: "%.1f秒", total),
+            zh: String(format: "%.1f秒", total),
+            en: String(format: "%.1fs", total),
+            my: String(format: "%.1fs", total),
+            ko: String(format: "%.1f초", total),
+            fr: String(format: "%.1f s", total),
+            zhHant: String(format: "%.1f秒", total)
+        )
     }
 
     private static func better(_ first: ScoreRecord, than second: ScoreRecord, rank: ScoreRank) -> Bool {
@@ -55,7 +105,7 @@ enum ScoreBoard {
             if first.score != second.score { return first.score > second.score }
         case .low, .tenths:
             if first.score != second.score { return first.score < second.score }
-        case .match:
+        case .match, .timed:
             if first.score != second.score { return first.score > second.score }
             if first.detail != second.detail { return first.detail < second.detail }
         }
@@ -74,6 +124,7 @@ struct ScoreBoardList: View {
     var textColor: Color = .white
 
     var body: some View {
+        let _ = LanguageStore.shared.language
         let rows = ScoreBoard.records(for: game)
         VStack(alignment: .leading, spacing: 6) {
             Text(title ?? tr(ja: "ランキング", zh: "排行榜", en: "Leaderboard", my: "အဆင့်စာရင်း"))
@@ -90,16 +141,30 @@ struct ScoreBoardList: View {
                             HStack(spacing: 8) {
                                 Text("\(index + 1)")
                                     .frame(width: 22, alignment: .leading)
-                                Text(ScoreBoard.label(row, rank: rank))
-                                    .monospacedDigit()
+                                if !row.avatar.isEmpty {
+                                    Text(row.avatar)
+                                }
+                                VStack(alignment: .leading, spacing: 1) {
+                                    if !row.name.isEmpty {
+                                        Text(row.name)
+                                            .lineLimit(1)
+                                    }
+                                    Text(ScoreBoard.label(row, rank: rank))
+                                        .monospacedDigit()
+                                }
                                 Spacer(minLength: 0)
+                                if rank == .timed {
+                                    Text(tr(ja: "\(row.score)点", zh: "\(row.score)分", en: "\(row.score) pts", my: "\(row.score)", ko: "\(row.score)점", fr: "\(row.score) pts", zhHant: "\(row.score)分"))
+                                        .monospacedDigit()
+                                        .opacity(0.72)
+                                }
                             }
                             .font(.subheadline.weight(index == 0 ? .bold : .regular))
                             .foregroundStyle(textColor.opacity(index == 0 ? 1 : 0.78))
                         }
                     }
                 }
-                .frame(maxHeight: min(148, 24 + CGFloat(rows.count) * 24))
+                .frame(maxHeight: min(220, 24 + CGFloat(rows.count) * 36))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
