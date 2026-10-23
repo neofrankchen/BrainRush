@@ -506,6 +506,7 @@ private final class StroopAudio {
     }
 }
 
+@MainActor
 @Observable
 final class StroopSession {
     enum Phase {
