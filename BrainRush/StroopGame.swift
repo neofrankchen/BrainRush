@@ -376,7 +376,8 @@ struct StroopRound: Equatable {
         return translated
     }
 
-    static let quizLength = 20
+    static let quizLength = 10
+    static let pointsPerCorrect = 10
     static let quizGame = "quiz"
 
     static func randomQuiz(count: Int = quizLength) -> [StroopRound] {
@@ -461,9 +462,7 @@ private final class StroopAudio {
             }
             engine.mainMixerNode.outputVolume = 0.9
             #if os(iOS)
-            let session = AVAudioSession.sharedInstance()
-            try? session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
-            try? session.setActive(true)
+            BackgroundMusic.activateSession()
             #endif
         }
         if !engine.isRunning {
@@ -471,6 +470,9 @@ private final class StroopAudio {
         }
         for player in players where !player.isPlaying {
             player.play()
+        }
+        DispatchQueue.main.async {
+            BackgroundMusic.shared.start()
         }
     }
 
@@ -574,105 +576,71 @@ final class StroopSession {
         ScoreBoard.durationLabel(milliseconds: Int((answeringElapsed * 1000).rounded()))
     }
 
-    var resultCatSpeech: String {
-        let who = playerName.isEmpty ? tr(ja: "きみ", zh: "你", en: "You", my: "သင်") : playerName
-        let boast = intelligenceBoast
-        if let place = lastPlacement {
-            if place == 1 {
-                return tr(
-                    ja: "\(who)、やったー！\(score)点でランキング1位！時間は\(answeringTimeText)だよ！\n\(boast)",
-                    zh: "\(who)，太棒了！你得了 \(score) 分，排行榜第 1 名！总用时 \(answeringTimeText)！\n\(boast)",
-                    en: "\(who) — yes! \(score) points and 1st place! Your time was \(answeringTimeText)!\n\(boast)",
-                    my: "\(who)၊ ယေး! \(score) မှတ်၊ အဆင့် ၁။ အချိန်က \(answeringTimeText)!\n\(boast)",
-                    ko: "\(who), 대단해요! \(score)점으로 1등! 시간은 \(answeringTimeText)예요!\n\(boast)",
-                    fr: "\(who) — bravo ! \(score) points et la 1re place ! Temps : \(answeringTimeText) !\n\(boast)",
-                    zhHant: "\(who)，太棒了！你得了 \(score) 分，排行榜第 1 名！總用時 \(answeringTimeText)！\n\(boast)"
-                )
-            }
-            let rankEN = place == 2 ? "2nd" : place == 3 ? "3rd" : "\(place)th"
+    var boastRivalNames: [String] {
+        boastRivals.map(leaderboardName)
+    }
+
+    var boastHeadline: String {
+        if !boastRivals.isEmpty {
             return tr(
-                ja: "\(who)、\(score)点だったよ。ランキングは\(place)位。かかった時間は\(answeringTimeText)。\n\(boast)",
-                zh: "\(who)，你得了 \(score) 分，排行榜第 \(place) 名。总用时 \(answeringTimeText)。\n\(boast)",
-                en: "\(who) scored \(score). That's \(rankEN) place. Total time \(answeringTimeText).\n\(boast)",
-                my: "\(who)၊ \(score) မှတ်ရသည်။ အဆင့် \(place)။ စုစုပေါင်း \(answeringTimeText)။\n\(boast)",
-                ko: "\(who), \(score)점이었어요. 순위는 \(place)위. 시간은 \(answeringTimeText).\n\(boast)",
-                fr: "\(who) a \(score) points. C’est la \(place)e place. Temps : \(answeringTimeText).\n\(boast)",
-                zhHant: "\(who)，你得了 \(score) 分，排行榜第 \(place) 名。總用時 \(answeringTimeText)。\n\(boast)"
+                ja: "きみは超えたよ",
+                zh: "你超越了",
+                en: "You surpassed",
+                my: "သင်ကျော်သွားသူ",
+                ko: "네가 넘어선 사람",
+                fr: "Tu as dépassé",
+                zhHant: "你超越了"
+            )
+        }
+        let language = LanguageStore.shared.language
+        let board = boastBoard(language: language)
+        let beaten = board.filter { beatsLeaderboard($0) && !isCurrentRun($0) }
+        if beaten.contains(where: { isSamePlayer($0) }) {
+            return tr(
+                ja: "きみの知性は、自分の記録を超えたよ！",
+                zh: "你的智力超越了自己的纪录！",
+                en: "Your brain just beat your own record!",
+                my: "သင့်ဉာဏ်က ကိုယ့်စံချိန်ကို ကျော်သွားပြီ!",
+                ko: "너의 지능이 자기 기록을 넘어섰어!",
+                fr: "Ton intelligence a battu ton propre record !",
+                zhHant: "你的智力超越了自己的紀錄！"
+            )
+        }
+        let others = board.filter { !isCurrentRun($0) && !isSamePlayer($0) }
+        if others.isEmpty {
+            return tr(
+                ja: "排行榜はまだきみだけだよ！",
+                zh: "排行榜上还只有你！",
+                en: "You’re the only one on the board!",
+                my: "အဆင့်စာရင်းတွင် သင်တစ်ယောက်တည်း!",
+                ko: "순위판에는 아직 너뿐이야!",
+                fr: "Tu es seul au classement !",
+                zhHant: "排行榜上還只有你！"
             )
         }
         return tr(
-            ja: "\(who)、\(score)点だったよ。時間は\(answeringTimeText)。今回はランキング圏外だったけど、また挑戦してね！\n\(boast)",
-            zh: "\(who)，你得了 \(score) 分，总用时 \(answeringTimeText)。这次没进排行榜，再来一局吧！\n\(boast)",
-            en: "\(who) scored \(score) in \(answeringTimeText). Not on the board this time — try again!\n\(boast)",
-            my: "\(who)၊ \(score) မှတ်၊ \(answeringTimeText)။ ဒီတစ်ခါ အဆင့်စာရင်း မဝင်၊ ထပ်ကစားပါ။\n\(boast)",
-            ko: "\(who), \(score)점, 시간은 \(answeringTimeText). 이번엔 순위에 못 들었지만 다시 도전해요!\n\(boast)",
-            fr: "\(who) a \(score) points en \(answeringTimeText). Pas au classement cette fois — réessaie !\n\(boast)",
-            zhHant: "\(who)，你得了 \(score) 分，總用時 \(answeringTimeText)。這次沒進排行榜，再來一局吧！\n\(boast)"
+            ja: "今度は排行榜の人を超えてみよう！",
+            zh: "这次还没超越排行榜上的人，再来一局吧！",
+            en: "You haven’t passed anyone on the board yet. Try again!",
+            my: "အဆင့်စာရင်းက လူတွေကို မကျော်ရသေး။ ထပ်ကစားပါ။",
+            ko: "이번엔 순위판의 사람을 넘지 못했어. 다시 도전하자!",
+            fr: "Tu n’as encore dépassé personne au classement. Réessaie !",
+            zhHant: "這次還沒超越排行榜上的人，再來一局吧！"
         )
     }
 
     var intelligenceBoast: String {
+        let names = boastRivalNames
+        if names.isEmpty { return boastHeadline }
+        return "\(boastHeadline)\n\(names.joined(separator: "\n"))"
+    }
+
+    private var boastRivals: [ScoreRecord] {
         let language = LanguageStore.shared.language
         let board = boastBoard(language: language)
         let beaten = board.filter { beatsLeaderboard($0) && !isCurrentRun($0) }
         let sameLanguage = beaten.filter { $0.language == language.rawValue && !isSamePlayer($0) }
-        let rivals = sameLanguage.isEmpty ? beaten.filter { !isSamePlayer($0) } : sameLanguage
-        if rivals.isEmpty {
-            if beaten.contains(where: { isSamePlayer($0) }) {
-                return tr(
-                    ja: "きみの知性は、自分の記録を超えたよ！",
-                    zh: "你的智力超越了自己的纪录！",
-                    en: "Your brain just beat your own record!",
-                    my: "သင့်ဉာဏ်က ကိုယ့်စံချိန်ကို ကျော်သွားပြီ!",
-                    ko: "너의 지능이 자기 기록을 넘어섰어!",
-                    fr: "Ton intelligence a battu ton propre record !",
-                    zhHant: "你的智力超越了自己的紀錄！"
-                )
-            }
-            let others = board.filter { !isCurrentRun($0) && !isSamePlayer($0) }
-            if others.isEmpty {
-                return tr(
-                    ja: "排行榜はまだきみだけだよ！",
-                    zh: "排行榜上还只有你！",
-                    en: "You’re the only one on the board!",
-                    my: "အဆင့်စာရင်းတွင် သင်တစ်ယောက်တည်း!",
-                    ko: "순위판에는 아직 너뿐이야!",
-                    fr: "Tu es seul au classement !",
-                    zhHant: "排行榜上還只有你！"
-                )
-            }
-            return tr(
-                ja: "今度は排行榜の人を超えてみよう！",
-                zh: "这次还没超越排行榜上的人，再来一局吧！",
-                en: "You haven’t passed anyone on the board yet. Try again!",
-                my: "အဆင့်စာရင်းက လူတွေကို မကျော်ရသေး။ ထပ်ကစားပါ။",
-                ko: "이번엔 순위판의 사람을 넘지 못했어. 다시 도전하자!",
-                fr: "Tu n’as encore dépassé personne au classement. Réessaie !",
-                zhHant: "這次還沒超越排行榜上的人，再來一局吧！"
-            )
-        }
-        let shown = Array(rivals.prefix(3)).map(leaderboardName)
-        let joined = shown.joined(separator: "、")
-        if rivals.count > 3 {
-            return tr(
-                ja: "きみの知性は\(joined)たちを超えたよ！",
-                zh: "你的智力超越了\(joined)等人！",
-                en: "Your brain just outsmarted \(joined), and more!",
-                my: "သင့်ဉာဏ်က \(joined) တို့ကို ကျော်သွားပြီ!",
-                ko: "너의 지능이 \(joined) 등을 넘어섰어!",
-                fr: "Ton intelligence a dépassé \(joined) et d’autres !",
-                zhHant: "你的智力超越了\(joined)等人！"
-            )
-        }
-        return tr(
-            ja: "きみの知性は\(joined)を超えたよ！",
-            zh: "你的智力超越了\(joined)！",
-            en: "Your brain just outsmarted \(joined)!",
-            my: "သင့်ဉာဏ်က \(joined) ကို ကျော်သွားပြီ!",
-            ko: "너의 지능이 \(joined)를 넘어섰어!",
-            fr: "Ton intelligence a dépassé \(joined) !",
-            zhHant: "你的智力超越了\(joined)！"
-        )
+        return sameLanguage.isEmpty ? beaten.filter { !isSamePlayer($0) } : sameLanguage
     }
 
     private func boastBoard(language: AppLanguage) -> [ScoreRecord] {
@@ -822,7 +790,7 @@ final class StroopSession {
         if !timeout && id == round.answerID {
             streak += 1
             correctCount += 1
-            score += 5
+            score += StroopRound.pointsPerCorrect
                 audio.play(.correct)
             lastAnswerWasCorrect = true
             lastMissWasTimeout = false
@@ -1188,12 +1156,15 @@ struct StroopGameView: View {
         .sensoryFeedback(.success, trigger: session.correctCount)
         .sensoryFeedback(.error, trigger: session.answerCount - session.correctCount)
         .safeAreaInset(edge: .top, spacing: 0) {
-            HStack {
+            HStack(alignment: .top) {
                 if session.phase != .ready {
                     backBarButton
                 }
                 Spacer(minLength: 0)
-                settingsBarButton
+                VStack(spacing: 8) {
+                    settingsBarButton
+                    MusicPickerMenu()
+                }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 4)
@@ -1219,19 +1190,10 @@ struct StroopGameView: View {
 
     private var backBarButton: some View {
         Button(action: goBack) {
-            Label(
-                tr(ja: "戻る", zh: "返回", en: "Back", my: "ပြန်ရန်"),
-                systemImage: "chevron.left"
-            )
-            .font(.subheadline.weight(.bold))
-            .foregroundStyle(CatQuizPalette.wood)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Capsule().fill(.ultraThinMaterial))
-            .overlay { Capsule().strokeBorder(CatQuizPalette.wood.opacity(0.18), lineWidth: 1) }
-            .shadow(color: CatQuizPalette.wood.opacity(0.12), radius: 8, y: 2)
+            WoodlandIconBadge(symbol: "chevron.left")
         }
         .buttonStyle(ArcadePressStyle())
+        .accessibilityLabel(tr(ja: "戻る", zh: "返回", en: "Back", my: "ပြန်ရန်"))
         .accessibilityIdentifier("stroop-back")
     }
 
@@ -1250,15 +1212,9 @@ struct StroopGameView: View {
                 }
             }
         } label: {
-            Image(systemName: "gearshape.fill")
-                .font(.body.weight(.bold))
-                .foregroundStyle(CatQuizPalette.wood)
-                .padding(10)
-                .background(Circle().fill(.ultraThinMaterial))
-                .overlay { Circle().strokeBorder(CatQuizPalette.wood.opacity(0.18), lineWidth: 1) }
-                .shadow(color: CatQuizPalette.wood.opacity(0.12), radius: 8, y: 2)
+            WoodlandIconBadge(symbol: "globe")
         }
-        .accessibilityLabel(tr(ja: "設定", zh: "设置", en: "Settings", my: "ဆက်တင်"))
+        .accessibilityLabel(tr(ja: "言語", zh: "语言", en: "Language", my: "ဘာသာစကား"))
         .accessibilityIdentifier("stroop-settings")
     }
 
@@ -1340,21 +1296,21 @@ struct StroopGameView: View {
                         )
                     )
                     guide(
-                        tr(ja: "20問と時間", zh: "20 题和时间", en: "20 questions and time", my: "မေးခွန်း ၂၀ နှင့် အချိန်"),
+                        tr(ja: "10問と時間", zh: "10 题和时间", en: "10 questions and time", my: "မေးခွန်း ၁၀ နှင့် အချိန်"),
                         tr(
-                            ja: "毎回20問。そのうち色と字は1問だけ、残りの19問はひっかけ、各種2択、旗の問題から。制限時間は1問30秒。時間切れは不正解。",
-                            zh: "每次 20 题。其中颜色题只随机出 1 道，其余 19 道来自脑筋急转弯、各类二选一和旗帜题。每题 30 秒，超时算错。",
-                            en: "Each game has 20 questions. Exactly one is a color-and-word item; the other 19 come from teasers, trivia, and flag quizzes. 30 seconds each; a timeout is a miss.",
-                            my: "တစ်ပွဲ ၂၀ ခု။ အရောင်မေးခွန်း ၁ ခုသာ၊ ကျန် ၁၉ ခုမှာ ပဟေဠိ၊ ဗဟုသုတ ၂ ခုရွေးနှင့် အလံမေးများ။ တစ်ခု ၃၀ စက္ကန့်။"
+                            ja: "毎回10問。そのうち色と字は1問だけ、残りの9問はひっかけ、各種2択、旗の問題から。制限時間は1問30秒。時間切れは不正解。",
+                            zh: "每次 10 题。其中颜色题只随机出 1 道，其余 9 道来自脑筋急转弯、各类二选一和旗帜题。每题 30 秒，超时算错。",
+                            en: "Each game has 10 questions. Exactly one is a color-and-word item; the other 9 come from teasers, trivia, and flag quizzes. 30 seconds each; a timeout is a miss.",
+                            my: "တစ်ပွဲ ၁၀ ခု။ အရောင်မေးခွန်း ၁ ခုသာ၊ ကျန် ၉ ခုမှာ ပဟေဠိ၊ ဗဟုသုတ ၂ ခုရွေးနှင့် အလံမေးများ။ တစ်ခု ၃၀ စက္ကန့်။"
                         )
                     )
                     guide(
                         tr(ja: "得点とランキング", zh: "得分和排行榜", en: "Score and ranking", my: "ရမှတ်နှင့် အဆင့်"),
                         tr(
-                            ja: "正解は1問5点、満点は100点。ランキングは回答にかかった合計時間を表示する。同じ点数なら速い方が上。",
-                            zh: "答对一题 5 分，满分 100 分。排行榜显示答题总时间。分数相同则更快的排前面。",
-                            en: "Each correct answer is 5 points, 100 in total. The leaderboard shows your answering time. Tied scores rank the faster run first.",
-                            my: "မှန်လျှင် တစ်မေးခွန်း ၅ မှတ်၊ အပြည့် ၁၀၀။ အဆင့်စာရင်းတွင် ဖြေချိန် စုစုပေါင်းကို ပြသည်။ မှတ်တူရင် ပိုမြန်သူ အပေါ်။"
+                            ja: "正解は1問10点、満点は100点。ランキングは回答にかかった合計時間を表示する。同じ点数なら速い方が上。",
+                            zh: "答对一题 10 分，满分 100 分。排行榜显示答题总时间。分数相同则更快的排前面。",
+                            en: "Each correct answer is 10 points, 100 in total. The leaderboard shows your answering time. Tied scores rank the faster run first.",
+                            my: "မှန်လျှင် တစ်မေးခွန်း ၁၀ မှတ်၊ အပြည့် ၁၀၀။ အဆင့်စာရင်းတွင် ဖြေချိန် စုစုပေါင်းကို ပြသည်။ မှတ်တူရင် ပိုမြန်သူ အပေါ်။"
                         )
                     )
                 }
@@ -2346,10 +2302,6 @@ struct StroopGameView: View {
     private var result: some View {
         ScrollView {
             VStack(spacing: 20) {
-                WoodlandTitle(height: 140)
-                CatQuizHost(hint: session.resultCatSpeech, celebrating: true)
-                    .accessibilityIdentifier("stroop-result-cat")
-
                 resultScoreCard
 
                 VStack(spacing: 12) {
@@ -2380,6 +2332,11 @@ struct StroopGameView: View {
 
     private var resultScoreCard: some View {
         VStack(spacing: 12) {
+            Image("QuizCat")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 88)
+                .accessibilityHidden(true)
             Label(tr(ja: "今回のスコア", zh: "本次得分", en: "Your score", my: "သင့်ရမှတ်"), systemImage: "star.fill")
                 .font(.subheadline.bold())
                 .foregroundStyle(CatQuizPalette.wood)
@@ -2392,12 +2349,6 @@ struct StroopGameView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(CatQuizPalette.ink.opacity(0.8))
                 .multilineTextAlignment(.center)
-            Text(session.intelligenceBoast)
-                .font(.system(.headline, design: .rounded, weight: .heavy))
-                .foregroundStyle(CatQuizPalette.wood)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("stroop-result-boast")
             HStack {
                 Label(tr(ja: "合計時間", zh: "答题总时间", en: "Total time", my: "စုစုပေါင်းအချိန်"), systemImage: "stopwatch")
                 Spacer()
@@ -2415,10 +2366,23 @@ struct StroopGameView: View {
             }
             .font(.subheadline.bold())
             .foregroundStyle(CatQuizPalette.wood)
+            Divider().overlay(CatQuizPalette.wood.opacity(0.2))
+            Text(session.boastHeadline)
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(CatQuizPalette.ink)
+                .multilineTextAlignment(.center)
+            ForEach(Array(session.boastRivalNames.enumerated()), id: \.offset) { _, name in
+                Text(name)
+                    .font(.title3.weight(.heavy))
+                    .foregroundStyle(CatQuizPalette.wood)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+            }
         }
         .padding(24)
         .frame(maxWidth: .infinity)
         .modifier(WoodlandPanel())
+        .accessibilityIdentifier("stroop-result-cat")
     }
 
     private var resultRanking: some View {

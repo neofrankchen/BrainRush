@@ -19,6 +19,7 @@ alwaysApply: true
   - `FlagBank.swift`：国旗
   - `HardChoiceBank.swift` / `FunChoiceBank.swift` / `FoodChoiceBank.swift` / `KidChoiceBank.swift`：旧题仍在题库里，练习入口不再单独列出
   - `StroopGame.swift`：游戏流程和画面，不堆新题
+  - `BackgroundMusic.swift`：背景音乐，右上角音符随时切换；播放时偶尔插入猫叫
 - 用户新发 2択 时自动归类，不要分太细。日本常识（地理/文化/节日/食物/传说） → `JapanChoiceBank`；日本漫画/动画/角色 → `AnimeChoiceBank`；动植物/天文/自然现象 → `NatureChoiceBank`；世界料理/美食 → `GourmetChoiceBank`；世界常识或拿不准 → `OtherChoiceBank`。两边都沾边就两份都写（id 分开）。不要塞进已有题库，也不要为了「更专业」加协议、工厂、多层抽象。
 - 解析、提示跟题目放在同一类文件里。老师问「这题写在哪」时，答案应是一个文件名。
 - 能少一层就少一层。如果解释时要画架构图，说明已经太复杂了。

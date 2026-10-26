@@ -100,6 +100,7 @@ enum ExtraLang {
         "選んだ答え": .init(ko: "내가 고른 답", fr: "Ton choix", zhHant: "你的選擇"),
         "もう一度あそぶ": .init(ko: "다시 하기", fr: "Rejouer", zhHant: "再玩一次"),
         "今回のスコア": .init(ko: "이번 점수", fr: "Ton score", zhHant: "本次得分"),
+        "きみは超えたよ": .init(ko: "네가 넘어선 사람", fr: "Tu as dépassé", zhHant: "你超越了"),
         "合計時間": .init(ko: "총 시간", fr: "Temps total", zhHant: "答題總時間"),
         "自己ベスト": .init(ko: "개인 최고", fr: "Record perso", zhHant: "個人最佳"),
         "よく見て、どっちかを選ぼう！": .init(ko: "잘 보고 하나를 고르자!", fr: "Regarde bien et choisis !", zhHant: "仔細看，選擇正確答案！"),
@@ -120,6 +121,7 @@ enum ExtraLang {
         "6種類の問題": .init(ko: "문제 6종류", fr: "Six types", zhHant: "六種題目"),
         "8種類の問題": .init(ko: "문제 8종류", fr: "Huit types", zhHant: "八種題目"),
         "20問と時間": .init(ko: "20문제와 시간", fr: "20 questions et le temps", zhHant: "20 題和時間"),
+        "10問と時間": .init(ko: "10문제와 시간", fr: "10 questions et le temps", zhHant: "10 題和時間"),
         "得点とランキング": .init(ko: "점수와 순위", fr: "Score et classement", zhHant: "得分和排行榜"),
         "好きな名前に変えてね。この名前がランキングに載るよ！": .init(
             ko: "원하는 이름으로 바꾸세요. 이 이름이 순위에 올라가요!",
@@ -160,6 +162,16 @@ enum ExtraLang {
             ko: "매번 20문제. 그중 색과 글자는 1문제만, 나머지 19문제는 말장난, 양자택일, 국기 문제에서 나와요. 한 문제 30초, 시간이 끝나면 오답이에요.",
             fr: "Chaque partie a 20 questions. Une seule est couleur-et-mot ; les 19 autres viennent des pièges, des quiz et des drapeaux. 30 secondes chacune ; un timeout est une erreur.",
             zhHant: "每次 20 題。其中顏色題只隨機出 1 道，其餘 19 道來自腦筋急轉彎、各類二選一和旗幟題。每題 30 秒，超時算錯。"
+        ),
+        "毎回10問。そのうち色と字は1問だけ、残りの9問はひっかけ、各種2択、旗の問題から。制限時間は1問30秒。時間切れは不正解。": .init(
+            ko: "매번 10문제. 그중 색과 글자는 1문제만, 나머지 9문제는 말장난, 양자택일, 국기 문제에서 나와요. 한 문제 30초, 시간이 끝나면 오답이에요.",
+            fr: "Chaque partie a 10 questions. Une seule est couleur-et-mot ; les 9 autres viennent des pièges, des quiz et des drapeaux. 30 secondes chacune ; un timeout est une erreur.",
+            zhHant: "每次 10 題。其中顏色題只隨機出 1 道，其餘 9 道來自腦筋急轉彎、各類二選一和旗幟題。每題 30 秒，超時算錯。"
+        ),
+        "正解は1問10点、満点は100点。ランキングは回答にかかった合計時間を表示する。同じ点数なら速い方が上。": .init(
+            ko: "맞으면 한 문제 10점, 만점 100점. 순위는 푸는 데 걸린 총 시간을 보여 줘요. 점수가 같으면 더 빠른 사람이 위예요.",
+            fr: "Chaque bonne réponse vaut 10 points, 100 au total. Le classement montre le temps. À score égal, le plus rapide est devant.",
+            zhHant: "答對一題 10 分，滿分 100 分。排行榜顯示答題總時間。分數相同則更快的排前面。"
         ),
         "正解は1問5点、満点は100点。ランキングは回答にかかった合計時間を表示する。同じ点数なら速い方が上。": .init(
             ko: "맞으면 한 문제 5점, 만점 100점. 순위는 푸는 데 걸린 총 시간을 보여 줘요. 점수가 같으면 더 빠른 사람이 위예요.",
@@ -1275,6 +1287,24 @@ enum ExtraLang {
         "ladybug": .init(ko: "무당벌레", fr: "coccinelle", zhHant: "瓢蟲"),
         "cricket": .init(ko: "귀뚜라미", fr: "grillon", zhHant: "蟋蟀"),
         "cockroach": .init(ko: "바퀴벌레", fr: "cafard", zhHant: "蟑螂"),
+        "BGM": .init(ko: "배경음악", fr: "Musique", zhHant: "背景音樂"),
+        "オフ": .init(ko: "끄기", fr: "Arrêt", zhHant: "關閉"),
+        "ランダム": .init(ko: "랜덤", fr: "Aléatoire", zhHant: "隨機播放"),
+        "ほっこり": .init(ko: "포근함", fr: "Douillet", zhHant: "暖暖氛圍"),
+        "本屋の午後": .init(ko: "책방 오후", fr: "Librairie", zhHant: "書店下午"),
+        "秋のぬくもり": .init(ko: "가을 온기", fr: "Automne doux", zhHant: "秋日暖意"),
+        "秋のそよ風": .init(ko: "가을바람", fr: "Brise d’automne", zhHant: "秋風"),
+        "秋のピアノ": .init(ko: "가을 피아노", fr: "Piano d’automne", zhHant: "秋日鋼琴"),
+        "落ち葉のピアノ": .init(ko: "낙엽 피아노", fr: "Feuilles", zhHant: "落葉鋼琴"),
+        "いやし": .init(ko: "힐링", fr: "Apaisement", zhHant: "療癒"),
+        "ひかり": .init(ko: "빛", fr: "Lumière", zhHant: "柔光"),
+        "やさしい気持ち": .init(ko: "다정함", fr: "Douceur", zhHant: "溫柔"),
+        "ものがたり": .init(ko: "이야기", fr: "Histoire", zhHant: "故事"),
+        "ときめき": .init(ko: "설렘", fr: "Romance", zhHant: "心動"),
+        "ファミリー": .init(ko: "가족", fr: "Famille", zhHant: "家人"),
+        "かんしゃ": .init(ko: "감사", fr: "Gratitude", zhHant: "感恩"),
+        "クリスマス": .init(ko: "크리스마스", fr: "Noël magique", zhHant: "聖誕魔法"),
+        "聖夜": .init(ko: "성야", fr: "Esprit de Noël", zhHant: "聖誕氣氛"),
         "spider": .init(ko: "거미", fr: "araignée", zhHant: "蜘蛛"),
         "scorpion": .init(ko: "전갈", fr: "scorpion", zhHant: "蠍子"),
         "mosquito": .init(ko: "모기", fr: "moustique", zhHant: "蚊子"),

@@ -6,6 +6,46 @@ enum CatQuizPalette {
     static let wood = Color(red: 0.43, green: 0.29, blue: 0.18)
 }
 
+struct WoodlandIconBadge: View {
+    var symbol: String
+    var rotation: Double = 0
+    var lit = false
+
+    var body: some View {
+        Image(systemName: symbol)
+            .font(.system(size: 18, weight: .heavy, design: .rounded))
+            .foregroundStyle(CatQuizPalette.wood)
+            .rotationEffect(.degrees(rotation))
+            .frame(width: 48, height: 48)
+            .background {
+                Circle().fill(
+                    LinearGradient(
+                        colors: lit
+                            ? [Color(red: 1, green: 0.93, blue: 0.46), Color(red: 1, green: 0.72, blue: 0.24)]
+                            : [Color(red: 1, green: 0.97, blue: 0.88), Color(red: 0.98, green: 0.89, blue: 0.72)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+            }
+            .overlay {
+                Circle().strokeBorder(Color(red: 0.67, green: 0.40, blue: 0.20).opacity(0.85), lineWidth: 1.6)
+            }
+            .overlay {
+                Circle()
+                    .strokeBorder(Color(red: 1, green: 0.99, blue: 0.92).opacity(0.9), lineWidth: 1.2)
+                    .padding(3.5)
+            }
+            .overlay(alignment: .top) {
+                Capsule()
+                    .fill(Color.white.opacity(0.42))
+                    .frame(width: 20, height: 6)
+                    .padding(.top, 8)
+            }
+            .shadow(color: CatQuizPalette.wood.opacity(0.22), radius: 8, y: 4)
+    }
+}
+
 struct CatQuizHost: View {
     var isMistake = false
     var hint: String? = nil

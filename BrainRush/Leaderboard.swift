@@ -46,8 +46,11 @@ enum ScoreBoardFilter: Hashable {
 
 enum ScoreBoard {
     static let limit = 8
+    private static let generationKey = "scoreboard.generation"
+    private static let generation = 10
 
     static func records(for game: String, filter: ScoreBoardFilter = .all) -> [ScoreRecord] {
+        resetStaleBoardsIfNeeded()
         switch filter {
         case .all:
             return stored(for: game)
@@ -66,6 +69,7 @@ enum ScoreBoard {
         language: AppLanguage,
         rank: ScoreRank
     ) -> UUID? {
+        resetStaleBoardsIfNeeded()
         let entry = ScoreRecord(
             id: UUID(),
             score: score,
@@ -117,6 +121,15 @@ enum ScoreBoard {
             fr: String(format: "%.1f s", total),
             zhHant: String(format: "%.1f秒", total)
         )
+    }
+
+    private static func resetStaleBoardsIfNeeded() {
+        let defaults = UserDefaults.standard
+        guard defaults.integer(forKey: generationKey) < generation else { return }
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("scoreboard.") && key != generationKey {
+            defaults.removeObject(forKey: key)
+        }
+        defaults.set(generation, forKey: generationKey)
     }
 
     private static func stored(for game: String) -> [ScoreRecord] {
