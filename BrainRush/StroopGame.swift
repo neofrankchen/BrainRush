@@ -544,6 +544,7 @@ final class StroopSession {
     private var quizIndex = 0
     private(set) var answeringElapsed: TimeInterval = 0
     private(set) var lastPlacement: Int?
+    private(set) var lastRunID: UUID?
     private(set) var playerName = ""
     private(set) var playerNameID: String?
     private(set) var playerAvatar = PlayerNames.fallbackAvatar
@@ -611,12 +612,11 @@ final class StroopSession {
     }
 
     var intelligenceBoast: String {
-        let board = ScoreBoard.records(
-            for: StroopRound.quizGame,
-            filter: .language(LanguageStore.shared.language)
-        )
+        let language = LanguageStore.shared.language
+        let board = boastBoard(language: language)
         let beaten = board.filter { beatsLeaderboard($0) && !isCurrentRun($0) }
-        let rivals = beaten.filter { !isSamePlayer($0) }
+        let sameLanguage = beaten.filter { $0.language == language.rawValue && !isSamePlayer($0) }
+        let rivals = sameLanguage.isEmpty ? beaten.filter { !isSamePlayer($0) } : sameLanguage
         if rivals.isEmpty {
             if beaten.contains(where: { isSamePlayer($0) }) {
                 return tr(
@@ -675,6 +675,18 @@ final class StroopSession {
         )
     }
 
+    private func boastBoard(language: AppLanguage) -> [ScoreRecord] {
+        var rows = ScoreBoard.records(for: StroopRound.quizGame, filter: .language(language))
+        var seen = Set(rows.map(\.id))
+        for row in ScoreBoard.records(for: StroopRound.quizGame) {
+            let sameLanguage = row.language == language.rawValue || row.language.isEmpty
+            if sameLanguage, seen.insert(row.id).inserted {
+                rows.append(row)
+            }
+        }
+        return rows
+    }
+
     private func beatsLeaderboard(_ row: ScoreRecord) -> Bool {
         if score != row.score { return score > row.score }
         let milliseconds = Int((answeringElapsed * 1000).rounded())
@@ -683,20 +695,8 @@ final class StroopSession {
     }
 
     private func isCurrentRun(_ row: ScoreRecord) -> Bool {
-        let milliseconds = Int((answeringElapsed * 1000).rounded())
-        let languageBoard = ScoreBoard.records(
-            for: StroopRound.quizGame,
-            filter: .language(LanguageStore.shared.language)
-        )
-        if let match = languageBoard
-            .filter({ $0.score == score && $0.detail == milliseconds && isSamePlayer($0) })
-            .max(by: { $0.created < $1.created })
-        {
-            return row.id == match.id
-        }
-        guard let place = lastPlacement else { return false }
-        let rows = ScoreBoard.records(for: StroopRound.quizGame)
-        return rows.indices.contains(place - 1) && rows[place - 1].id == row.id
+        if let lastRunID { return row.id == lastRunID }
+        return false
     }
 
     private func isSamePlayer(_ row: ScoreRecord) -> Bool {
@@ -777,6 +777,7 @@ final class StroopSession {
         quizIndex = 0
         answeringElapsed = 0
         lastPlacement = nil
+        lastRunID = nil
         questionStartedAt = nil
         score = 0
         streak = 0
@@ -864,7 +865,8 @@ final class StroopSession {
 
     private func publishScore() {
         lastPlacement = nil
-        if let id = ScoreBoard.submit(
+        lastRunID = nil
+        let id = ScoreBoard.submit(
             game: StroopRound.quizGame,
             score: score,
             detail: Int((answeringElapsed * 1000).rounded()),
@@ -872,10 +874,10 @@ final class StroopSession {
             avatar: playerAvatar,
             language: LanguageStore.shared.language,
             rank: .timed
-        ) {
-            if let index = ScoreBoard.records(for: StroopRound.quizGame).firstIndex(where: { $0.id == id }) {
-                lastPlacement = index + 1
-            }
+        )
+        lastRunID = id
+        if let id, let index = ScoreBoard.records(for: StroopRound.quizGame).firstIndex(where: { $0.id == id }) {
+            lastPlacement = index + 1
         }
         phase = .finished
         isResolving = false

@@ -75,9 +75,9 @@ enum ScoreBoard {
             avatar: avatar,
             language: language.rawValue
         )
-        let onTotal = insert(entry, game: game, rank: rank)
+        _ = insert(entry, game: game, rank: rank)
         _ = insert(entry, game: "\(game).\(language.rawValue)", rank: rank)
-        return onTotal ? entry.id : nil
+        return entry.id
     }
 
     static func label(_ row: ScoreRecord, rank: ScoreRank) -> String {
