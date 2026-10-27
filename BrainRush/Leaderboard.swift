@@ -45,7 +45,6 @@ enum ScoreBoardFilter: Hashable {
 }
 
 enum ScoreBoard {
-    static let limit = 8
     private static let generationKey = "scoreboard.generation"
     private static let generation = 10
 
@@ -144,11 +143,10 @@ enum ScoreBoard {
         var rows = stored(for: game)
         rows.append(entry)
         rows.sort { better($0, than: $1, rank: rank) }
-        let kept = Array(rows.prefix(limit))
-        if let data = try? JSONEncoder().encode(kept) {
+        if let data = try? JSONEncoder().encode(rows) {
             UserDefaults.standard.set(data, forKey: key(game))
         }
-        return kept.contains(where: { $0.id == entry.id })
+        return true
     }
 
     private static func better(_ first: ScoreRecord, than second: ScoreRecord, rank: ScoreRank) -> Bool {
@@ -229,36 +227,33 @@ struct ScoreBoardList: View {
                     .font(.caption)
                     .foregroundStyle(textColor.opacity(0.62))
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                            HStack(spacing: 8) {
-                                Text("\(index + 1)")
-                                    .frame(width: 22, alignment: .leading)
-                                if !row.avatar.isEmpty {
-                                    Text(row.avatar)
-                                }
-                                VStack(alignment: .leading, spacing: 1) {
-                                    if !row.name.isEmpty {
-                                        Text(row.name)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                    }
-                                    Text(ScoreBoard.label(row, rank: rank))
-                                        .monospacedDigit()
-                                }
-                                Spacer(minLength: 0)
-                                if rank == .timed {
-                                    Text(tr(ja: "\(row.score)点", zh: "\(row.score)分", en: "\(row.score) pts", my: "\(row.score)", ko: "\(row.score)점", fr: "\(row.score) pts", zhHant: "\(row.score)分"))
-                                        .monospacedDigit()
-                                        .opacity(0.72)
-                                }
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                        HStack(spacing: 8) {
+                            Text("\(index + 1)")
+                                .frame(width: 22, alignment: .leading)
+                            if !row.avatar.isEmpty {
+                                Text(row.avatar)
                             }
-                            .font(.subheadline.weight(index == 0 ? .bold : .regular))
-                            .foregroundStyle(textColor.opacity(index == 0 ? 1 : 0.78))
+                            VStack(alignment: .leading, spacing: 1) {
+                                if !row.name.isEmpty {
+                                    Text(row.name)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                Text(ScoreBoard.label(row, rank: rank))
+                                    .monospacedDigit()
+                            }
+                            Spacer(minLength: 0)
+                            if rank == .timed {
+                                Text(tr(ja: "\(row.score)点", zh: "\(row.score)分", en: "\(row.score) pts", my: "\(row.score)", ko: "\(row.score)点", fr: "\(row.score) pts", zhHant: "\(row.score)分"))
+                                    .monospacedDigit()
+                                    .opacity(0.72)
+                            }
                         }
+                        .font(.subheadline.weight(index == 0 ? .bold : .regular))
+                        .foregroundStyle(textColor.opacity(index == 0 ? 1 : 0.78))
                     }
                 }
-                .frame(maxHeight: min(360, 28 + CGFloat(rows.count) * 56))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

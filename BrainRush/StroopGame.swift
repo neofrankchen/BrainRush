@@ -64,18 +64,18 @@ struct LanguagePicker: View {
                     LanguageStore.shared.language = language
                 } label: {
                     Text(language.label)
-                        .font(compact ? .caption2.weight(.semibold) : .subheadline.weight(.semibold))
+                .font(compact ? .caption2.weight(.semibold) : .subheadline.weight(.semibold))
                         .foregroundStyle(selected == language ? CatQuizPalette.ink : CatQuizPalette.wood)
-                        .padding(.horizontal, compact ? 8 : 12)
+                .padding(.horizontal, compact ? 8 : 12)
                         .padding(.vertical, compact ? 5 : 7)
                         .frame(minHeight: compact ? 32 : 44)
-                        .background {
-                            Capsule().fill(
-                                selected == language
-                                    ? Color(red: 0.98, green: 0.74, blue: 0.32)
+                .background {
+                    Capsule().fill(
+                        selected == language
+                            ? Color(red: 0.98, green: 0.74, blue: 0.32)
                                     : CatQuizPalette.cream.opacity(0.94)
-                            )
-                        }
+                    )
+                }
                         .overlay {
                             Capsule().strokeBorder(CatQuizPalette.wood.opacity(selected == language ? 0.4 : 0.14), lineWidth: 1)
                         }
@@ -389,8 +389,11 @@ struct StroopRound: Equatable {
         }
         quiz.append(contentsOf: others.prefix(max(0, count - 1 - quiz.count)))
         quiz.append(ColorWordBank.pick())
+        if quiz.count < count {
+            quiz.append(contentsOf: others.dropFirst(quiz.count - 1).prefix(count - quiz.count))
+        }
         quiz.shuffle()
-        return quiz
+        return Array(quiz.prefix(count))
     }
 
 }
@@ -402,109 +405,76 @@ private enum StroopCue {
 }
 
 private final class StroopAudio {
-    private let engine = AVAudioEngine()
-    private let players = (0..<2).map { _ in AVAudioPlayerNode() }
-    private let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
-    private var clips: [StroopCue: AVAudioPCMBuffer] = [:]
-    private var nextPlayer = 0
+    private var clips: [StroopCue: Data] = [:]
+    private var player: AVAudioPlayer?
     private let audioQueue = DispatchQueue(label: "stroop.audio", qos: .userInitiated)
-    private var wired = false
 
     init() {
-        let format = self.format
-        DispatchQueue.global(qos: .utility).async { [weak self] in
-            let built: [StroopCue: AVAudioPCMBuffer] = [
-                .correct: Self.notes([(784, 0, 0.42), (1046, 0.07, 0.36)], seconds: 0.2, noise: 0, format: format),
-                .wrong: Self.notes([(196, 0, 0.48), (140, 0.04, 0.32)], seconds: 0.16, noise: 0.18, format: format),
-                .timeout: Self.notes([(494, 0, 0.36), (330, 0.08, 0.32), (220, 0.16, 0.26)], seconds: 0.32, noise: 0.08, format: format),
-            ].compactMapValues { $0 }
-            DispatchQueue.main.async {
-                self?.clips = built
-            }
-        }
-    }
-
-    func prepare() {
         audioQueue.async { [weak self] in
-            self?.activate()
+            self?.clips = [
+                .correct: Self.wav([(784, 0, 0.42), (1046, 0.07, 0.36)], seconds: 0.2),
+                .wrong: Self.wav([(196, 0, 0.48), (140, 0.04, 0.32)], seconds: 0.16),
+                .timeout: Self.wav([(494, 0, 0.36), (330, 0.08, 0.32), (220, 0.16, 0.26)], seconds: 0.32),
+            ]
         }
     }
 
     func stop() {
         audioQueue.async { [weak self] in
-            guard let self else { return }
-            for player in self.players {
-                player.stop()
-            }
-            self.engine.stop()
+            self?.player?.stop()
+            self?.player = nil
         }
     }
 
     func play(_ cue: StroopCue) {
-        guard let buffer = clips[cue] else { return }
-        let player = players[nextPlayer % players.count]
-        nextPlayer += 1
-        let volume: Float = cue == .wrong || cue == .timeout ? 0.55 : 0.75
         audioQueue.async { [weak self] in
-            guard let self else { return }
-            self.activate()
-            player.volume = volume
-            player.scheduleBuffer(buffer, completionHandler: nil)
+            guard let self, let data = self.clips[cue] else { return }
+            self.player?.stop()
+            guard let next = try? AVAudioPlayer(data: data) else { return }
+            next.volume = cue == .correct ? 0.18 : 0.14
+            next.prepareToPlay()
+            next.play()
+            self.player = next
         }
     }
 
-    private func activate() {
-        if !wired {
-            wired = true
-            for node in players {
-                engine.attach(node)
-                engine.connect(node, to: engine.mainMixerNode, format: format)
-            }
-            engine.mainMixerNode.outputVolume = 0.9
-            #if os(iOS)
-            BackgroundMusic.activateSession()
-            #endif
-        }
-        if !engine.isRunning {
-            try? engine.start()
-        }
-        for player in players where !player.isPlaying {
-            player.play()
-        }
-        DispatchQueue.main.async {
-            BackgroundMusic.shared.start()
-        }
-    }
-
-    private static func notes(
-        _ notes: [(hz: Double, at: Double, amp: Double)],
-        seconds: Double,
-        noise: Double,
-        format: AVAudioFormat
-    ) -> AVAudioPCMBuffer? {
-        let frameCount = AVAudioFrameCount(seconds * format.sampleRate)
-        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount),
-              let samples = buffer.floatChannelData?[0] else { return nil }
-        buffer.frameLength = frameCount
-        var seed: UInt64 = 29
-        for frame in 0..<Int(frameCount) {
-            let time = Double(frame) / format.sampleRate
+    private static func wav(_ notes: [(hz: Double, at: Double, amp: Double)], seconds: Double) -> Data {
+        let rate = 44_100.0
+        let count = Int(seconds * rate)
+        var samples = [Int16](repeating: 0, count: count)
+        for frame in 0..<count {
+            let time = Double(frame) / rate
             var sample = 0.0
+            let attack = min(1, time / 0.012)
             for note in notes {
                 let age = time - note.at
                 if age >= 0 {
-                    let envelope = exp(-age * 8)
-                    sample += sin(2 * .pi * note.hz * age) * note.amp * envelope
+                    sample += sin(2 * .pi * note.hz * age) * note.amp * exp(-age * 8)
                 }
             }
-            if noise > 0 {
-                seed = seed &* 6364136223846793005 &+ 1
-                let hiss = Double(seed >> 40) / Double(1 << 24) * 2 - 1
-                sample += hiss * noise * exp(-time * 18)
-            }
-            samples[frame] = Float(max(-1, min(1, sample)))
+            sample *= attack
+            samples[frame] = Int16(max(-1, min(1, sample)) * Double(Int16.max))
         }
-        return buffer
+        let dataSize = UInt32(count * 2)
+        var data = Data()
+        data.append(contentsOf: Array("RIFF".utf8))
+        let chunk = UInt32(36 + dataSize).littleEndian
+        data.append(contentsOf: withUnsafeBytes(of: chunk, Array.init))
+        data.append(contentsOf: Array("WAVEfmt ".utf8))
+        let meta: [UInt32] = [16, 0x0001_0001, UInt32(rate), UInt32(rate) * 2]
+        for value in meta {
+            let little = value.littleEndian
+            data.append(contentsOf: withUnsafeBytes(of: little, Array.init))
+        }
+        let block: UInt16 = 2
+        let bits: UInt16 = 16
+        data.append(contentsOf: withUnsafeBytes(of: block.littleEndian, Array.init))
+        data.append(contentsOf: withUnsafeBytes(of: bits.littleEndian, Array.init))
+        data.append(contentsOf: Array("data".utf8))
+        let size = dataSize.littleEndian
+        data.append(contentsOf: withUnsafeBytes(of: size, Array.init))
+        samples.withUnsafeBytes { data.append(contentsOf: $0) }
+        return data
     }
 }
 
@@ -532,6 +502,8 @@ final class StroopSession {
     private(set) var lastAnswerWasCorrect: Bool?
     private(set) var lastMissWasTimeout = false
     private(set) var isResolving = false
+    private(set) var answersLocked = false
+    private var answerLockTask: Task<Void, Never>?
     private(set) var selectedChoiceID: String?
     private(set) var roundID = UUID()
     private(set) var testing = false
@@ -577,7 +549,7 @@ final class StroopSession {
     }
 
     var boastRivalNames: [String] {
-        boastRivals.map(leaderboardName)
+        Array(boastRivals.prefix(1)).map(leaderboardName)
     }
 
     var boastHeadline: String {
@@ -706,15 +678,18 @@ final class StroopSession {
     }
 
     func confirmName(_ draft: String, cannedID: String?, avatar: String) {
+        guard phase == .naming else { return }
         applyNameDraft(draft, cannedID: cannedID, avatar: avatar)
         start(practice: false)
     }
 
     func keepNameForBoard() {
+        guard phase == .renaming else { return }
         publishScore()
     }
 
     func confirmRename(_ draft: String, cannedID: String?, avatar: String) {
+        guard phase == .renaming else { return }
         applyNameDraft(draft, cannedID: cannedID, avatar: avatar)
         publishScore()
     }
@@ -725,6 +700,8 @@ final class StroopSession {
 
     func backToNaming() {
         audio.stop()
+        answerLockTask?.cancel()
+        answersLocked = false
         questionEndsAt = nil
         questionStartedAt = nil
         isResolving = false
@@ -739,6 +716,10 @@ final class StroopSession {
             showsPracticeTools = practice
             testing = practice
         }
+        answerLockTask?.cancel()
+        answersLocked = false
+        isResolving = false
+        selectedChoiceID = nil
         usedTeaserIDs = []
         seenQuestionKeys = []
         quiz = testing ? [] : StroopRound.randomQuiz()
@@ -755,9 +736,8 @@ final class StroopSession {
         questionRemaining = 30
         lastAnswerWasCorrect = nil
         lastMissWasTimeout = false
-        audio.prepare()
-        deal()
         phase = .playing
+        deal()
     }
 
     func tick(now: Date) {
@@ -769,6 +749,9 @@ final class StroopSession {
             choose("", timeout: true)
             return
         }
+        let oldSecond = Int(ceil(questionRemaining - 0.001))
+        let newSecond = Int(ceil(left - 0.001))
+        if newSecond == oldSecond, abs(questionRemaining - left) < 0.25 { return }
         questionRemaining = left
     }
 
@@ -778,6 +761,7 @@ final class StroopSession {
 
     private func choose(_ id: String, timeout: Bool) {
         guard phase == .playing, !isResolving else { return }
+        if !timeout, answersLocked { return }
         guard timeout || round.choices.contains(where: { $0.id == id }) else { return }
         isResolving = true
         selectedChoiceID = timeout ? nil : id
@@ -791,9 +775,9 @@ final class StroopSession {
             streak += 1
             correctCount += 1
             score += StroopRound.pointsPerCorrect
-                audio.play(.correct)
             lastAnswerWasCorrect = true
             lastMissWasTimeout = false
+            audio.play(.correct)
         } else {
             streak = 0
             lastAnswerWasCorrect = false
@@ -807,7 +791,7 @@ final class StroopSession {
         if isQuizComplete {
             finishQuiz()
         } else {
-        deal()
+            deal()
         }
     }
 
@@ -892,12 +876,16 @@ final class StroopSession {
 
     func returnToMenu() {
         audio.stop()
+        answerLockTask?.cancel()
+        answersLocked = false
         questionEndsAt = nil
         roundID = UUID()
         isResolving = false
         selectedChoiceID = nil
         lastAnswerWasCorrect = nil
         lastMissWasTimeout = false
+        testing = false
+        showsPracticeTools = false
         phase = .ready
     }
 
@@ -962,6 +950,17 @@ final class StroopSession {
             questionEndsAt = Date().addingTimeInterval(questionLimit)
         } else {
             questionEndsAt = nil
+        }
+        lockAnswersBriefly()
+    }
+
+    private func lockAnswersBriefly() {
+        answersLocked = true
+        answerLockTask?.cancel()
+        answerLockTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled else { return }
+            answersLocked = false
         }
     }
 
@@ -1103,8 +1102,12 @@ final class StroopSession {
 
 struct StroopGameView: View {
     @State private var session = StroopSession()
+    @State private var companion = CatCompanion()
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showsGuide = false
     @State private var showsRanking = false
+    @State private var isHomeMenuVisible = false
+    @State private var homeIdleNudge = 0
     @State private var nameDraft = ""
     @State private var cannedNameID: String?
     @State private var chosenAvatar = PlayerNames.fallbackAvatar
@@ -1140,11 +1143,13 @@ struct StroopGameView: View {
         .navigationTitle(tr(ja: "ブレインラッシュ", zh: "脑乱挑战", en: "Brain Rush", my: "အနှောင့်အယှက်စိန်ခေါ်ပွဲ"))
         .modifier(StroopNavigationChrome(isPlaying: session.phase == .playing))
         .background {
-            TimelineView(.periodic(from: .now, by: 0.05)) { context in
-                Color.clear
-                    .onChange(of: context.date) { _, date in
-                        session.tick(now: date)
-                    }
+            if session.phase == .playing, session.showsTimer {
+                TimelineView(.periodic(from: .now, by: 0.25)) { context in
+                    Color.clear
+                        .onChange(of: context.date) { _, date in
+                            session.tick(now: date)
+                        }
+                }
             }
         }
         .onChange(of: language) { _, _ in
@@ -1155,19 +1160,64 @@ struct StroopGameView: View {
         }
         .sensoryFeedback(.success, trigger: session.correctCount)
         .sensoryFeedback(.error, trigger: session.answerCount - session.correctCount)
+        .onChange(of: session.answerCount) { oldCount, count in
+            guard session.phase == .playing, count > oldCount else { return }
+            if session.lastAnswerWasCorrect == true {
+                companion.perform(.celebrate)
+            } else {
+                companion.perform(.encourage)
+            }
+        }
+        .onChange(of: session.roundID) { _, _ in
+            if session.phase == .playing { companion.stop() }
+        }
+        .onChange(of: session.phase) { _, phase in
+            switch phase {
+            case .ready: companion.stop()
+            case .naming, .playing: companion.perform(.greet, cue: .greeting)
+            case .renaming:
+                companion.perform(session.score >= 40 ? .celebrate : .encourage,
+                                  cue: session.score >= 40 ? .result : .wrong)
+            case .finished: companion.perform(session.score >= 40 ? .celebrate : .encourage)
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active {
+                companion.stop()
+                if session.phase == .playing { session.pauseClock() }
+            } else if session.phase == .playing, !showsProfileEditor, !showsLeaveAlert {
+                session.resumeClock()
+            }
+        }
+        .onDisappear { companion.stop() }
         .safeAreaInset(edge: .top, spacing: 0) {
-            HStack(alignment: .top) {
-                if session.phase != .ready {
-                    backBarButton
+            if session.phase != .ready {
+                HStack {
+                    if session.phase != .ready {
+                        backBarButton
+                    }
+                    Spacer(minLength: 0)
+                    HStack(spacing: 8) {
+                        settingsBarButton
+                        MusicPickerMenu()
+                    }
+                    .fixedSize()
                 }
-                Spacer(minLength: 0)
-                VStack(spacing: 8) {
+                .padding(.horizontal, 16)
+                .padding(.vertical, 4)
+            }
+        }
+        .overlay(alignment: .topTrailing) {
+            if session.phase == .ready && isHomeMenuVisible {
+                HStack(spacing: 8) {
                     settingsBarButton
                     MusicPickerMenu()
                 }
+                .fixedSize()
+                .padding(.horizontal, 16)
+                .padding(.vertical, 4)
+                .simultaneousGesture(TapGesture().onEnded { homeIdleNudge += 1 })
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 4)
         }
         .modifier(EdgeBackSwipe(enabled: session.phase != .ready, action: goBack))
         .alert(
@@ -1185,6 +1235,13 @@ struct StroopGameView: View {
                 en: "Your current score will not be saved.",
                 my: "ယခုရမှတ် သိမ်းမည်မဟုတ်။"
             ))
+        }
+        .onChange(of: showsLeaveAlert) { _, showing in
+            if showing {
+                session.pauseClock()
+            } else if session.phase == .playing {
+                session.resumeClock()
+            }
         }
     }
 
@@ -1228,6 +1285,7 @@ struct StroopGameView: View {
             if session.testing {
                 session.returnToMenu()
             } else if session.answerCount > 0 || session.isResolving {
+                session.pauseClock()
                 showsLeaveAlert = true
             } else {
                 session.backToNaming()
@@ -1244,33 +1302,29 @@ struct StroopGameView: View {
     }
 
     private var menu: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: 18) {
-                    Spacer(minLength: 0)
-                    WoodlandTitle(height: min(320, max(220, geometry.size.height * 0.42)))
-
-                    Button { session.beginSetup(practice: false) } label: {
-                        WoodlandAction(title: tr(ja: "ゲームを始める", zh: "开始游戏", en: "Let’s play", my: "ကစားမည်"), symbol: "play.fill")
-                    }
-                    .buttonStyle(ArcadePressStyle())
-                    .accessibilityIdentifier("stroop-start")
-                    .accessibilityLabel(tr(ja: "開始", zh: "开始", en: "Start", my: "စတင်မည်"))
-
-                    HStack(spacing: 12) {
-                        arcadeShortcut("crown.fill", tr(ja: "ランキング", zh: "排行榜", en: "Ranking", my: "အဆင့်"), .orange) { showsRanking = true }
-                        arcadeShortcut("book.fill", tr(ja: "遊び方", zh: "怎么玩", en: "How to play", my: "ကစားနည်း"), .blue) { showsGuide = true }
-                        arcadeShortcut("pencil.and.outline", tr(ja: "練習", zh: "练习", en: "Practice", my: "လေ့ကျင့်"), Color(red: 0.18, green: 0.62, blue: 0.42)) { session.beginSetup(practice: true) }
-                    }
-                    Spacer(minLength: 0)
+        CatWelcomeView(
+            isMenuVisible: $isHomeMenuVisible,
+            companion: companion,
+            pauseIdle: showsRanking || showsGuide,
+            idleNudge: homeIdleNudge
+        ) {
+            VStack(spacing: 8) {
+                Button { session.beginSetup(practice: false) } label: {
+                    WoodlandAction(title: tr(ja: "ゲームを始める", zh: "开始游戏", en: "Let’s play", my: "ကစားမည်"), symbol: "play.fill")
                 }
-                .padding(.horizontal, max(22, geometry.size.width * 0.065))
-                .padding(.vertical, 16)
-                .frame(maxWidth: 450)
-                .frame(minHeight: geometry.size.height)
-                .frame(maxWidth: .infinity)
+                .buttonStyle(ArcadePressStyle())
+                .accessibilityIdentifier("stroop-start")
+                .accessibilityLabel(tr(ja: "開始", zh: "开始", en: "Start", my: "စတင်မည်"))
+
+                HStack(spacing: 12) {
+                    arcadeShortcut("pencil.and.outline", tr(ja: "練習", zh: "练习", en: "Practice", my: "လေ့ကျင့်"), Color(red: 0.28, green: 0.48, blue: 0.36)) { session.beginSetup(practice: true) }
+                        .accessibilityIdentifier("stroop-practice")
+                    arcadeShortcut("crown", tr(ja: "ランキング", zh: "排行榜", en: "Ranking", my: "အဆင့်"), Color(red: 0.65, green: 0.43, blue: 0.18)) { showsRanking = true }
+                        .accessibilityIdentifier("stroop-ranking")
+                    arcadeShortcut("book.closed", tr(ja: "遊び方", zh: "怎么玩", en: "How to play", my: "ကစားနည်း"), Color(red: 0.36, green: 0.44, blue: 0.53)) { showsGuide = true }
+                        .accessibilityIdentifier("stroop-guide")
+                }
             }
-            .scrollIndicators(.hidden)
         }
         .background(StroopBackdrop(light: true))
         .toolbar(.hidden, for: .navigationBar)
@@ -1323,12 +1377,12 @@ struct StroopGameView: View {
 
     private func arcadeShortcut(_ symbol: String, _ title: String, _ color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 10) {
+            VStack(spacing: 8) {
                 Image(systemName: symbol)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(color)
-                    .frame(width: 44, height: 44)
-                    .background(color.opacity(0.16), in: Circle())
+                    .frame(width: 38, height: 38)
+                    .background(color.opacity(0.10), in: Circle())
                 Text(title)
                     .font(.system(.caption, design: .rounded, weight: .heavy))
                     .foregroundStyle(CatQuizPalette.ink)
@@ -1336,9 +1390,8 @@ struct StroopGameView: View {
                     .minimumScaleFactor(0.7)
             }
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 92)
-            .padding(.vertical, 6)
-            .modifier(WoodlandPanel(cornerRadius: 22))
+            .frame(minHeight: 64)
+            .contentShape(Rectangle())
         }
         .buttonStyle(ArcadePressStyle())
     }
@@ -1371,10 +1424,10 @@ struct StroopGameView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
+            Button {
                         showsGuide = false
                         showsRanking = false
-                    } label: {
+            } label: {
                         Image(systemName: "xmark.circle.fill")
                             .symbolRenderingMode(.hierarchical)
                             .foregroundStyle(CatQuizPalette.wood)
@@ -1431,7 +1484,7 @@ struct StroopGameView: View {
                                 }
                                 .overlay {
                                     Capsule().strokeBorder(CatQuizPalette.wood.opacity(selected ? 0.45 : 0.16), lineWidth: 1)
-                                }
+                        }
                         }
                         .buttonStyle(ArcadePressStyle())
                     .accessibilityIdentifier("stroop-test-task-\(family.rawValue)")
@@ -1442,7 +1495,7 @@ struct StroopGameView: View {
                 } label: {
                     Label(
                         session.testUsesTimer
-                            ? tr(ja: "制限時間：オン", zh: "倒计时：开", en: "Countdown: on", my: "အချိန်ရေတွက်၊ ဖွင့်")
+                        ? tr(ja: "制限時間：オン", zh: "倒计时：开", en: "Countdown: on", my: "အချိန်ရေတွက်၊ ဖွင့်")
                             : tr(ja: "制限時間：オフ", zh: "倒计时：关", en: "Countdown: off", my: "အချိန်ရေတွက်၊ ပိတ်"),
                         systemImage: session.testUsesTimer ? "timer" : "timer.slash"
                     )
@@ -1489,7 +1542,8 @@ struct StroopGameView: View {
                             zh: "起个名字吧。可以自己填，也可以随机生成！",
                             en: "Give yourself a name. Type one, or tap random!",
                             my: "နာမည်ပေးပါ။ ကိုယ်တိုင်ရေး သို့မဟုတ် ကျပန်းနှိပ်ပါ။"
-                        )
+                        ),
+                        companion: companion
                     )
                     .padding(.bottom, -8)
 
@@ -1545,7 +1599,8 @@ struct StroopGameView: View {
                                 fr: "\(session.intelligenceBoast)\nTu as \(session.score) points. Ton nom est « \(session.playerName) ». Il ira au classement. Tu changes ?",
                                 zhHant: "\(session.intelligenceBoast)\n你得了 \(session.score) 分。現在的名字是「\(session.playerName)」。這個名字會進排行榜。要改名嗎？"
                             ),
-                        celebrating: true
+                        celebrating: session.score >= 40,
+                        companion: companion
                     )
                     .padding(.bottom, -8)
                     .accessibilityIdentifier("stroop-rename-cat")
@@ -1886,6 +1941,7 @@ struct StroopGameView: View {
             }
             .animation(.snappy(duration: 0.22), value: session.roundID)
             .animation(.snappy(duration: 0.22), value: session.isReviewing)
+            .animation(.snappy(duration: 0.22), value: playfieldCatFace)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if session.isReviewing {
@@ -1920,7 +1976,7 @@ struct StroopGameView: View {
     }
 
     private var playfieldStack: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             quizHeader
             if session.showsPracticeTools {
                 VStack(alignment: .leading, spacing: 8) {
@@ -1930,25 +1986,8 @@ struct StroopGameView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .modifier(WoodlandPanel(cornerRadius: 22))
             }
-            if !session.isReviewing {
-                CatQuizHost(hint: session.round.catHint)
-                    .padding(.bottom, -18)
-                    .zIndex(1)
-            }
-            VStack(spacing: 10) {
-                LanguagePicker(compact: true)
-                    .frame(maxWidth: .infinity)
-                questionBanner
-                if session.round.task == .colorWord || session.round.task == .flag {
-                    stimulusPanel
-                }
-                if session.isReviewing {
-                    answerExplanation
-                }
-            }
-            .padding(14)
-            .modifier(WoodlandPanel(cornerRadius: 22))
-            .id(session.roundID)
+            questionCard
+                .id(session.roundID)
             answers
                 .frame(maxHeight: session.showsPracticeTools ? nil : .infinity)
         }
@@ -1982,8 +2021,8 @@ struct StroopGameView: View {
                 }
                 .buttonStyle(ArcadePressStyle())
                 .accessibilityIdentifier("stroop-profile-cancel")
-            }
-            .padding(20)
+        }
+        .padding(20)
         }
         .scrollDismissesKeyboard(.interactively)
         .ignoresSafeArea(.keyboard)
@@ -1994,83 +2033,68 @@ struct StroopGameView: View {
     }
 
     private var quizHeader: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(spacing: 10) {
             Button(action: openProfileEditor) {
-                HStack(alignment: .top, spacing: 8) {
-                    ZStack(alignment: .bottomTrailing) {
-                        Text(session.playerAvatar)
-                            .font(.system(size: 36))
-                            .frame(width: 52, height: 52)
-                            .background(CatQuizPalette.cream, in: Circle())
-                            .overlay {
-                                Circle()
-                                    .strokeBorder(CatQuizPalette.wood.opacity(0.35), lineWidth: 1.5)
-                .allowsHitTesting(false)
-                            }
-                        Image(systemName: "pencil.circle.fill")
-                            .font(.system(size: 16))
-                            .foregroundStyle(CatQuizPalette.wood)
-                            .background(Circle().fill(CatQuizPalette.cream))
-                            .offset(x: 2, y: 2)
-                    }
+                HStack(spacing: 8) {
+                    Text(session.playerAvatar)
+                        .font(.system(size: 28))
+                        .frame(width: 40, height: 40)
+                        .background(CatQuizPalette.cream, in: Circle())
+                        .overlay {
+                            Circle()
+                                .strokeBorder(CatQuizPalette.wood.opacity(0.35), lineWidth: 1.2)
+                                .allowsHitTesting(false)
+                        }
                     Text(session.playerName)
                         .font(.caption.weight(.heavy))
                         .foregroundStyle(CatQuizPalette.ink)
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(4)
+                        .lineLimit(1)
                         .minimumScaleFactor(0.7)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityIdentifier("stroop-player-name")
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
             .buttonStyle(ArcadePressStyle())
             .accessibilityLabel(tr(ja: "名前とアイコンを変える", zh: "改名字和头像", en: "Change name and avatar", my: "နာမည်နှင့် ပုံ ပြောင်းရန်"))
             .accessibilityIdentifier("stroop-player")
+            Spacer(minLength: 8)
             Text(tr(ja: "得点 \(session.score)", zh: "得分 \(session.score)", en: "Score \(session.score)", my: "ရမှတ် \(session.score)", ko: "점수 \(session.score)", fr: "Score \(session.score)", zhHant: "得分 \(session.score)"))
-                .font(.caption.weight(.heavy))
-                .foregroundStyle(CatQuizPalette.ink)
+                .font(.subheadline.weight(.black))
+                .foregroundStyle(CatQuizPalette.wood)
                 .monospacedDigit()
                 .contentTransition(.numericText())
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(CatQuizPalette.cream.opacity(0.94), in: Capsule())
-                .overlay { Capsule().strokeBorder(CatQuizPalette.wood.opacity(0.16), lineWidth: 1) }
-                .animation(.snappy(duration: 0.2), value: session.score)
                 .lineLimit(1)
-                .layoutPriority(1)
+                .animation(.snappy(duration: 0.2), value: session.score)
                 .accessibilityIdentifier("stroop-score")
-            Group {
-                if session.showsTimer {
-                    circularTimer
-                } else {
-                    Color.clear.frame(width: 68, height: 68)
-                }
+            if session.showsTimer {
+                circularTimer
             }
-            .layoutPriority(1)
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .modifier(WoodlandPanel(cornerRadius: 20))
     }
 
     private var circularTimer: some View {
         ZStack {
+            Circle().fill(
+                LinearGradient(
+                    colors: [Color(red: 1, green: 0.97, blue: 0.88), Color(red: 0.98, green: 0.89, blue: 0.72)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
             Circle()
-                .fill(CatQuizPalette.wood)
-                .overlay(Circle().strokeBorder(.white.opacity(0.7), lineWidth: 2))
-            Circle()
-                .stroke(Color.white.opacity(0.12), lineWidth: 7)
+                .stroke(CatQuizPalette.wood.opacity(0.16), lineWidth: 5)
             Circle()
                 .trim(from: 0, to: progress)
-                .stroke(
-                    urgencyColor,
-                    style: StrokeStyle(lineWidth: 7, lineCap: .round)
-                )
+                .stroke(urgencyColor, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                Text("\(secondsLeft)")
-                .font(.system(size: session.questionRemaining <= urgentRemaining ? 26 : 22, weight: .black, design: .rounded))
-                .foregroundStyle(.white)
+            Text("\(secondsLeft)")
+                .font(.system(size: 16, weight: .black, design: .rounded))
+                .foregroundStyle(CatQuizPalette.ink)
+                .monospacedDigit()
         }
-        .frame(width: 68, height: 68)
+        .frame(width: 44, height: 44)
         .accessibilityElement(children: .ignore)
         .accessibilityIdentifier("stroop-timer")
         .accessibilityLabel(tr(ja: "残り \(secondsLeft) 秒", zh: "还剩 \(secondsLeft) 秒", en: "\(secondsLeft) seconds left", my: "\(secondsLeft) စက္ကန့်ကျန်သည်", ko: "남은 시간 \(secondsLeft)초", fr: "\(secondsLeft) s restantes", zhHant: "還剩 \(secondsLeft) 秒"))
@@ -2081,13 +2105,58 @@ struct StroopGameView: View {
         return session.testing ? "Q\(number)" : "Q\(number)/\(StroopRound.quizLength)"
     }
 
+    private var playfieldCatFace: QuizCatFace {
+        if session.lastAnswerWasCorrect == true { return .cheer }
+        if session.lastMissWasTimeout { return .surprised }
+        if session.isReviewingMistake { return .sad }
+        if session.isReviewing { return .thinking }
+        if session.showsTimer, session.questionRemaining <= urgentRemaining { return .surprised }
+        return .happy
+    }
+
+    private var resultCatFace: QuizCatFace {
+        if session.score >= 80 { return .cheer }
+        if session.score >= 40 { return .happy }
+        if session.score == 0 { return .sad }
+        return .curious
+    }
+
+    private var questionCard: some View {
+        VStack(spacing: 12) {
+            HStack(alignment: .top, spacing: 10) {
+                QuizCatPortrait(face: playfieldCatFace, width: 68, height: 54,
+                                companion: companion, accessibilityID: "stroop-play-cat")
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(questionIndexText)
+                        .font(.caption.weight(.heavy))
+                        .foregroundStyle(CatQuizPalette.wood)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(CatQuizPalette.cream, in: Capsule())
+                        .overlay { Capsule().strokeBorder(CatQuizPalette.wood.opacity(0.2), lineWidth: 1) }
+                    questionBanner
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if session.round.task == .colorWord || session.round.task == .flag {
+                stimulusPanel
+            }
+            if session.isReviewing {
+                answerExplanation
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .modifier(WoodlandPanel(cornerRadius: 24))
+    }
+
     private var questionBanner: some View {
-        VStack(spacing: 4) {
-            Text("\(questionIndexText)  \(session.round.rule)")
-                .font(.system(size: 22, weight: .heavy, design: .rounded))
+        VStack(alignment: .leading, spacing: 4) {
+            Text(session.round.rule)
+                .font(.system(size: 20, weight: .heavy, design: .rounded))
                 .foregroundStyle(CatQuizPalette.ink)
-                .multilineTextAlignment(.center)
-                .lineSpacing(3)
+                .multilineTextAlignment(.leading)
+                .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
             if session.lastAnswerWasCorrect == true {
                 Text(tr(ja: "正解", zh: "答对了", en: "Correct", my: "မှန်သည်"))
@@ -2101,8 +2170,7 @@ struct StroopGameView: View {
                     .foregroundStyle(Color(red: 0.92, green: 0.28, blue: 0.34))
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityIdentifier("stroop-answer-\(session.round.answerID)")
         .accessibilityLabel("\(questionIndexText) \(session.round.rule)")
     }
@@ -2110,18 +2178,11 @@ struct StroopGameView: View {
     private var answerExplanation: some View {
         VStack(alignment: .leading, spacing: 8) {
             Divider()
-            HStack(spacing: 10) {
-                Image("QuizCatThinking")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 52, height: 42)
-                    .accessibilityHidden(true)
-                Label(
-                    explanationTitle,
-                    systemImage: "lightbulb.fill"
-                )
-                .font(.headline)
-            }
+            Label(
+                explanationTitle,
+                systemImage: "lightbulb.fill"
+            )
+            .font(.headline)
             Text(session.round.answerExplanation)
                 .font(.body)
                 .fixedSize(horizontal: false, vertical: true)
@@ -2206,45 +2267,43 @@ struct StroopGameView: View {
 
     private var answers: some View {
         let marks = ["A", "B"]
-        let accents: [Color] = [.pink, .blue]
         return HStack(spacing: 12) {
             ForEach(Array(session.round.choices.enumerated()), id: \.element.id) { index, choice in
-                choiceCard(choice, mark: marks[index], accent: accents[index])
+                choiceCard(choice, mark: marks[index])
             }
         }
     }
 
-    private func choiceCard(_ choice: AnswerChoice, mark: String, accent: Color) -> some View {
-        Button { session.choose(choice.id) } label: {
-            VStack(spacing: 12) {
+    private func choiceCard(_ choice: AnswerChoice, mark: String) -> some View {
+        let isAnswer = session.isResolving && choice.id == session.round.answerID
+        let isMiss = session.isReviewingMistake && session.selectedChoiceID == choice.id
+        return Button { session.choose(choice.id) } label: {
+            VStack(spacing: 10) {
                 HStack {
                     Text(mark)
-                        .font(.system(size: 20, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-                        .frame(width: 34, height: 34)
-                        .background(accent, in: Circle())
-                        .overlay { Circle().strokeBorder(CatQuizPalette.cream, lineWidth: 2) }
+                        .font(.system(size: 15, weight: .black, design: .rounded))
+                        .foregroundStyle(CatQuizPalette.wood)
+                        .frame(width: 28, height: 28)
+                        .background(CatQuizPalette.cream, in: Circle())
+                        .overlay { Circle().strokeBorder(CatQuizPalette.wood.opacity(0.28), lineWidth: 1) }
                     Spacer()
-                    if session.isResolving && choice.id == session.round.answerID {
+                    if isAnswer {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(Color(red: 0.1, green: 0.45, blue: 0.24))
-                    } else if session.isReviewingMistake && session.selectedChoiceID == choice.id {
+                    } else if isMiss {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(Color(red: 0.75, green: 0.15, blue: 0.2))
-        } else {
-                        Image(systemName: "pawprint.fill")
-                            .foregroundStyle(CatQuizPalette.wood.opacity(0.18))
                     }
                 }
                 choiceVisual(choice)
                     .frame(maxWidth: .infinity)
-                    .frame(minHeight: session.isReviewing ? 52 : 72)
-                    .frame(maxHeight: session.isReviewing ? 90 : 120)
-                if session.isResolving && choice.id == session.round.answerID {
+                    .frame(minHeight: session.isReviewing ? 48 : 64)
+                    .frame(maxHeight: session.isReviewing ? 84 : 110)
+                if isAnswer {
                     Text(tr(ja: "正解", zh: "正确答案", en: "Correct answer", my: "အဖြေမှန်"))
                         .font(.caption.bold())
                         .foregroundStyle(Color(red: 0.1, green: 0.45, blue: 0.24))
-                } else if session.isReviewingMistake && session.selectedChoiceID == choice.id {
+                } else if isMiss {
                     Text(tr(ja: "選んだ答え", zh: "你的选择", en: "Your choice", my: "သင်ရွေးသောအဖြေ"))
                         .font(.caption.bold())
                         .foregroundStyle(Color(red: 0.75, green: 0.15, blue: 0.2))
@@ -2252,17 +2311,17 @@ struct StroopGameView: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity)
-            .frame(minHeight: session.isReviewing ? 150 : 180)
+            .frame(minHeight: session.isReviewing ? 132 : 168)
             .modifier(WoodlandPanel(cornerRadius: 22))
         }
         .buttonStyle(ArcadePressStyle())
-        .disabled(session.isResolving)
-        .scaleEffect(session.isResolving && choice.id == session.round.answerID ? 1.03 : 1)
+        .disabled(session.isResolving || session.answersLocked)
+        .scaleEffect(isAnswer ? 1.02 : 1)
         .animation(.spring(response: 0.32, dampingFraction: 0.72), value: session.isResolving)
         .overlay {
-            if session.isResolving && (session.selectedChoiceID == choice.id || choice.id == session.round.answerID) {
+            if isAnswer || isMiss {
                 RoundedRectangle(cornerRadius: 22)
-                    .strokeBorder(choice.id == session.round.answerID ? Color(red: 0.18, green: 0.62, blue: 0.38) : Color(red: 0.86, green: 0.22, blue: 0.28), lineWidth: 3.5)
+                    .strokeBorder(isAnswer ? Color(red: 0.18, green: 0.62, blue: 0.38) : Color(red: 0.86, green: 0.22, blue: 0.28), lineWidth: 3)
                     .allowsHitTesting(false)
             }
         }
@@ -2283,7 +2342,7 @@ struct StroopGameView: View {
                 Text(choice.title)
                 .font(.system(size: 40, weight: .black))
                 .foregroundStyle(color.color)
-                    .lineLimit(1)
+            .lineLimit(1)
                 .minimumScaleFactor(0.35)
                 .padding(18)
                 .background(Circle().fill(color.color.opacity(0.16)))
@@ -2332,11 +2391,8 @@ struct StroopGameView: View {
 
     private var resultScoreCard: some View {
         VStack(spacing: 12) {
-            Image("QuizCat")
-                .resizable()
-                .scaledToFit()
-                .frame(height: 88)
-                .accessibilityHidden(true)
+            QuizCatPortrait(face: resultCatFace, height: 84,
+                            companion: companion, accessibilityID: "stroop-result-pet")
             Label(tr(ja: "今回のスコア", zh: "本次得分", en: "Your score", my: "သင့်ရမှတ်"), systemImage: "star.fill")
                 .font(.subheadline.bold())
                 .foregroundStyle(CatQuizPalette.wood)
@@ -2376,7 +2432,7 @@ struct StroopGameView: View {
                     .font(.title3.weight(.heavy))
                     .foregroundStyle(CatQuizPalette.wood)
                     .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity)
             }
         }
         .padding(24)
@@ -2440,18 +2496,6 @@ struct StroopGameView: View {
         }
     }
 
-}
-
-private struct WoodlandTitle: View {
-    let height: CGFloat
-    var body: some View {
-        Image("WoodlandTitle")
-            .resizable().scaledToFit()
-            .frame(maxWidth: .infinity)
-            .frame(height: height)
-            .shadow(color: CatQuizPalette.wood.opacity(0.22), radius: 12, y: 6)
-            .accessibilityLabel("Brain Rush")
-    }
 }
 
 private struct WoodlandPanel: ViewModifier {
@@ -2575,14 +2619,7 @@ private struct StroopBackdrop: View {
     var body: some View {
         Group {
             if light {
-                GeometryReader { geometry in
-                    Image("CatRoomBackground")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .clipped()
-                        .overlay(Color(red: 1, green: 0.95, blue: 0.85).opacity(0.08))
-                }
+                CatRoomBackdrop()
             } else {
         LinearGradient(
             colors: [

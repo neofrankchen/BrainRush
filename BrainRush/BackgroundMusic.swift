@@ -1,7 +1,7 @@
 import AVFoundation
 import SwiftUI
 
-/// 背景音乐。曲目在 `Music/`，右上角音符随时切换。播放时偶尔插入 `Meows/` 里的真猫叫。
+/// 背景音乐。曲目在 `Music/`，右上角音符随时切换。
 @MainActor
 @Observable
 final class BackgroundMusic {
@@ -9,9 +9,7 @@ final class BackgroundMusic {
 
     enum Track: String, CaseIterable, Identifiable {
         case off
-        case random
         case cozyAmbience = "cozy-ambience"
-        case bookshop
         case autumnCozy = "autumn-cozy"
         case autumnBreeze = "autumn-breeze"
         case autumnPiano = "autumn-piano"
@@ -23,14 +21,12 @@ final class BackgroundMusic {
         case romantic
         case family
         case thanksgiving
-        case christmasMagic = "christmas-magic"
-        case christmasSpirit = "christmas-spirit"
 
         var id: String { rawValue }
 
         var fileName: String? {
             switch self {
-            case .off, .random: nil
+            case .off: nil
             default: rawValue
             }
         }
@@ -39,12 +35,8 @@ final class BackgroundMusic {
             switch self {
             case .off:
                 tr(ja: "オフ", zh: "关闭", en: "Off", my: "ပိတ်")
-            case .random:
-                tr(ja: "ランダム", zh: "随机播放", en: "Shuffle", my: "ကျပန်း")
             case .cozyAmbience:
                 tr(ja: "ほっこり", zh: "暖暖氛围", en: "Cozy", my: "နွေးထွေး")
-            case .bookshop:
-                tr(ja: "本屋の午後", zh: "书店下午", en: "Bookshop", my: "စာအုပ်ဆိုင်")
             case .autumnCozy:
                 tr(ja: "秋のぬくもり", zh: "秋日暖意", en: "Autumn cozy", my: "ဆောင်းဦးနွေး")
             case .autumnBreeze:
@@ -67,10 +59,6 @@ final class BackgroundMusic {
                 tr(ja: "ファミリー", zh: "家人", en: "Family", my: "မိသားစု")
             case .thanksgiving:
                 tr(ja: "かんしゃ", zh: "感恩", en: "Thanks", my: "ကျေးဇူးတင်")
-            case .christmasMagic:
-                tr(ja: "クリスマス", zh: "圣诞魔法", en: "Christmas magic", my: "ခရစ္စမတ်")
-            case .christmasSpirit:
-                tr(ja: "聖夜", zh: "圣诞气氛", en: "Christmas spirit", my: "ခရစ္စမတ်ည")
             }
         }
     }
@@ -82,28 +70,20 @@ final class BackgroundMusic {
         }
     }
 
-    var isPlaying = false {
-        didSet {
-            guard isPlaying != oldValue else { return }
-            if isPlaying {
-                startMeows()
-            } else {
-                stopMeows()
-            }
-        }
-    }
+    var isPlaying = false
 
     private var player: AVAudioPlayer?
-    private var meowPlayer: AVAudioPlayer?
-    private var meowTask: Task<Void, Never>?
     private var currentFile: String?
+    private var sessionReady = false
+    private var sessionStarting = false
+    private var pendingForceNew: Bool?
     private let finishRelay = FinishRelay()
     private static let key = "bgmTrackMode"
     private static var songs: [Track] { Track.allCases.filter { $0.fileName != nil } }
-    private static let meowFiles = (1...5).map { "meow-\($0)" }
 
     private init() {
-        track = Track(rawValue: UserDefaults.standard.string(forKey: Self.key) ?? "") ?? .random
+        track = Track(rawValue: UserDefaults.standard.string(forKey: Self.key) ?? "")
+            ?? (Self.songs.randomElement() ?? .off)
         finishRelay.owner = { BackgroundMusic.shared.songDidFinish() }
         NotificationCenter.default.addObserver(
             forName: AVAudioSession.interruptionNotification,
@@ -125,12 +105,45 @@ final class BackgroundMusic {
         }
     }
 
-    nonisolated static func activateSession() {
+    private func activateSession(then forceNew: Bool) {
         #if os(iOS)
+        if sessionReady {
+            playCurrent(forceNew: forceNew)
+            return
+        }
+        if sessionStarting {
+            pendingForceNew = (pendingForceNew ?? false) || forceNew
+            return
+        }
+        sessionStarting = true
+        pendingForceNew = forceNew
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
-        try? session.setActive(true)
+        if #available(iOS 27.0, *) {
+            session.activate(options: []) { [weak self] _, _ in
+                Task { @MainActor in
+                    self?.finishSessionStart()
+                }
+            }
+        } else {
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                try? session.setActive(true)
+                Task { @MainActor in
+                    self?.finishSessionStart()
+                }
+            }
+        }
+        #else
+        playCurrent(forceNew: forceNew)
         #endif
+    }
+
+    private func finishSessionStart() {
+        sessionReady = true
+        sessionStarting = false
+        let force = pendingForceNew ?? false
+        pendingForceNew = nil
+        playCurrent(forceNew: force)
     }
 
     func start() {
@@ -150,8 +163,8 @@ final class BackgroundMusic {
     }
 
     fileprivate func songDidFinish() {
-        guard track == .random else { return }
-        apply(forceNew: true)
+        guard track != .off else { return }
+        track = Self.songs.filter { $0.fileName != currentFile }.randomElement() ?? track
     }
 
     private func handleInterruption(_ notification: Notification) {
@@ -173,7 +186,10 @@ final class BackgroundMusic {
     }
 
     private func apply(forceNew: Bool) {
-        Self.activateSession()
+        activateSession(then: forceNew)
+    }
+
+    private func playCurrent(forceNew: Bool) {
         if track == .off {
             player?.stop()
             player = nil
@@ -188,54 +204,19 @@ final class BackgroundMusic {
             isPlaying = true
             return
         }
-        let file: String
-        if track == .random {
-            let names = Self.songs.compactMap(\.fileName)
-            file = names.filter { $0 != currentFile }.randomElement() ?? names.first ?? ""
-        } else {
-            file = track.fileName ?? ""
-        }
+        let file = track.fileName ?? ""
         guard !file.isEmpty, let url = Self.url(for: file) else { return }
+        player?.volume = 0
         player?.stop()
         guard let next = try? AVAudioPlayer(contentsOf: url) else { return }
-        next.numberOfLoops = track == .random ? 0 : -1
-        next.volume = 0.45
+        next.numberOfLoops = 0
+        next.volume = 0.52
         next.delegate = finishRelay
         next.prepareToPlay()
         next.play()
         player = next
         currentFile = file
         isPlaying = true
-    }
-
-    private func startMeows() {
-        meowTask?.cancel()
-        meowTask = Task { @MainActor in
-            while !Task.isCancelled {
-                let wait = Double.random(in: 9...24)
-                try? await Task.sleep(for: .seconds(wait))
-                guard !Task.isCancelled, isPlaying else { return }
-                playMeow()
-            }
-        }
-    }
-
-    private func stopMeows() {
-        meowTask?.cancel()
-        meowTask = nil
-        meowPlayer?.stop()
-        meowPlayer = nil
-    }
-
-    private func playMeow() {
-        guard let name = Self.meowFiles.randomElement(),
-              let url = Self.url(for: name, ext: "m4a", folder: "Meows") else { return }
-        guard let next = try? AVAudioPlayer(contentsOf: url) else { return }
-        next.enableRate = true
-        next.rate = Float.random(in: 0.9...1.12)
-        next.volume = Float.random(in: 0.42...0.7)
-        next.play()
-        meowPlayer = next
     }
 
     private static func url(for file: String, ext: String = "mp3", folder: String = "Music") -> URL? {
@@ -287,7 +268,7 @@ struct MusicPickerMenu: View {
             }
         } label: {
             let playing = BackgroundMusic.shared.isPlaying
-            TimelineView(.animation(minimumInterval: 1 / 30, paused: !playing)) { context in
+            TimelineView(.animation(minimumInterval: 1 / 8, paused: !playing)) { context in
                 let turn = playing
                     ? context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 2.4) / 2.4
                     : 0
