@@ -1,9 +1,7 @@
 import Foundation
-import Observation
 
 /// The cat's interaction state survives moves between the room and quiz pages.
 @MainActor
-@Observable
 final class CatCompanion {
     private var state = CatBehaviorState()
     private let audio = CatMeowPlayer.shared

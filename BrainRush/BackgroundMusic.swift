@@ -3,8 +3,7 @@ import SwiftUI
 
 /// 背景音乐。曲目在 `Music/`，右上角音符随时切换。
 @MainActor
-@Observable
-final class BackgroundMusic {
+final class BackgroundMusic: ObservableObject {
     static let shared = BackgroundMusic()
 
     enum Track: String, CaseIterable, Identifiable {
@@ -60,14 +59,14 @@ final class BackgroundMusic {
         }
     }
 
-    var track: Track {
+    @Published var track: Track {
         didSet {
             UserDefaults.standard.set(track.rawValue, forKey: Self.key)
             apply(forceNew: true)
         }
     }
 
-    var isPlaying = false
+    @Published var isPlaying = false
 
     private var player: AVAudioPlayer?
     private var currentFile: String?
@@ -245,10 +244,11 @@ private final class FinishRelay: NSObject, AVAudioPlayerDelegate {
 
 struct MusicPickerMenu: View {
     var action: () -> Void
+    @ObservedObject private var music = BackgroundMusic.shared
 
     var body: some View {
         Button(action: action) {
-            let playing = BackgroundMusic.shared.isPlaying
+            let playing = music.isPlaying
             TimelineView(.animation(minimumInterval: 1 / 8, paused: !playing)) { context in
                 let turn = playing
                     ? context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 2.4) / 2.4
@@ -263,12 +263,14 @@ struct MusicPickerMenu: View {
 }
 
 struct MusicTrackPicker: View {
+    @ObservedObject private var music = BackgroundMusic.shared
+
     var body: some View {
-        let selected = BackgroundMusic.shared.track
+        let selected = music.track
         VStack(spacing: 8) {
             ForEach(BackgroundMusic.Track.allCases) { track in
                 Button {
-                    BackgroundMusic.shared.track = track
+                    music.track = track
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: track == .off ? "speaker.slash.fill" : "music.note")

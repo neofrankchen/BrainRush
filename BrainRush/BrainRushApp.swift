@@ -15,7 +15,7 @@ struct BrainRushApp: App {
                     BackgroundMusic.shared.start()
                 }
             }
-            .onChange(of: scenePhase) { _, phase in
+            .onChange(of: scenePhase) { phase in
                 BackgroundMusic.shared.handle(phase)
             }
         }

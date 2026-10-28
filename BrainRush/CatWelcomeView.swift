@@ -13,6 +13,7 @@ struct CatWelcomeView<Controls: View>: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
+    @ObservedObject private var languages = LanguageStore.shared
     @State private var phase: Phase
     @State private var sequence: Task<Void, Never>?
     @State private var idleReturn: Task<Void, Never>?
@@ -54,7 +55,7 @@ struct CatWelcomeView<Controls: View>: View {
     }
 
     var body: some View {
-        let _ = LanguageStore.shared.language
+        let _ = languages.language
         GeometryReader { geometry in
             let size = geometry.size
             let landscape = size.width > size.height * 1.15
@@ -75,14 +76,14 @@ struct CatWelcomeView<Controls: View>: View {
             cancelIdleReturn()
             stopSequence()
         }
-        .onChange(of: scenePhase) { _, newPhase in
+        .onChange(of: scenePhase) { newPhase in
             if newPhase == .background {
                 resetToRestingState()
             } else if newPhase == .active, phase == .greeting || phase == .welcomed {
                 watchForIdleReturn()
             }
         }
-        .onChange(of: isMenuVisible) { _, visible in
+        .onChange(of: isMenuVisible) { visible in
             if visible && phase != .welcomed {
                 stopSequence()
                 finishJourney(at: 1)
@@ -90,14 +91,14 @@ struct CatWelcomeView<Controls: View>: View {
                 phase = .welcomed
             }
         }
-        .onChange(of: pauseIdle) { _, paused in
+        .onChange(of: pauseIdle) { paused in
             if paused {
                 cancelIdleReturn()
             } else if phase == .greeting || phase == .welcomed {
                 watchForIdleReturn()
             }
         }
-        .onChange(of: idleNudge) { _, _ in
+        .onChange(of: idleNudge) { _ in
             if phase == .greeting || phase == .welcomed {
                 watchForIdleReturn()
             }

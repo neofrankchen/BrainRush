@@ -26,11 +26,10 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
 }
 
 @MainActor
-@Observable
-final class LanguageStore {
+final class LanguageStore: ObservableObject {
     static let shared = LanguageStore()
 
-    var language: AppLanguage {
+    @Published var language: AppLanguage {
         didSet { UserDefaults.standard.set(language.rawValue, forKey: "appLanguage") }
     }
 
@@ -70,6 +69,7 @@ struct LanguagePicker: View {
     var compact = false
     var stacked = false
     var onSelect: (() -> Void)? = nil
+    @ObservedObject private var languages = LanguageStore.shared
 
     var body: some View {
         if stacked {
@@ -84,9 +84,9 @@ struct LanguagePicker: View {
     }
 
     private func languageButton(_ language: AppLanguage) -> some View {
-        let selected = LanguageStore.shared.language
+        let selected = languages.language
         return Button {
-            LanguageStore.shared.language = language
+            languages.language = language
             onSelect?()
         } label: {
             HStack(spacing: 10) {
@@ -509,8 +509,7 @@ private final class StroopAudio {
 }
 
 @MainActor
-@Observable
-final class StroopSession {
+final class StroopSession: ObservableObject {
     enum Phase {
         case ready
         case naming
@@ -521,38 +520,38 @@ final class StroopSession {
 
     private let audio = StroopAudio()
 
-    private(set) var phase: Phase = .ready
-    private(set) var round = StroopRound.make(.colorWord)
-    private(set) var score = 0
-    private(set) var streak = 0
-    private(set) var correctCount = 0
-    private(set) var answerCount = 0
-    private(set) var questionRemaining: TimeInterval = 30
-    private(set) var questionLimit: TimeInterval = 30
-    private(set) var lastAnswerWasCorrect: Bool?
-    private(set) var lastMissWasTimeout = false
-    private(set) var isResolving = false
-    private(set) var answersLocked = false
+    @Published private(set) var phase: Phase = .ready
+    @Published private(set) var round = StroopRound.make(.colorWord)
+    @Published private(set) var score = 0
+    @Published private(set) var streak = 0
+    @Published private(set) var correctCount = 0
+    @Published private(set) var answerCount = 0
+    @Published private(set) var questionRemaining: TimeInterval = 30
+    @Published private(set) var questionLimit: TimeInterval = 30
+    @Published private(set) var lastAnswerWasCorrect: Bool?
+    @Published private(set) var lastMissWasTimeout = false
+    @Published private(set) var isResolving = false
+    @Published private(set) var answersLocked = false
     private var answerLockTask: Task<Void, Never>?
-    private(set) var selectedChoiceID: String?
-    private(set) var roundID = UUID()
-    private(set) var testing = false
-    private(set) var justPlayed = false
-    private(set) var showsPracticeTools = false
-    private(set) var testUsesTimer = false
-    private(set) var testFamily: QuestionFamily = .all
+    @Published private(set) var selectedChoiceID: String?
+    @Published private(set) var roundID = UUID()
+    @Published private(set) var testing = false
+    @Published private(set) var justPlayed = false
+    @Published private(set) var showsPracticeTools = false
+    @Published private(set) var testUsesTimer = false
+    @Published private(set) var testFamily: QuestionFamily = .all
     private var questionEndsAt: Date?
     private var questionStartedAt: Date?
     private var usedTeaserIDs = Set<String>()
     private var seenQuestionKeys = Set<String>()
     private var quiz: [StroopRound] = []
     private var quizIndex = 0
-    private(set) var answeringElapsed: TimeInterval = 0
-    private(set) var lastPlacement: Int?
-    private(set) var lastRunID: UUID?
-    private(set) var playerName = ""
-    private(set) var playerNameID: String?
-    private(set) var playerAvatar = PlayerNames.fallbackAvatar
+    @Published private(set) var answeringElapsed: TimeInterval = 0
+    @Published private(set) var lastPlacement: Int?
+    @Published private(set) var lastRunID: UUID?
+    @Published private(set) var playerName = ""
+    @Published private(set) var playerNameID: String?
+    @Published private(set) var playerAvatar = PlayerNames.fallbackAvatar
 
     private struct ScriptedTrial {
         var task: InterferenceTask
@@ -612,7 +611,7 @@ final class StroopSession {
         let others = board.filter { !isCurrentRun($0) && !isSamePlayer($0) }
         if others.isEmpty {
             return tr(
-                ja: "排行榜はまだきみだけだよ！",
+                ja: "ランキングはまだきみだけだよ！",
                 zh: "排行榜上还只有你！",
                 en: "You’re the only one on the board!",
                 my: "အဆင့်စာရင်းတွင် သင်တစ်ယောက်တည်း!",
@@ -622,7 +621,7 @@ final class StroopSession {
             )
         }
         return tr(
-            ja: "今度は排行榜の人を超えてみよう！",
+            ja: "今度はランキングの人を超えてみよう！",
             zh: "这次还没超越排行榜上的人，再来一局吧！",
             en: "You haven’t passed anyone on the board yet. Try again!",
             my: "အဆင့်စာရင်းက လူတွေကို မကျော်ရသေး။ ထပ်ကစားပါ။",
@@ -1134,8 +1133,9 @@ final class StroopSession {
 }
 
 struct StroopGameView: View {
-    @State private var session = StroopSession()
+    @StateObject private var session = StroopSession()
     @State private var companion = CatCompanion()
+    @ObservedObject private var languages = LanguageStore.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var showsGuide = false
     @State private var showsRanking = false
@@ -1155,7 +1155,7 @@ struct StroopGameView: View {
     @FocusState private var nameFieldFocused: Bool
 
     var body: some View {
-        let language = LanguageStore.shared.language
+        let language = languages.language
         Group {
             switch session.phase {
             case .ready:
@@ -1172,7 +1172,7 @@ struct StroopGameView: View {
         }
         .id(session.phase)
         .transition(.opacity.combined(with: .offset(y: 12)))
-        .animation(.snappy(duration: 0.28), value: session.phase)
+        .animation(.easeInOut(duration: 0.28), value: session.phase)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(StroopBackdrop(light: session.phase == .playing || session.phase == .finished))
         .navigationTitle(tr(ja: "ブレインラッシュ", zh: "脑乱挑战", en: "Brain Rush", my: "အနှောင့်အယှက်စိန်ခေါ်ပွဲ"))
@@ -1181,32 +1181,31 @@ struct StroopGameView: View {
             if session.phase == .playing, session.showsTimer {
                 TimelineView(.periodic(from: .now, by: 0.25)) { context in
                     Color.clear
-                        .onChange(of: context.date) { _, date in
+                        .onChange(of: context.date) { date in
                             session.tick(now: date)
                         }
                 }
             }
         }
-        .onChange(of: language) { _, _ in
+        .onChange(of: language) { _ in
             session.applyLanguage()
             if let cannedNameID {
                 nameDraft = PlayerNames.display(id: cannedNameID)
             }
         }
-        .sensoryFeedback(.success, trigger: session.correctCount)
-        .sensoryFeedback(.error, trigger: session.answerCount - session.correctCount)
-        .onChange(of: session.answerCount) { oldCount, count in
-            guard session.phase == .playing, count > oldCount else { return }
+        .modifier(AnswerSensoryFeedback(correct: session.correctCount, answers: session.answerCount))
+        .onChange(of: session.answerCount) { count in
+            guard session.phase == .playing, count > 0 else { return }
             if session.lastAnswerWasCorrect == true {
                 companion.perform(.celebrate)
             } else {
                 companion.perform(.encourage)
             }
         }
-        .onChange(of: session.roundID) { _, _ in
+        .onChange(of: session.roundID) { _ in
             if session.phase == .playing { companion.stop() }
         }
-        .onChange(of: session.phase) { _, phase in
+        .onChange(of: session.phase) { phase in
             switch phase {
             case .ready: companion.stop()
             case .naming, .playing: companion.perform(.greet, cue: .greeting)
@@ -1216,7 +1215,7 @@ struct StroopGameView: View {
             case .finished: companion.perform(session.score >= 40 ? .celebrate : .encourage)
             }
         }
-        .onChange(of: scenePhase) { _, phase in
+        .onChange(of: scenePhase) { phase in
             if phase != .active {
                 companion.stop()
                 if session.phase == .playing { session.pauseClock() }
@@ -1271,13 +1270,13 @@ struct StroopGameView: View {
                 my: "ယခုရမှတ် သိမ်းမည်မဟုတ်။"
             ))
         }
-        .onChange(of: showsLeaveAlert) { _, showing in
+        .onChange(of: showsLeaveAlert) { showing in
             pauseOrResumePlay(showing)
         }
-        .onChange(of: showsLanguage) { _, showing in
+        .onChange(of: showsLanguage) { showing in
             pauseOrResumePlay(showing)
         }
-        .onChange(of: showsMusic) { _, showing in
+        .onChange(of: showsMusic) { showing in
             pauseOrResumePlay(showing)
         }
         .sheet(isPresented: $showsLanguage) {
@@ -1446,7 +1445,7 @@ struct StroopGameView: View {
     }
 
     private var rankingSheet: some View {
-        let _ = LanguageStore.shared.language
+        let _ = languages.language
         return menuSheet(tr(ja: "ランキング", zh: "排行榜", en: "Leaderboard", my: "အဆင့်စာရင်း"), isPresented: $showsRanking) {
             VStack(alignment: .leading, spacing: 14) {
                 ScoreBoardFilterBar(filter: $rankingFilter)
@@ -1800,12 +1799,12 @@ struct StroopGameView: View {
                 .accessibilityIdentifier("stroop-name-field")
                 .onTapGesture { nameFieldFocused = true }
             }
-            .onChange(of: nameDraft) { _, newValue in
+            .onChange(of: nameDraft) { newValue in
                 if let cannedNameID, newValue != PlayerNames.display(id: cannedNameID) {
                     self.cannedNameID = nil
                 }
             }
-            .onChange(of: nameFieldFocused) { _, focused in
+            .onChange(of: nameFieldFocused) { focused in
                 if focused { showsAvatarPicker = false }
             }
             Text(tr(ja: "下の種類から選んでね", zh: "按下面的分类选", en: "Pick a category below", my: "အောက်က အမျိုးအစားမှ ရွေးပါ"))
@@ -1986,9 +1985,9 @@ struct StroopGameView: View {
                         .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
                 }
             }
-            .animation(.snappy(duration: 0.22), value: session.roundID)
-            .animation(.snappy(duration: 0.22), value: session.isReviewing)
-            .animation(.snappy(duration: 0.22), value: playfieldCatFace)
+            .animation(.easeInOut(duration: 0.22), value: session.roundID)
+            .animation(.easeInOut(duration: 0.22), value: session.isReviewing)
+            .animation(.easeInOut(duration: 0.22), value: playfieldCatFace)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if session.isReviewing {
@@ -2108,9 +2107,9 @@ struct StroopGameView: View {
                 .font(.subheadline.weight(.black))
                 .foregroundStyle(CatQuizPalette.wood)
                 .monospacedDigit()
-                .contentTransition(.numericText())
+                .modifier(NumericScoreTransition())
                 .lineLimit(1)
-                .animation(.snappy(duration: 0.2), value: session.score)
+                .animation(.easeInOut(duration: 0.2), value: session.score)
                 .accessibilityIdentifier("stroop-score")
             if session.showsTimer {
                 circularTimer
@@ -2630,6 +2629,31 @@ private struct EdgeBackSwipe: ViewModifier {
                     )
                     .accessibilityHidden(true)
             }
+        }
+    }
+}
+
+private struct AnswerSensoryFeedback: ViewModifier {
+    var correct: Int
+    var answers: Int
+
+    func body(content: Content) -> some View {
+        if #available(iOS 17.0, *) {
+            content
+                .sensoryFeedback(.success, trigger: correct)
+                .sensoryFeedback(.error, trigger: answers - correct)
+        } else {
+            content
+        }
+    }
+}
+
+private struct NumericScoreTransition: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 17.0, *) {
+            content.contentTransition(.numericText())
+        } else {
+            content
         }
     }
 }

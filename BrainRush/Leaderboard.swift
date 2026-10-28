@@ -214,9 +214,10 @@ struct ScoreBoardList: View {
     var filter: ScoreBoardFilter = .all
     var title: String?
     var textColor: Color = .white
+    @ObservedObject private var languages = LanguageStore.shared
 
     var body: some View {
-        let _ = LanguageStore.shared.language
+        let _ = languages.language
         let rows = ScoreBoard.records(for: game, filter: filter)
         VStack(alignment: .leading, spacing: 6) {
             Text(title ?? tr(ja: "ランキング", zh: "排行榜", en: "Leaderboard", my: "အဆင့်စာရင်း"))
