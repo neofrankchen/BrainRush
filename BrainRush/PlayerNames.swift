@@ -26,8 +26,8 @@ enum PlayerNames {
             case .chinese: return part.zh
             case .english: return part.en
             case .burmese: return part.my
-            case .korean: return ExtraLang.first(extra?.ko, part.en)
-            case .french: return ExtraLang.first(extra?.fr, part.en)
+            case .korean: return ExtraLang.first(extra?.ko, part.ja)
+            case .french: return ExtraLang.first(extra?.fr, part.ja)
             case .traditional: return ExtraLang.first(extra?.zhHant, ExtraLang.toTraditional(part.zh))
             }
         }

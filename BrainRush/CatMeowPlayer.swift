@@ -14,13 +14,11 @@ final class CatMeowPlayer {
     static let shared = CatMeowPlayer()
 
     private enum Clip: String, CaseIterable {
-        case adult = "adult-1"
         case curious = "curious-1"
         case happy = "happy-1"
         case impatient = "impatient-1"
         case kitten = "kitten-1"
         case pleading = "pleading-1"
-        case siamese = "siamese-1"
     }
 
     private let urls: [Clip: URL]
@@ -92,13 +90,13 @@ final class CatMeowPlayer {
 
     private func clips(for cue: CatCue) -> [Clip] {
         switch cue {
-        case .pet: Clip.allCases
-        case .greeting: [.curious, .kitten, .adult]
-        case .correct: [.happy, .kitten, .curious]
-        case .wrong: [.pleading, .adult, .curious]
-        case .timeout: [.impatient, .siamese, .pleading]
-        case .result: [.happy, .kitten, .siamese]
-        case .goodbye: [.pleading, .adult, .curious]
+        case .pet: [.kitten, .curious, .happy]
+        case .greeting: [.kitten, .curious]
+        case .correct: [.happy, .kitten]
+        case .wrong: [.pleading, .kitten]
+        case .timeout: [.impatient, .pleading]
+        case .result: [.happy, .kitten]
+        case .goodbye: [.kitten, .pleading]
         }
     }
 

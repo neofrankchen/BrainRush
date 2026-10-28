@@ -10,7 +10,11 @@ struct BrainRushApp: App {
                 StroopGameView()
             }
             .preferredColorScheme(.dark)
-            .onAppear { BackgroundMusic.shared.start() }
+            .onAppear {
+                DispatchQueue.main.async {
+                    BackgroundMusic.shared.start()
+                }
+            }
             .onChange(of: scenePhase) { _, phase in
                 BackgroundMusic.shared.handle(phase)
             }

@@ -35,56 +35,86 @@ final class LanguageStore {
     }
 
     private init() {
-        language = AppLanguage(rawValue: UserDefaults.standard.string(forKey: "appLanguage") ?? "") ?? .japanese
+        language = Self.loadLaunchLanguage()
+    }
+
+    private static func loadLaunchLanguage() -> AppLanguage {
+        let args = ProcessInfo.processInfo.arguments
+        if let flag = args.firstIndex(of: "-appLanguage"), args.indices.contains(flag + 1),
+           let forced = AppLanguage(rawValue: args[flag + 1]) {
+            return forced
+        }
+        if !UserDefaults.standard.bool(forKey: "appLanguageDefaultIsJapanese") {
+            UserDefaults.standard.set(true, forKey: "appLanguageDefaultIsJapanese")
+            UserDefaults.standard.set(AppLanguage.japanese.rawValue, forKey: "appLanguage")
+            return .japanese
+        }
+        return AppLanguage(rawValue: UserDefaults.standard.string(forKey: "appLanguage") ?? "") ?? .japanese
     }
 }
 
 func tr(ja: String, zh: String, en: String, my: String, ko: String = "", fr: String = "", zhHant: String = "") -> String {
     let language = MainActor.assumeIsolated { LanguageStore.shared.language }
-    let extra = ExtraLang.ui[ja]
     switch language {
     case .japanese: return ja
     case .chinese: return zh
     case .english: return en
     case .burmese: return my
-    case .korean: return ExtraLang.first(ko, extra?.ko, en)
-    case .french: return ExtraLang.first(fr, extra?.fr, en)
-    case .traditional: return ExtraLang.first(zhHant, extra?.zhHant, ExtraLang.toTraditional(zh))
+    case .korean: return ExtraLang.first(ko, ExtraLang.ui[ja]?.ko, ja)
+    case .french: return ExtraLang.first(fr, ExtraLang.ui[ja]?.fr, ja)
+    case .traditional: return ExtraLang.first(zhHant, ExtraLang.ui[ja]?.zhHant, ExtraLang.toTraditional(zh))
     }
 }
 
 struct LanguagePicker: View {
     var compact = false
+    var stacked = false
+    var onSelect: (() -> Void)? = nil
 
     var body: some View {
-        let selected = LanguageStore.shared.language
-        LanguageWrap(spacing: compact ? 6 : 8) {
-            ForEach(AppLanguage.allCases) { language in
-                Button {
-                    LanguageStore.shared.language = language
-                } label: {
-                    Text(language.label)
-                .font(compact ? .caption2.weight(.semibold) : .subheadline.weight(.semibold))
-                        .foregroundStyle(selected == language ? CatQuizPalette.ink : CatQuizPalette.wood)
-                .padding(.horizontal, compact ? 8 : 12)
-                        .padding(.vertical, compact ? 5 : 7)
-                        .frame(minHeight: compact ? 32 : 44)
-                .background {
-                    Capsule().fill(
-                        selected == language
-                            ? Color(red: 0.98, green: 0.74, blue: 0.32)
-                                    : CatQuizPalette.cream.opacity(0.94)
-                    )
-                }
-                        .overlay {
-                            Capsule().strokeBorder(CatQuizPalette.wood.opacity(selected == language ? 0.4 : 0.14), lineWidth: 1)
-                        }
-                }
-                .buttonStyle(ArcadePressStyle())
-                .accessibilityAddTraits(selected == language ? .isSelected : [])
-                .accessibilityIdentifier("language-\(language.rawValue)")
+        if stacked {
+            VStack(spacing: 8) {
+                ForEach(AppLanguage.allCases, content: languageButton)
+            }
+        } else {
+            LanguageWrap(spacing: compact ? 6 : 8) {
+                ForEach(AppLanguage.allCases, content: languageButton)
             }
         }
+    }
+
+    private func languageButton(_ language: AppLanguage) -> some View {
+        let selected = LanguageStore.shared.language
+        return Button {
+            LanguageStore.shared.language = language
+            onSelect?()
+        } label: {
+            HStack(spacing: 10) {
+                Text(language.label)
+                    .frame(maxWidth: stacked ? .infinity : nil, alignment: .leading)
+                if stacked, language == selected {
+                    Image(systemName: "checkmark")
+                }
+            }
+            .font(compact ? .caption2.weight(.semibold) : .system(.subheadline, design: .rounded, weight: .bold))
+            .foregroundStyle(selected == language ? CatQuizPalette.ink : CatQuizPalette.wood)
+            .padding(.horizontal, compact ? 8 : 16)
+            .padding(.vertical, compact ? 5 : (stacked ? 12 : 7))
+            .frame(minHeight: compact ? 32 : 44)
+            .background {
+                Capsule().fill(
+                    selected == language
+                        ? Color(red: 0.98, green: 0.74, blue: 0.32)
+                        : CatQuizPalette.cream.opacity(0.94)
+                )
+            }
+            .overlay {
+                Capsule().strokeBorder(CatQuizPalette.wood.opacity(selected == language ? 0.4 : 0.14), lineWidth: 1)
+            }
+        }
+        .buttonStyle(ArcadePressStyle())
+        .accessibilityAddTraits(selected == language ? .isSelected : [])
+        .accessibilityIdentifier("language-\(language.rawValue)")
     }
 }
 
@@ -507,6 +537,7 @@ final class StroopSession {
     private(set) var selectedChoiceID: String?
     private(set) var roundID = UUID()
     private(set) var testing = false
+    private(set) var justPlayed = false
     private(set) var showsPracticeTools = false
     private(set) var testUsesTimer = false
     private(set) var testFamily: QuestionFamily = .all
@@ -667,6 +698,7 @@ final class StroopSession {
     }
 
     func beginSetup(practice: Bool? = nil) {
+        justPlayed = false
         if practice == true {
             let item = PlayerNames.random()
             playerAvatar = item.emoji
@@ -886,6 +918,7 @@ final class StroopSession {
         lastMissWasTimeout = false
         testing = false
         showsPracticeTools = false
+        justPlayed = true
         phase = .ready
     }
 
@@ -1116,6 +1149,8 @@ struct StroopGameView: View {
     @State private var isEditingRename = false
     @State private var showsProfileEditor = false
     @State private var showsLeaveAlert = false
+    @State private var showsLanguage = false
+    @State private var showsMusic = false
     @State private var rankingFilter: ScoreBoardFilter = .all
     @FocusState private var nameFieldFocused: Bool
 
@@ -1185,7 +1220,7 @@ struct StroopGameView: View {
             if phase != .active {
                 companion.stop()
                 if session.phase == .playing { session.pauseClock() }
-            } else if session.phase == .playing, !showsProfileEditor, !showsLeaveAlert {
+            } else if session.phase == .playing, !overlaysPausePlay {
                 session.resumeClock()
             }
         }
@@ -1199,7 +1234,7 @@ struct StroopGameView: View {
                     Spacer(minLength: 0)
                     HStack(spacing: 8) {
                         settingsBarButton
-                        MusicPickerMenu()
+                        MusicPickerMenu { showsMusic = true }
                     }
                     .fixedSize()
                 }
@@ -1211,7 +1246,7 @@ struct StroopGameView: View {
             if session.phase == .ready && isHomeMenuVisible {
                 HStack(spacing: 8) {
                     settingsBarButton
-                    MusicPickerMenu()
+                    MusicPickerMenu { showsMusic = true }
                 }
                 .fixedSize()
                 .padding(.horizontal, 16)
@@ -1237,10 +1272,22 @@ struct StroopGameView: View {
             ))
         }
         .onChange(of: showsLeaveAlert) { _, showing in
-            if showing {
-                session.pauseClock()
-            } else if session.phase == .playing {
-                session.resumeClock()
+            pauseOrResumePlay(showing)
+        }
+        .onChange(of: showsLanguage) { _, showing in
+            pauseOrResumePlay(showing)
+        }
+        .onChange(of: showsMusic) { _, showing in
+            pauseOrResumePlay(showing)
+        }
+        .sheet(isPresented: $showsLanguage) {
+            menuSheet(tr(ja: "言語", zh: "语言", en: "Language", my: "ဘာသာစကား"), isPresented: $showsLanguage) {
+                LanguagePicker(stacked: true) { showsLanguage = false }
+            }
+        }
+        .sheet(isPresented: $showsMusic) {
+            menuSheet(tr(ja: "BGM", zh: "背景音乐", en: "Music", my: "နောက်ခံသီချင်း"), isPresented: $showsMusic) {
+                MusicTrackPicker()
             }
         }
     }
@@ -1255,24 +1302,25 @@ struct StroopGameView: View {
     }
 
     private var settingsBarButton: some View {
-        let selected = LanguageStore.shared.language
-        return Menu {
-            ForEach(AppLanguage.allCases) { language in
-                Button {
-                    LanguageStore.shared.language = language
-                } label: {
-                    if language == selected {
-                        Label(language.label, systemImage: "checkmark")
-                    } else {
-                        Text(language.label)
-                    }
-                }
-            }
-        } label: {
+        Button { showsLanguage = true } label: {
             WoodlandIconBadge(symbol: "globe")
         }
+        .buttonStyle(ArcadePressStyle())
         .accessibilityLabel(tr(ja: "言語", zh: "语言", en: "Language", my: "ဘာသာစကား"))
         .accessibilityIdentifier("stroop-settings")
+    }
+
+    private var overlaysPausePlay: Bool {
+        showsProfileEditor || showsLeaveAlert || showsLanguage || showsMusic
+    }
+
+    private func pauseOrResumePlay(_ showing: Bool) {
+        guard session.phase == .playing else { return }
+        if showing {
+            session.pauseClock()
+        } else if !overlaysPausePlay {
+            session.resumeClock()
+        }
     }
 
     private func goBack() {
@@ -1305,7 +1353,8 @@ struct StroopGameView: View {
         CatWelcomeView(
             isMenuVisible: $isHomeMenuVisible,
             companion: companion,
-            pauseIdle: showsRanking || showsGuide,
+            justPlayed: session.justPlayed,
+            pauseIdle: showsRanking || showsGuide || showsLanguage || showsMusic,
             idleNudge: homeIdleNudge
         ) {
             VStack(spacing: 8) {
@@ -1329,7 +1378,7 @@ struct StroopGameView: View {
         .background(StroopBackdrop(light: true))
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showsGuide) {
-            menuSheet(tr(ja: "遊び方", zh: "怎么玩", en: "How to play", my: "ကစားနည်း")) {
+            menuSheet(tr(ja: "遊び方", zh: "怎么玩", en: "How to play", my: "ကစားနည်း"), isPresented: $showsGuide) {
                 VStack(alignment: .leading, spacing: 24) {
                     guide(
                         tr(ja: "遊び方", zh: "怎么玩", en: "How to play", my: "ကစားနည်း"),
@@ -1398,7 +1447,7 @@ struct StroopGameView: View {
 
     private var rankingSheet: some View {
         let _ = LanguageStore.shared.language
-        return menuSheet(tr(ja: "ランキング", zh: "排行榜", en: "Leaderboard", my: "အဆင့်စာရင်း")) {
+        return menuSheet(tr(ja: "ランキング", zh: "排行榜", en: "Leaderboard", my: "အဆင့်စာရင်း"), isPresented: $showsRanking) {
             VStack(alignment: .leading, spacing: 14) {
                 ScoreBoardFilterBar(filter: $rankingFilter)
                 ScoreBoardList(game: StroopRound.quizGame, rank: .timed, filter: rankingFilter, textColor: CatQuizPalette.wood)
@@ -1406,7 +1455,7 @@ struct StroopGameView: View {
         }
     }
 
-    private func menuSheet<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func menuSheet<Content: View>(_ title: String, isPresented: Binding<Bool>, @ViewBuilder content: () -> Content) -> some View {
         let sheetContent = content()
         return NavigationStack {
             ScrollView {
@@ -1425,8 +1474,7 @@ struct StroopGameView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
             Button {
-                        showsGuide = false
-                        showsRanking = false
+                        isPresented.wrappedValue = false
             } label: {
                         Image(systemName: "xmark.circle.fill")
                             .symbolRenderingMode(.hierarchical)
@@ -1438,11 +1486,10 @@ struct StroopGameView: View {
         }
         .preferredColorScheme(.light)
         .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
+        .presentationDragIndicator(.visible)
         .modifier(EdgeBackSwipe(enabled: true) {
-            showsGuide = false
-            showsRanking = false
+            isPresented.wrappedValue = false
         })
     }
 

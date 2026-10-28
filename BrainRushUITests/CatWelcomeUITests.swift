@@ -120,7 +120,7 @@ final class CatWelcomeUITests: XCTestCase {
         Thread.sleep(forTimeInterval: 1.1)
         let farewell = app.staticTexts["home-cat-speech"]
         XCTAssertTrue(farewell.exists)
-        if farewell.exists { XCTAssertEqual(farewell.label, "うん、遊びたくなったら呼んでね。") }
+        if farewell.exists { XCTAssertEqual(farewell.label, "嗯，想玩的时候再叫我。") }
         let asleep = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "睡觉中"), object: cat)
         XCTAssertEqual(XCTWaiter.wait(for: [asleep], timeout: 7), .completed)
         capture(app, "04 Back to sleep")

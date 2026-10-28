@@ -10,7 +10,6 @@ final class BackgroundMusic {
     enum Track: String, CaseIterable, Identifiable {
         case off
         case cozyAmbience = "cozy-ambience"
-        case autumnCozy = "autumn-cozy"
         case autumnBreeze = "autumn-breeze"
         case autumnPiano = "autumn-piano"
         case fallenLeaves = "fallen-leaves"
@@ -37,8 +36,6 @@ final class BackgroundMusic {
                 tr(ja: "オフ", zh: "关闭", en: "Off", my: "ပိတ်")
             case .cozyAmbience:
                 tr(ja: "ほっこり", zh: "暖暖氛围", en: "Cozy", my: "နွေးထွေး")
-            case .autumnCozy:
-                tr(ja: "秋のぬくもり", zh: "秋日暖意", en: "Autumn cozy", my: "ဆောင်းဦးနွေး")
             case .autumnBreeze:
                 tr(ja: "秋のそよ風", zh: "秋风", en: "Autumn breeze", my: "ဆောင်းဦးလေ")
             case .autumnPiano:
@@ -117,20 +114,12 @@ final class BackgroundMusic {
         }
         sessionStarting = true
         pendingForceNew = forceNew
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
-        if #available(iOS 27.0, *) {
-            session.activate(options: []) { [weak self] _, _ in
-                Task { @MainActor in
-                    self?.finishSessionStart()
-                }
-            }
-        } else {
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                try? session.setActive(true)
-                Task { @MainActor in
-                    self?.finishSessionStart()
-                }
+        // Never activate the session on the main thread — iPhone 17 freezes there.
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let session = AVAudioSession.sharedInstance()
+            try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            Task { @MainActor in
+                self?.finishSessionStart()
             }
         }
         #else
@@ -139,6 +128,7 @@ final class BackgroundMusic {
     }
 
     private func finishSessionStart() {
+        guard sessionStarting || !sessionReady else { return }
         sessionReady = true
         sessionStarting = false
         let force = pendingForceNew ?? false
@@ -208,15 +198,22 @@ final class BackgroundMusic {
         guard !file.isEmpty, let url = Self.url(for: file) else { return }
         player?.volume = 0
         player?.stop()
-        guard let next = try? AVAudioPlayer(contentsOf: url) else { return }
-        next.numberOfLoops = 0
-        next.volume = 0.52
-        next.delegate = finishRelay
-        next.prepareToPlay()
-        next.play()
-        player = next
-        currentFile = file
-        isPlaying = true
+        player = nil
+        let relay = finishRelay
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let next = try? AVAudioPlayer(contentsOf: url) else { return }
+            next.numberOfLoops = 0
+            next.volume = 0.52
+            next.prepareToPlay()
+            Task { @MainActor in
+                guard let self else { return }
+                next.delegate = relay
+                next.play()
+                self.player = next
+                self.currentFile = file
+                self.isPlaying = true
+            }
+        }
     }
 
     private static func url(for file: String, ext: String = "mp3", folder: String = "Music") -> URL? {
@@ -230,11 +227,6 @@ final class BackgroundMusic {
         let nested = root.appending(path: "\(folder)/\(file).\(ext)")
         if FileManager.default.fileExists(atPath: nested.path) {
             return nested
-        }
-        if let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil) {
-            for case let item as URL in enumerator where item.lastPathComponent == "\(file).\(ext)" {
-                return item
-            }
         }
         return nil
     }
@@ -252,21 +244,10 @@ private final class FinishRelay: NSObject, AVAudioPlayerDelegate {
 }
 
 struct MusicPickerMenu: View {
+    var action: () -> Void
+
     var body: some View {
-        let selected = BackgroundMusic.shared.track
-        Menu {
-            ForEach(BackgroundMusic.Track.allCases) { track in
-                Button {
-                    BackgroundMusic.shared.track = track
-                } label: {
-                    if track == selected {
-                        Label(track.title, systemImage: "checkmark")
-                    } else {
-                        Text(track.title)
-                    }
-                }
-            }
-        } label: {
+        Button(action: action) {
             let playing = BackgroundMusic.shared.isPlaying
             TimelineView(.animation(minimumInterval: 1 / 8, paused: !playing)) { context in
                 let turn = playing
@@ -275,7 +256,47 @@ struct MusicPickerMenu: View {
                 WoodlandIconBadge(symbol: "music.note", rotation: turn * 360, lit: playing)
             }
         }
+        .buttonStyle(.plain)
         .accessibilityLabel(tr(ja: "BGM", zh: "背景音乐", en: "Music", my: "နောက်ခံသီချင်း"))
         .accessibilityIdentifier("stroop-music")
+    }
+}
+
+struct MusicTrackPicker: View {
+    var body: some View {
+        let selected = BackgroundMusic.shared.track
+        VStack(spacing: 8) {
+            ForEach(BackgroundMusic.Track.allCases) { track in
+                Button {
+                    BackgroundMusic.shared.track = track
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: track == .off ? "speaker.slash.fill" : "music.note")
+                        Text(track.title)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        if track == selected {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
+                    .foregroundStyle(selected == track ? CatQuizPalette.ink : CatQuizPalette.wood)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background {
+                        Capsule().fill(
+                            selected == track
+                                ? Color(red: 0.98, green: 0.74, blue: 0.32)
+                                : CatQuizPalette.cream.opacity(0.94)
+                        )
+                    }
+                    .overlay {
+                        Capsule().strokeBorder(CatQuizPalette.wood.opacity(selected == track ? 0.4 : 0.14), lineWidth: 1)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected == track ? .isSelected : [])
+                .accessibilityIdentifier("music-\(track.rawValue)")
+            }
+        }
     }
 }
