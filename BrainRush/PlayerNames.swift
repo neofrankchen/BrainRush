@@ -1050,7 +1050,6 @@ enum PlayerNames {
         Part(id: "friends-send-to-stream", ja: "友達に配信で技術を学べと勧められた", zh: "被朋友劝去直播间学技术的", en: "Friends-told-it-to-learn-from-streams", my: "သူငယ်ချင်းက တိုက်ရိုက်ထုတ်မှ သင်ရန် တိုက်တွန်းသော"),
         Part(id: "made-game-cant-clear", ja: "自分で作ったゲームをクリアできない", zh: "自己做的游戏自己通不了关的", en: "Made-the-game-can't-clear-it", my: "ကိုယ်လုပ်သောဂိမ်း ကိုယ်မအောင်နိုင်သော"),
         Part(id: "cant-keep-up-triple-queue", ja: "大物についていけず三人キューしかできない", zh: "跟不上大佬只能三排的", en: "Can't-keep-up-only-queues-as-three", my: "ကျွမ်းသူမလိုက်နိုင် သုံးဦးတန်းသာသော"),
-        Part(id: "asks-coach-gun-clumsy", ja: "コーチに銃を借りる手残", zh: "请教练枪的手残", en: "Clumsy-hands-that-borrow-the-coach's-gun", my: "နည်းပြသေနတ် ငှားသော လက်ညံ့"),
         Part(id: "three-games-to-pass-tutorial", ja: "三試合やってやっと初心者関を越える", zh: "玩三把才过新手关的", en: "Takes-three-matches-to-pass-the-tutorial", my: "သုံးပွဲကစားမှ အစဂိမ်းကျော်သော"),
         Part(id: "no-minimap-gets-lost", ja: "ミニマップを見ないと迷う", zh: "不看小地图就迷路的", en: "Gets-lost-without-the-minimap", my: "မြေပုံငယ်မကြည့်လျှင် လမ်းမှားသော"),
         Part(id: "so-lost-no-main-quest", ja: "方向音痴すぎてメインクエストが見つからない", zh: "路痴到找不到主线的", en: "Too-directionless-to-find-the-main-quest", my: "လမ်းမှားလွန်း၍ ပင်မတာဝန် ရှာမတွေ့သော"),

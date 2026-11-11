@@ -1057,7 +1057,6 @@ enum ExtraLang {
         "friends-send-to-stream": .init(ko: "친구에게 방송으로 기술 배우라고 권유받은", fr: "Les amis lui disent d’apprendre en live", zhHant: "被朋友勸去直播間學技術的"),
         "made-game-cant-clear": .init(ko: "자기가 만든 게임을 자기가 못 깨는", fr: "A fait le jeu et n’arrive pas à le finir", zhHant: "自己做的遊戲自己通不了關的"),
         "cant-keep-up-triple-queue": .init(ko: "고수를 못 따라가서 3인큐만 하는", fr: "N’arrive pas à suivre les cracks, ne queue qu’à trois", zhHant: "跟不上大佬只能三排的"),
-        "asks-coach-gun-clumsy": .init(ko: "코치에게 총을 빌리는 손짜", fr: "Mains maladroites qui empruntent le fusil du coach", zhHant: "請教練槍的手殘"),
         "three-games-to-pass-tutorial": .init(ko: "세 판 해야 초보 관문을 넘는", fr: "Met trois parties à passer le tuto", zhHant: "玩三把才過新手關的"),
         "no-minimap-gets-lost": .init(ko: "미니맵 안 보면 길 잃는", fr: "Se perd dès qu’il ne regarde pas la mini-carte", zhHant: "不看小地圖就迷路的"),
         "so-lost-no-main-quest": .init(ko: "길치라서 메인 퀘도 못 찾는", fr: "Tellement perdu qu’il ne trouve pas la quête principale", zhHant: "路癡到找不到主線的"),

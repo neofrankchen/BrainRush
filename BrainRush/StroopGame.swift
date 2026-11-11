@@ -1596,6 +1596,7 @@ struct StroopGameView: View {
                     nameFields
 
                     Button {
+                        nameFieldFocused = false
                         session.confirmName(nameDraft, cannedID: cannedNameID, avatar: chosenAvatar)
                     } label: {
                         WoodlandAction(
@@ -1617,7 +1618,7 @@ struct StroopGameView: View {
             }
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.interactively)
-            .ignoresSafeArea(.keyboard)
+            .simultaneousGesture(TapGesture().onEnded { nameFieldFocused = false })
         }
         .background(StroopBackdrop(light: true))
         .toolbar(.hidden, for: .navigationBar)
@@ -1654,6 +1655,7 @@ struct StroopGameView: View {
                     if isEditingRename {
                         nameFields
                         Button {
+                            nameFieldFocused = false
                             session.confirmRename(nameDraft, cannedID: cannedNameID, avatar: chosenAvatar)
                         } label: {
                             WoodlandAction(
@@ -1722,7 +1724,7 @@ struct StroopGameView: View {
             }
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.interactively)
-            .ignoresSafeArea(.keyboard)
+            .simultaneousGesture(TapGesture().onEnded { nameFieldFocused = false })
         }
         .background(StroopBackdrop(light: true))
         .toolbar(.hidden, for: .navigationBar)
@@ -1741,7 +1743,7 @@ struct StroopGameView: View {
             Text(tr(ja: "言語", zh: "语言", en: "Language", my: "ဘာသာစကား"))
                 .font(.caption.weight(.bold))
                 .foregroundStyle(CatQuizPalette.wood)
-            LanguagePicker(compact: true)
+            LanguagePicker(compact: true, onSelect: { nameFieldFocused = false })
                 .frame(maxWidth: .infinity)
             Text(tr(ja: "プレイヤー名", zh: "玩家名字", en: "Player name", my: "ကစားသမားနာမည်"))
                 .font(.caption.weight(.bold))
@@ -1786,6 +1788,7 @@ struct StroopGameView: View {
                 .autocorrectionDisabled()
                 .submitLabel(.done)
                 .focused($nameFieldFocused)
+                .onSubmit { nameFieldFocused = false }
                 .padding(12)
                 .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
                 .background(CatQuizPalette.cream, in: RoundedRectangle(cornerRadius: 14))
@@ -1799,7 +1802,21 @@ struct StroopGameView: View {
                 .accessibilityIdentifier("stroop-name-field")
                 .onTapGesture { nameFieldFocused = true }
             }
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button(tr(ja: "完了", zh: "完成", en: "Done", my: "ပြီးပြီ")) {
+                        nameFieldFocused = false
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
             .onChange(of: nameDraft) { newValue in
+                if newValue.contains(where: \.isNewline) {
+                    nameDraft = newValue.filter { !$0.isNewline }
+                    nameFieldFocused = false
+                    return
+                }
                 if let cannedNameID, newValue != PlayerNames.display(id: cannedNameID) {
                     self.cannedNameID = nil
                 }
@@ -1921,6 +1938,7 @@ struct StroopGameView: View {
     }
 
     private func applyRandomName(_ item: PlayerNames.Item) {
+        nameFieldFocused = false
         cannedNameID = item.id
         nameDraft = item.display
         chosenAvatar = item.emoji
@@ -1928,6 +1946,7 @@ struct StroopGameView: View {
     }
 
     private func applyRandomAdjective() {
+        nameFieldFocused = false
         let item = PlayerNames.randomAdjective(keeping: cannedNameID)
         cannedNameID = item.id
         nameDraft = item.display
@@ -2047,6 +2066,7 @@ struct StroopGameView: View {
                     .foregroundStyle(CatQuizPalette.wood)
                 nameFields
                 Button {
+                    nameFieldFocused = false
                     session.updateProfile(nameDraft, cannedID: cannedNameID, avatar: chosenAvatar)
                     showsProfileEditor = false
                 } label: {
@@ -2071,7 +2091,7 @@ struct StroopGameView: View {
         .padding(20)
         }
         .scrollDismissesKeyboard(.interactively)
-        .ignoresSafeArea(.keyboard)
+        .simultaneousGesture(TapGesture().onEnded { nameFieldFocused = false })
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
@@ -2094,8 +2114,10 @@ struct StroopGameView: View {
                     Text(session.playerName)
                         .font(.caption.weight(.heavy))
                         .foregroundStyle(CatQuizPalette.ink)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.65)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("stroop-player-name")
                 }
             }
